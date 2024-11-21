@@ -62,7 +62,9 @@ class Game:
         self.units = self.create_units()
         self.current_unit_index = 0
         self.last_turn_time = 0  # Initialize turn delay tracking
-        self.last_phase_press = 0  # Delay for phase transitions
+        self.last_move_time = 0  # Timestamp of the last movement
+
+        
 
     def create_grid(self):
         """Create a grid with predefined lakes and hills."""
@@ -177,17 +179,23 @@ class Game:
         keys = pygame.key.get_pressed()
 
         # Movement Phase
+        # Movement Phase with delays and consistent elif structure
         if current_unit.state == "move":
-            if keys[pygame.K_UP]:
-                current_unit.move(0, -1, self.grid)
-            elif keys[pygame.K_DOWN]:
-                current_unit.move(0, 1, self.grid)
-            elif keys[pygame.K_LEFT]:
-                current_unit.move(-1, 0, self.grid)
-            elif keys[pygame.K_RIGHT]:
-                current_unit.move(1, 0, self.grid)
-            elif keys[pygame.K_RETURN]:
-                current_unit.state = "attack"  # Transition to attack phase
+            if current_time - self.last_move_time > 100:  # Delay of 300ms between movements
+                if keys[pygame.K_UP]:
+                    current_unit.move(0, -1, self.grid)
+                    self.last_move_time = current_time  # Update the last movement time
+                elif keys[pygame.K_DOWN]:
+                    current_unit.move(0, 1, self.grid)
+                    self.last_move_time = current_time  # Update the last movement time
+                elif keys[pygame.K_LEFT]:
+                    current_unit.move(-1, 0, self.grid)
+                    self.last_move_time = current_time  # Update the last movement time
+                elif keys[pygame.K_RIGHT]:
+                    current_unit.move(1, 0, self.grid)
+                    self.last_move_time = current_time  # Update the last movement time
+                elif keys[pygame.K_RETURN]:
+                    current_unit.state = "attack"  # Transition to attack phase
 
         # Attack Phase
         elif current_unit.state == "attack":
