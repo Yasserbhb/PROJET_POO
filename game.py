@@ -114,37 +114,40 @@ class Game:
         ]
 
     def draw_units(self):
-        """Draw all units on the screen with their images and team-colored health bars."""
+        """Draw all units on the grid with health bars inside their squares."""
         for unit in self.units:
             if unit.alive:
-                # Draw the unit's image
+                # Draw the unit's image inside the square
                 rect = pygame.Rect(unit.x * CELL_SIZE, unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                unit_image = pygame.transform.scale(unit.image, (CELL_SIZE, CELL_SIZE))
-                self.screen.blit(unit_image, rect)
+                self.screen.blit(pygame.transform.scale(unit.image, (CELL_SIZE, CELL_SIZE)), rect)
 
-                # Determine health bar color based on team
-                if unit.color == (0, 0, 255):  # Blue team (Ashe, Garen)
-                    health_color = (0, 200, 100)  # Green
-                    missing_health_color = (0, 50, 0)  # Dark green
-                elif unit.color == (255, 0, 0):  # Red team (Darius, Soraka)
-                    health_color = (150, 0, 128)  # Purple
-                    missing_health_color = (50, 0, 50)  # Dark purple
+                # Draw health bar inside the square
+                health_ratio = unit.health / 100  # Health percentage
+                health_bar_width = int(CELL_SIZE * health_ratio*0.95)  # Width of the health bar
+                health_bar_height = 5  # Height of the health bar
+                health_bar_x = rect.x + 2  # Small margin from the left
+                health_bar_y = rect.y + 2  # Small margin from the top
+
+                # Health bar background (red for missing health)
+                pygame.draw.rect(
+                    self.screen,
+                    (0,0,0),
+                    (health_bar_x, health_bar_y, CELL_SIZE - 4, health_bar_height),
+                )
+
+                # Health bar foreground (green/purple for remaining health)
+                if unit.color == (0, 0, 255):  # Blue team
+                    health_color = (0, 255, 0)  # Green
+                elif unit.color == (255, 0, 0):  # Red team
+                    health_color = (128, 0, 128)  # Purple
                 else:
-                    health_color = (255, 255, 255)  # Default to white (fallback)
-                    missing_health_color = (100, 100, 100)
+                    health_color = (255, 255, 255)  # Default white
+                pygame.draw.rect(
+                    self.screen,
+                    health_color,
+                    (health_bar_x, health_bar_y, health_bar_width, health_bar_height),
+            )
 
-                # Health bar background (missing health)
-                health_bar_bg = pygame.Rect(
-                    rect.x + 2, rect.y - 6, CELL_SIZE - 4, 5
-                )
-                pygame.draw.rect(self.screen, missing_health_color, health_bar_bg)
-
-                # Health bar foreground (current health)
-                health_percentage = unit.health / 100  # Assuming max health = 100
-                health_bar_fg = pygame.Rect(
-                    rect.x + 2, rect.y - 6, int((CELL_SIZE - 4) * health_percentage), 5
-                )
-                pygame.draw.rect(self.screen, health_color, health_bar_fg)
 
 
     def highlight_range(self, unit):
@@ -167,7 +170,7 @@ class Game:
                     x, y = unit.x + dx, unit.y + dy
                     if (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and
                             abs(dx) + abs(dy) <= unit.attack_range):
-                        color = (150, 0, 200)  # Purple for attack range
+                        color = (250, 0, 0)  # Purple for attack range
                         rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                         pygame.draw.rect(self.screen, color, rect, 2)
 
