@@ -88,7 +88,7 @@ class Game:
         self.last_move_time = 0  # Timestamp of the last movement
         self.last_action_time = 0  # Timestamp of the last attack movement to target
 
-        self.damage_popups = []  # List to store active damage popups
+        
         self.visible_tiles = set()
         
         starting_team_color = self.units[self.current_unit_index].color
