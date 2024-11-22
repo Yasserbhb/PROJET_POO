@@ -27,7 +27,11 @@ def load_unit_images():
         "darius": "assets/darius.png",
         "soraka": "assets/soraka.png",
     }
-    
+def load_indicators():
+    return {
+        "indicator": pygame.image.load("assets/indicator.png"),
+        "indicator1": pygame.image.load("assets/indicator1.png")
+    }
     
     
     
@@ -65,6 +69,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.textures = load_textures()
         self.unit_images = load_unit_images()
+        self.indicators = load_indicators()
         self.grid = self.create_grid()
         self.units = self.create_units()
         self.current_unit_index = 0
@@ -163,7 +168,7 @@ class Game:
             
                     
                 if (self.grid[x][y].traversable ):
-                    overlay.fill((50, 150, 255, 80))  # Yellow with transparency (alpha = 100)
+                    overlay.fill((50, 150, 255, 100))  # Blue with transparency (alpha = 100)
                     rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                     self.screen.blit(overlay, rect)
                     
@@ -180,14 +185,23 @@ class Game:
                     x, y = unit.x + dx, unit.y + dy
                     if (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and
                             abs(dx) + abs(dy) <= unit.attack_range):
-                        overlay.fill((250, 0, 0, 80))  # Red with transparency (alpha = 100)
+                        overlay.fill((250, 0, 0, 100))  # Red with transparency (alpha = 100)
                         rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                         self.screen.blit(overlay, rect)
+
             # Highlight the target cursor
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            overlay = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-            overlay.fill((128, 0, 128, 150))  # Purple with 50% transparency
-            self.screen.blit(overlay, target_rect)
+            beat_scale = 90  # Indicator scale percentage
+            beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
+            indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale the indicator image
+            indicator_image = pygame.transform.scale(self.indicators["indicator1"], (indicator_size, indicator_size))
+            indicator_image.set_alpha(beat_alpha)
+
+            # Center the scaled indicator within the target tile
+            indicator_x = target_rect.x + (CELL_SIZE - indicator_size) // 2
+            indicator_y = target_rect.y + (CELL_SIZE - indicator_size) // 2
+
+            self.screen.blit(indicator_image, (indicator_x, indicator_y))
             
             
 
@@ -226,8 +240,7 @@ class Game:
         self.visible_tiles = set()  # Reset visible tiles
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Light propagation directions
 
-        for unit in [u for u in self.units if u.alive]:
-            print("update fog")
+        for unit in self.units:
             if unit.color == team_color and unit.alive:
                 queue = [(unit.x, unit.y, 0)]  # BFS queue: (x, y, distance)
                 max_visibility = unit.move_range + 2  # Visibility range slightly larger than movement
@@ -279,11 +292,11 @@ class Game:
                 if (x, y) not in self.visible_tiles:
                     # Fully fogged areas
                     self.screen.blit(fog_overlay, rect)   
-                """elif (x, y) in self.visible_tiles and any(
+                elif (x, y) in self.visible_tiles and any(
                     (x + dx, y + dy) not in self.visible_tiles for dx, dy in directions
                 ):
                     # Dim lighting at the edges of visibility
-                    self.screen.blit(dim_overlay, rect)     """  
+                    self.screen.blit(dim_overlay, rect)    
 
 
 
@@ -444,3 +457,5 @@ if __name__ == "__main__":
 #make an ability class that has a name, description, and a function that gets called when the ability is used and a lot of attributes
 #take the turn handler to a diffrent class ?
 # take in rnage verification to game instead of unit , so resolve attack checks all the enviromeent and confirms if we attack , and attack method only works after we confim that so it just modifies the hp and effects...
+# after done attacking add button so that it doesnt directly go to the enemy team to give me time to look at the impacts i did or to use the vision i gained from the move ability
+# i want the highlight for range to also be like the attack so the move phase only the cursor for target position moves than when we confirm , the unit snaps to that posotion
