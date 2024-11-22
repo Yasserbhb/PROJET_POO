@@ -3,7 +3,7 @@ import random
 from unit import Unit
 
 # Constants
-GRID_SIZE = 20
+GRID_SIZE = 21
 CELL_SIZE = 40
 SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE, CELL_SIZE * GRID_SIZE
 FPS = 60
@@ -19,6 +19,9 @@ def load_textures():
         ],
         "water": pygame.image.load("assets/water.jpg"),
         "rock": pygame.image.load("assets/rock.jpg"),
+        "bush": pygame.image.load("assets/bush.png"),
+        "nexus": pygame.image.load("assets/nexus.png"),
+        "barrier": pygame.image.load("assets/barrier.png"),
     }
 def load_unit_images():
     return {
@@ -30,19 +33,21 @@ def load_unit_images():
 def load_indicators():
     return {
         "indicator": pygame.image.load("assets/indicator.png"),
-        "indicator1": pygame.image.load("assets/indicator1.png")
+        "indicator": pygame.image.load("assets/indicator.png")
     }
     
     
     
 # Tile class
 class Tile:
-    def __init__(self, x, y, terrain, textures):
+    def __init__(self, x, y, terrain, textures,  overlay=None):
         self.x = x
         self.y = y
         self.terrain = terrain  # "grass", "water", or "rock"
         self.textures = textures
-        self.traversable = terrain == "grass"  # Only grass is traversable
+        self.overlay = overlay  # Overlay type: "bush", "barrier", "nexus"
+        self.traversable = terrain in ["grass", "water"]  # Only grass is traversable
+        
 
         # Assign texture for grass
         if self.terrain == "grass":
@@ -54,6 +59,12 @@ class Tile:
         """Draw the tile with its texture."""
         rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         screen.blit(pygame.transform.scale(self.texture, (CELL_SIZE, CELL_SIZE)), rect)
+
+        # Draw the overlay (if any) on top
+        if self.overlay:
+            overlay_texture = self.textures[self.overlay]
+            screen.blit(pygame.transform.scale(overlay_texture, (CELL_SIZE, CELL_SIZE)), rect)
+
         # Optional: Add a subtle border for tiles
         pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
         
@@ -96,7 +107,7 @@ class Game:
 
         # Add lakes (water tiles)
         lakes = [
-            [(5, 5), (5, 6), (5, 7), (6,5),(6, 6),(6,7),(7, 6)],
+            [(5, 5), (5, 6), (5, 7), (6,5),(6, 6),(6,7)],
             [(12, 12), (12, 13), (13, 12), (13, 13)],
             [(14, 5), (14, 6), (15, 5), (15, 6)],
         ]
@@ -116,6 +127,17 @@ class Game:
         for hill in hills:
             for x, y in hill:
                 grid[x][y] = Tile(x, y, "rock", self.textures)
+
+        # Add overlays (bushes, barriers, nexus)
+        overlays = {
+            "bush": [(0, 0), (1, 0), (0, 1), (20, 20), (19, 20), (20, 19), (3, 7), (3, 8), (8, 3), (17, 12), (17, 13), (12, 17)],
+            "barrier": [(0, 17), (1, 17), (2, 17), (3, 17), (3, 18), (3, 19), (3, 20), (17, 0), (17, 1), (17, 2), (17, 3), (18, 3), (19, 3), (20, 3)],
+            "nexus": [(1, 19), (19, 1)],  # Nexus positions
+        }
+        for overlay_type, positions in overlays.items():
+            for x, y in positions:
+                if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:
+                    grid[x][y].overlay = overlay_type
 
         return grid
 
@@ -194,7 +216,7 @@ class Game:
             beat_scale = 90  # Indicator scale percentage
             beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
             indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale the indicator image
-            indicator_image = pygame.transform.scale(self.indicators["indicator1"], (indicator_size, indicator_size))
+            indicator_image = pygame.transform.scale(self.indicators["indicator"], (indicator_size, indicator_size))
             indicator_image.set_alpha(beat_alpha)
 
             # Center the scaled indicator within the target tile
@@ -243,7 +265,7 @@ class Game:
         for unit in self.units:
             if unit.color == team_color and unit.alive:
                 queue = [(unit.x, unit.y, 0)]  # BFS queue: (x, y, distance)
-                max_visibility = unit.move_range + 2  # Visibility range slightly larger than movement
+                max_visibility = unit.move_range + 1  # Visibility range slightly larger than movement
 
                 while queue:
                     x, y, distance = queue.pop(0)
@@ -453,9 +475,16 @@ if __name__ == "__main__":
     Game().run()
 
 
-#make grid and tile as a class and have 3 different maps, no need for config map in the game part , everything related to grid stays in grid
+#make grid and tile as a class and have 3 different maps, no need for config map in the game part , everything related to grid stays in grid and make ice make you slower next round (less range) , and add a hiding place that we can use as a dmg boost if you hit from it
 #make an ability class that has a name, description, and a function that gets called when the ability is used and a lot of attributes
 #take the turn handler to a diffrent class ?
 # take in rnage verification to game instead of unit , so resolve attack checks all the enviromeent and confirms if we attack , and attack method only works after we confim that so it just modifies the hp and effects...
 # after done attacking add button so that it doesnt directly go to the enemy team to give me time to look at the impacts i did or to use the vision i gained from the move ability
 # i want the highlight for range to also be like the attack so the move phase only the cursor for target position moves than when we confirm , the unit snaps to that posotion
+# create a HUD as a class
+# add pick ups class
+# verify all conditions after creating TP and healings and effects 
+# add objective class it has a nexus also red and blue monster  (red and blue monster spawn once each 6 rounds)
+# each team has 2 keys 1 on each player and the third is hidden in a monster ( 2 keys 2 buffs , 1 for each team and there are 3 monsters total ) and one that spawns randomly
+# once u have 3 keys of the enemy (1 from monster 1 random and 1 from killing them) the barriere disappears and their nexus is visible and u can hit it )
+# game ends with nexus exploding 
