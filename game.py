@@ -64,10 +64,10 @@ class Game:
         """Create units and place them on the grid."""
         
         return [
-            Unit(14, 16, "Ashe",100, self.unit_images["ashe"], (0, 0, 255)),  # Blue team
-            Unit(14, 15, "Garen",170, self.unit_images["garen"], (0, 0, 255)),  # Blue team
-            Unit(18, 18, "Darius",190, self.unit_images["darius"], (255, 0, 0)),  # Red team
-            Unit(17, 18, "Soraka",85, self.unit_images["soraka"], (255, 0, 0)),  # Red team
+            Unit(14, 16, "Ashe",500, self.unit_images["ashe"], (0, 0, 255)),  # Blue team
+            Unit(14, 15, "Garen",1600, self.unit_images["garen"], (0, 0, 255)),  # Blue team
+            Unit(18, 18, "Darius",1090, self.unit_images["darius"], (255, 0, 0)),  # Red team
+            Unit(17, 18, "Soraka",350, self.unit_images["soraka"], (255, 0, 0)),  # Red team
         ]
     
 
@@ -76,10 +76,13 @@ class Game:
         """Draw all units on the grid with visibility logic."""
         current_team_color = self.units[self.current_unit_index].color
 
-        for unit in self.units:
+        for index, unit in enumerate(self.units):
             if unit.alive:
+                is_current_turn = (index == self.current_unit_index)  # Check if it's the current unit's turn
+                # Draw units only if they belong to the current team or are in visible tiles
                 if unit.color == current_team_color or (unit.x, unit.y) in self.visible_tiles:
-                    unit.draw(self.screen)
+                    unit.draw(self.screen, is_current_turn=is_current_turn)
+
 
 
 
@@ -124,19 +127,18 @@ class Game:
                 return
 
 
-
+    
     def handle_turn(self):
         """Handle movement and attacks for the current unit."""
         current_time = pygame.time.get_ticks()
         current_unit = self.units[self.current_unit_index]
-
         if not current_unit.alive:
             # Move to the next unit's turn
             self.current_unit_index = (self.current_unit_index + 1) % len(self.units)
             return
         
         keys = pygame.key.get_pressed()
-
+        
         # Movement Phase
         if current_unit.state == "move":
             if current_time - self.last_move_time > 100:  # Delay of 100ms between movements
@@ -156,7 +158,7 @@ class Game:
                     if not any(
                         unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
                         for unit in self.units
-                    ):
+                    ):  
                         print(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
                         current_unit.state = "attack"
                         current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
