@@ -69,15 +69,18 @@ class Unit:
         if target and self.in_range(target):
             print(f"{self.name} attacks {target.name}!")
             
-            target.health -= self.damage  # Example damage
-            target.damage_taken = self.damage  #############################################""""""
+            damage = self.damage
+            target.health -= damage  
+            target.damage_taken = damage 
             target.last_damage_time = pygame.time.get_ticks() 
             if target.health <= 0:
                 target.health = 0
                 target.alive = False
                 print(f"{target.name} has been defeated!")
+            return damage
         else:
             print(f"{self.name} can't attack: Target is out of range or invalid.")
+            return 0
 
 
 

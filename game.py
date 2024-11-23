@@ -7,7 +7,7 @@ from interface import Tile,Grid,Highlight
 # Constants
 GRID_SIZE = 21
 CELL_SIZE = 40
-SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE, CELL_SIZE * GRID_SIZE
+SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE
 FPS = 60
 
 # Load assets
@@ -114,7 +114,7 @@ class Game:
         """Create units and place them on the grid."""
         
         return [
-            Unit(3, 16, "Ashe", 700, 170, self.unit_images["ashe"], (0, 0, 255),3,2),  # Blue team
+            Unit(16, 4, "Ashe", 700, 170, self.unit_images["ashe"], (0, 0, 255),3,2),  # Blue team
             Unit(4, 17, "Garen", 1300, 60, self.unit_images["garen"], (0, 0, 255),3,2),  # Blue team
             Unit(16, 3, "Darius",1090, 80,self.unit_images["darius"], (255, 0, 0),3,2),  # Red team
             Unit(17, 4, "Soraka",490, 50 ,self.unit_images["soraka"], (255, 0, 0),3,2),  # Red team
