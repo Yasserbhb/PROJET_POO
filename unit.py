@@ -5,7 +5,7 @@ import time
 CELL_SIZE = 40
 class Unit:
     """A single unit in the game."""
-    def __init__(self, x, y, name, health, damage,image_path, color, move_range=3, attack_range=2):
+    def __init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range):
         self.x = x
         self.y = y
         self.initial_x = x  # Initial position for movement range

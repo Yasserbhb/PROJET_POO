@@ -70,7 +70,7 @@ class Grid:
             [(5, 5), (5, 6), (5, 7), (6, 5), (6, 6), (7, 6)],  
             [(10, 7), (11, 6), (11, 7), (12, 6),(12,7)],  
             [(8, 13),(9, 13), (8, 14), (9, 14), (10, 13)], 
-            [(13, 14), (14, 14), (14, 15), (15, 13), (15, 14), (15, 15)],  
+            [(13, 14), (14, 14), (14, 15), (15, 14), (15, 15)],  
         ]
         for lake in lakes:
             for x, y in lake:
@@ -182,7 +182,7 @@ class Highlight:
         
         self.visible_tiles = set()  # Reset visible tiles
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Light propagation directions
-
+        
         for unit in self.units:
             if unit.color == team_color and unit.alive:
                 queue = [(unit.x, unit.y, 0)]  # BFS queue: (x, y, distance)
@@ -215,6 +215,8 @@ class Highlight:
 
                             # Add to queue to continue propagation
                             queue.append((nx, ny, distance + 1))
+                #if not (unit.color==(255,0,0) or unit.color==(0,0,255) ):
+                 #   self.visible_tiles = set()
 
     def draw_fog(self, screen):
         """Draw the fog of war and dim lighting based on the visible tiles."""

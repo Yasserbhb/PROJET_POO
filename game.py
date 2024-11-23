@@ -28,6 +28,7 @@ def load_unit_images():
         "garen": "assets/garen.png",
         "darius": "assets/darius.png",
         "soraka": "assets/soraka.png",
+        "barrier": "assets/barrier.jpg"
     }
 def load_indicators():
     return {
@@ -64,10 +65,14 @@ class Game:
         """Create units and place them on the grid."""
         
         return [
-            Unit(17, 3, "Ashe", 500, 170, self.unit_images["ashe"], (0, 0, 255)),  # Blue team
-            Unit(15, 5, "Garen", 1600, 60, self.unit_images["garen"], (0, 0, 255)),  # Blue team
-            Unit(18, 4, "Darius",1090, 80,self.unit_images["darius"], (255, 0, 0)),  # Red team
-            Unit(16, 2, "Soraka",390, 50 ,self.unit_images["soraka"], (255, 0, 0)),  # Red team
+            Unit(3, 16, "Ashe", 700, 170, self.unit_images["ashe"], (0, 0, 255),3,2),  # Blue team
+            Unit(4, 17, "Garen", 1300, 60, self.unit_images["garen"], (0, 0, 255),3,2),  # Blue team
+            Unit(16, 3, "Darius",1090, 80,self.unit_images["darius"], (255, 0, 0),3,2),  # Red team
+            Unit(17, 4, "Soraka",490, 50 ,self.unit_images["soraka"], (255, 0, 0),3,2),  # Red team
+            Unit(10, 10, "Monstera",390, 50 ,self.unit_images["barrier"], (255, 10, 0),0,0),  
+            Unit(5, 7, "Monsterb",390, 50 ,self.unit_images["barrier"], (255, 10, 0),0,0),  
+            Unit(15, 13, "Monsterc",390, 50 ,self.unit_images["barrier"], (255, 10, 0),0,0), 
+
         ]
     
 
@@ -113,12 +118,14 @@ class Game:
         # Start from the current unit
         start_index = self.current_unit_index
 
+        #we keep incrementing the index untill we fullfil the conditions
         while True:
             # Move to the next unit
             self.current_unit_index = (self.current_unit_index + 1) % len(self.units)
 
-            # Check if the unit is alive
-            if self.units[self.current_unit_index].alive:
+            # Check if the unit is alive and that is part of either team red or team blue
+            if (self.units[self.current_unit_index].alive 
+                and (self.units[self.current_unit_index].color==(255,0,0) or self.units[self.current_unit_index].color==(0,0,255))):
                 break
 
             # If we've cycled through all units and come back to the start, stop (prevents infinite loops)
@@ -132,10 +139,7 @@ class Game:
         """Handle movement and attacks for the current unit."""
         current_time = pygame.time.get_ticks()
         current_unit = self.units[self.current_unit_index]
-        if not current_unit.alive:
-            # Move to the next unit's turn
-            self.current_unit_index = (self.current_unit_index + 1) % len(self.units)
-            return
+
         
         keys = pygame.key.get_pressed()
         
@@ -204,6 +208,7 @@ class Game:
             #self.current_unit_index = (self.current_unit_index + 1) % len(self.units)  
 
             # Advance to the next unit, skipping dead ones
+
             self.advance_to_next_unit()
 
             next_team_color = self.units[self.current_unit_index].color
@@ -235,6 +240,7 @@ class Game:
             
             self.draw_units()
             # Handle current unit's turn
+            
             self.handle_turn()
             
             pygame.display.flip()
