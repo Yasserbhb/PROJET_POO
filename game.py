@@ -64,10 +64,10 @@ class Game:
         """Create units and place them on the grid."""
         
         return [
-            Unit(14, 16, "Ashe",500, self.unit_images["ashe"], (0, 0, 255)),  # Blue team
-            Unit(14, 15, "Garen",1600, self.unit_images["garen"], (0, 0, 255)),  # Blue team
-            Unit(18, 18, "Darius",1090, self.unit_images["darius"], (255, 0, 0)),  # Red team
-            Unit(17, 18, "Soraka",350, self.unit_images["soraka"], (255, 0, 0)),  # Red team
+            Unit(17, 3, "Ashe", 500, 170, self.unit_images["ashe"], (0, 0, 255)),  # Blue team
+            Unit(15, 5, "Garen", 1600, 60, self.unit_images["garen"], (0, 0, 255)),  # Blue team
+            Unit(18, 4, "Darius",1090, 80,self.unit_images["darius"], (255, 0, 0)),  # Red team
+            Unit(16, 2, "Soraka",390, 50 ,self.unit_images["soraka"], (255, 0, 0)),  # Red team
         ]
     
 
