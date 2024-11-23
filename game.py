@@ -58,15 +58,19 @@ class Game:
         starting_team_color = self.units[self.current_unit_index].color
         Highlight.update_fog_visibility(self,starting_team_color)  # Pre-calculate fog for the starting team
 
+
+
     def create_units(self):
         """Create units and place them on the grid."""
         
         return [
-            Unit(14, 16, "Ashe", self.unit_images["ashe"], (0, 0, 255)),  # Blue team
-            Unit(14, 15, "Garen", self.unit_images["garen"], (0, 0, 255)),  # Blue team
-            Unit(18, 18, "Darius", self.unit_images["darius"], (255, 0, 0)),  # Red team
-            Unit(17, 18, "Soraka", self.unit_images["soraka"], (255, 0, 0)),  # Red team
+            Unit(14, 16, "Ashe",100, self.unit_images["ashe"], (0, 0, 255)),  # Blue team
+            Unit(14, 15, "Garen",170, self.unit_images["garen"], (0, 0, 255)),  # Blue team
+            Unit(18, 18, "Darius",190, self.unit_images["darius"], (255, 0, 0)),  # Red team
+            Unit(17, 18, "Soraka",85, self.unit_images["soraka"], (255, 0, 0)),  # Red team
         ]
+    
+
 
     def draw_units(self):
         """Draw all units on the grid with visibility logic."""
@@ -76,6 +80,7 @@ class Game:
             if unit.alive:
                 if unit.color == current_team_color or (unit.x, unit.y) in self.visible_tiles:
                     unit.draw(self.screen)
+
 
 
     def resolve_attack(self, unit):
@@ -93,12 +98,12 @@ class Game:
                 unit.attack(other_unit)  # Use the Unit's attack method
                 target_hit = True
                 break
-
         if not target_hit:
             print(f"{unit.name} attacked but missed!")
 
         unit.state = "done"  # Mark the unit as done after the attack
         
+
 
     def advance_to_next_unit(self):
         """Advance to the next unit, skipping dead ones."""
@@ -117,6 +122,8 @@ class Game:
             if self.current_unit_index == start_index:
                 print("No alive units remaining!")
                 return
+
+
 
     def handle_turn(self):
         """Handle movement and attacks for the current unit."""
@@ -146,13 +153,17 @@ class Game:
                     current_unit.move(1, 0, self.grid)
                     self.last_move_time = current_time
                 elif keys[pygame.K_RETURN]:
-                    print(f"{current_unit.name} moved to ({current_unit.x}, {current_unit.y}).")
-                    # Start attack phase
-                    current_unit.state = "attack"
-                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
-                    
-                    next_team_color = self.units[self.current_unit_index].color
-                    Highlight.update_fog_visibility(self,next_team_color)
+                    if not any(
+                        unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
+                        for unit in self.units
+                    ):
+                        print(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
+                        current_unit.state = "attack"
+                        current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
+                        next_team_color = self.units[self.current_unit_index].color
+                        Highlight.update_fog_visibility(self,next_team_color)
+                    else:
+                        print("Cannot finalize move: Another unit is already occupying this position.")
                     
         # Attack Phase
         elif current_unit.state == "attack":
@@ -255,3 +266,6 @@ if __name__ == "__main__":
 #1st thing to do tmrrw morning : try movement cost and bush hiding units (maybe use inheretance) and add some pick ups
 #2nd thing is creating an ability class and surely use inheretence 
 #3rd create more units 
+#4th
+#create split screen
+#5th check if i want to make a cursor for moving phase , if yes i need to fix the move method so it is generalised bcs the unit will snap right in (so both fct tell me im not in a good spot , but if i need to call move without handler i'll be fine)

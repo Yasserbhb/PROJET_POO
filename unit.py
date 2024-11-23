@@ -5,7 +5,7 @@ import time
 CELL_SIZE = 40
 class Unit:
     """A single unit in the game."""
-    def __init__(self, x, y, name, image_path, color, move_range=3, attack_range=2):
+    def __init__(self, x, y, name, health, image_path, color, move_range=3, attack_range=2):
         self.x = x
         self.y = y
         self.initial_x = x  # Initial position for movement range
@@ -13,7 +13,8 @@ class Unit:
         self.name = name
         self.image = pygame.image.load(image_path)
         self.color = color
-        self.health = 100
+        self.health = health
+        self.max_health = health
         self.move_range = move_range
         self.attack_range = attack_range
         self.alive = True
@@ -84,7 +85,7 @@ class Unit:
         screen.blit(pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE)), rect)
 
         # Health bar settings
-        health_ratio = self.health / 100  # Health percentage
+        health_ratio = self.health / self.max_health  # Health percentage
         health_bar_width = int(CELL_SIZE * health_ratio * 0.95)  # Width of the health bar
         health_bar_height = 7  # Height of the health bar
         health_bar_x = rect.x + 2  # Margin from the left
@@ -128,7 +129,7 @@ class Unit:
             border_radius=border_radius,
         )
         # Draw 20 HP markers
-        segment_size = 20  # Size of each HP segment
+        segment_size = 40  # Size of each HP segment
         num_segments = self.health // segment_size  # Calculate the number of markers
 
         for i in range(1, num_segments):
