@@ -43,9 +43,9 @@ class Unit:
         new_y = self.y + dy
         distance = abs(self.initial_x - new_x) + abs(self.initial_y - new_y)
 
-        if (0 <= new_x < len(grid) and 0 <= new_y < len(grid[0])  # Ensure within bounds
+        if (0 <= new_x < len(grid.tiles) and 0 <= new_y < len(grid.tiles[0])  # Ensure within bounds
                 and distance <= self.move_range  # Within movement range
-                and grid[new_x][new_y].traversable):  # Traversable tile
+                and grid.tiles[new_x][new_y].traversable):  # Traversable tile
             self.x, self.y = new_x, new_y  # Update position
                       
             #print(f"{self.name} moved to ({self.x}, {self.y}).")
