@@ -2,7 +2,7 @@ import pygame
 import random
 from unit import Unit
 from interface import Tile,Grid,Highlight 
-
+import os
 
 # Constants
 GRID_SIZE = 21
@@ -22,13 +22,17 @@ def load_textures():
         "barrier": pygame.image.load("assets/barrier.png"),
         "nexus": pygame.image.load("assets/nexus.png"),
     }
+import os
+
 def load_unit_images():
+    assets_folder = os.path.abspath("assets")
     return {
-        "ashe": "assets/ashe.png",
-        "garen": "assets/garen.png",
-        "darius": "assets/darius.png",
-        "soraka": "assets/soraka.png",
+        "ashe": os.path.join(assets_folder, "ashe.png"),
+        "garen": os.path.join(assets_folder, "garen.png"),
+        "darius": os.path.join(assets_folder, "darius.png"),
+        "soraka": os.path.join(assets_folder, "soraka.png"),
     }
+
 def load_indicators():
     return {
         "indicator": pygame.image.load("assets/indicator.png"),
@@ -157,7 +161,7 @@ class Game:
                 elif keys[pygame.K_RETURN]:
                     if not any(
                         unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
-                        for unit in self.units
+                        and unit.alive for unit in self.units 
                     ):  
                         print(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
                         current_unit.state = "attack"

@@ -1,30 +1,40 @@
 import pygame
 import time
-
+import os
 
 CELL_SIZE = 40
 class Unit:
     """A single unit in the game."""
-    def __init__(self, x, y, name, health, image_path, color, move_range=3, attack_range=2):
+    def __init__(self, x, y, name, health, damage,image_path, color, move_range=3, attack_range=2):
         self.x = x
         self.y = y
         self.initial_x = x  # Initial position for movement range
         self.initial_y = y
         self.name = name
+        if not isinstance(image_path, str):
+            raise TypeError(f"Expected a string for image_path, got {type(image_path)}")
+        if not os.path.isfile(image_path):
+            raise FileNotFoundError(f"Image not found at path: {image_path}")
         self.image = pygame.image.load(image_path)
         self.color = color
         self.health = health
         self.max_health = health
         self.move_range = move_range
         self.attack_range = attack_range
+        self.damage=damage
         self.alive = True
         self.state = "move"  # "move" or "attack"
-        self.damage_popup = None
+        
         
         
         # Attack targeting cursor
         self.target_x = x
         self.target_y = y
+
+        # Initialize for damage display
+        self.last_damage_time = None ####################################################""""
+        self.damage_taken = 0 #####################################################""""
+
         
 
 
@@ -62,7 +72,10 @@ class Unit:
 
         if target and self.in_range(target):
             print(f"{self.name} attacks {target.name}!")
-            target.health -= 100  # Example damage
+            
+            target.health -= self.damage  # Example damage
+            target.damage_taken = self.damage  #############################################""""""
+            target.last_damage_time = pygame.time.get_ticks() 
             if target.health <= 0:
                 target.health = 0
                 target.alive = False
@@ -143,6 +156,9 @@ class Unit:
             (health_bar_x, health_bar_y, health_bar_width, health_bar_height),
             border_radius=border_radius,
         )
+
+
+
         # Draw 40 HP markers
         segment_size = 100  # Size of each HP segment
         num_segments = self.health // segment_size  # Calculate the number of markers
@@ -161,4 +177,37 @@ class Unit:
         gloss_surface = pygame.Surface((health_bar_width*0.85, int(health_bar_height / 3)), pygame.SRCALPHA)
         gloss_surface.fill((255, 255, 255, 150))  # Semi-transparent white with alpha 50
         screen.blit(gloss_surface, (health_bar_x+1, health_bar_y+1))
+
+        # Draw damage text with a black boundary
+        if hasattr(self, "last_damage_time") and hasattr(self, "damage_taken") and self.damage_taken > 0:
+            time_passed = pygame.time.get_ticks() - self.last_damage_time
+
+            if time_passed < 1000:  # Show for 1 second
+                # Calculate alpha (opacity) and vertical position
+                alpha = max(255 - (time_passed // 4), 0)  # Fade out over time
+                offset_y = -time_passed // 30 + 25 # Move upward over time
+
+                # Create the text surface with fading effect
+                font = pygame.font.Font("assets/RussoOne.ttf", 18)
+                text_surface = font.render(f"-{self.damage_taken}", True, (255, 0, 0))
+                text_surface.set_alpha(alpha)
+
+                # Add a black outline
+                outline_surface = font.render(f"-{self.damage_taken}", True, (0, 0, 0))
+                outline_surface.set_alpha(alpha)
+
+                # Draw the outline slightly offset in each direction
+                x = self.x * CELL_SIZE + CELL_SIZE // 2 - text_surface.get_width() // 2
+                y = self.y * CELL_SIZE + offset_y
+                for dx, dy in [(-1, -1), (1, -1), (-1, 1), (1, 1)]:
+                    screen.blit(outline_surface, (x + dx, y + dy))
+
+                # Draw the text
+                screen.blit(text_surface, (x, y))
+            else:
+                # Clear the damage_taken attribute after animation ends
+                self.damage_taken = 0
+
+
+                
 
