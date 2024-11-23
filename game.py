@@ -300,7 +300,7 @@ class Game:
             # Handle current unit's turn
             
             self.handle_turn()
-            
+            self.draw_info_panel()
             pygame.display.flip()
             self.clock.tick(FPS)
 
