@@ -39,14 +39,13 @@ class Unit:
         if self.state != "move":
             print(f"{self.name} cannot move: Already moved this turn.")
             return
-
         new_x = self.x + dx
         new_y = self.y + dy
         distance = abs(self.initial_x - new_x) + abs(self.initial_y - new_y)
 
         if (0 <= new_x < len(grid.tiles) and 0 <= new_y < len(grid.tiles[0])  # Ensure within bounds
                 and distance <= self.move_range  # Within movement range
-                and grid.tiles[new_x][new_y].traversable):  # Traversable tile
+                and grid.tiles[new_x][new_y].traversable) :  # Traversable tile
             self.x, self.y = new_x, new_y  # Update position
                       
             #print(f"{self.name} moved to ({self.x}, {self.y}).")
@@ -63,7 +62,7 @@ class Unit:
 
         if target and self.in_range(target):
             print(f"{self.name} attacks {target.name}!")
-            target.health -= 30  # Example damage
+            target.health -= 100  # Example damage
             if target.health <= 0:
                 target.health = 0
                 target.alive = False
@@ -79,13 +78,14 @@ class Unit:
     
     
     
-    def draw(self, screen):
+    def draw(self, screen, is_current_turn):
         # Draw the unit's image inside the square
         rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         screen.blit(pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE)), rect)
 
         # Health bar settings
         health_ratio = self.health / self.max_health  # Health percentage
+        health_bar_full_width = int (CELL_SIZE*0.95)  # width of the full bar not just the health part
         health_bar_width = int(CELL_SIZE * health_ratio * 0.95)  # Width of the health bar
         health_bar_height = 7  # Height of the health bar
         health_bar_x = rect.x + 2  # Margin from the left
@@ -107,29 +107,44 @@ class Unit:
             border_radius=border_radius,
         )
 
+        # Glow effect for the current player's turn
+        if is_current_turn:
+            glow_rect = pygame.Rect(
+                health_bar_x - 2,  # Slightly larger than the health bar
+                health_bar_y - 2,
+                health_bar_full_width + 4,
+                health_bar_height + 4
+            )
+            pygame.draw.rect(
+                screen,
+                (255, 255, 0),  # Yellow glow color
+                glow_rect,
+                border_radius=5  # Rounded corners
+            )
+
         # Health bar background (gray for missing health)
         pygame.draw.rect(
             screen,
-            (125, 75, 75),  # Dark gray background
+            (0, 0, 0),  # Dark gray background
             (health_bar_x, health_bar_y, CELL_SIZE - 4, health_bar_height),
             border_radius=border_radius,
         )
 
         # Health bar foreground (green or purple for remaining health)
         if self.color == (0, 0, 255):  # Blue team
-            health_color = (0, 200, 0)  # Green
+            health_color = (90, 120, 200)  # Blue
         elif self.color == (255, 0, 0):  # Red team
-            health_color = (150, 0, 150)  # Purple
+            health_color = (255, 90, 90)  # Red
         else:
-            health_color = (200, 200, 200)  # Default white
+            health_color = (200, 0 , 200)  # Default white
         pygame.draw.rect(
             screen,
             health_color,
             (health_bar_x, health_bar_y, health_bar_width, health_bar_height),
             border_radius=border_radius,
         )
-        # Draw 20 HP markers
-        segment_size = 40  # Size of each HP segment
+        # Draw 40 HP markers
+        segment_size = 100  # Size of each HP segment
         num_segments = self.health // segment_size  # Calculate the number of markers
 
         for i in range(1, num_segments):
