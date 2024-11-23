@@ -157,7 +157,6 @@ class Highlight:
 
 
     def update_fog_visibility(self, team_color):
-        print(f"Updating fog visibility for team: {team_color}")
 
 
         """
