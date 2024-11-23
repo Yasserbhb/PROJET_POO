@@ -157,7 +157,7 @@ class Game:
                 elif keys[pygame.K_RETURN]:
                     if not any(
                         unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
-                        for unit in self.units
+                        and unit.alive for unit in self.units 
                     ):  
                         print(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
                         current_unit.state = "attack"
