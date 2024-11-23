@@ -53,12 +53,61 @@ class Game:
         self.last_move_time = 0  # Timestamp of the last movement
         self.last_action_time = 0  # Timestamp of the last attack movement to target
 
-        
+
         self.visible_tiles = set()
         
         starting_team_color = self.units[self.current_unit_index].color
         Highlight.update_fog_visibility(self,starting_team_color)  # Pre-calculate fog for the starting team
 
+        # Initialize event log
+        self.event_log = []
+
+    def log_event(self, message):
+        """Add an event to the event log."""
+        self.event_log.append(message)
+        if len(self.event_log) > 10:  # Limit the log to the last 10 events
+            self.event_log.pop(0)
+
+    def draw_info_panel(self):
+        """Draw the information panel with word wrapping for long text."""
+        panel_x = CELL_SIZE * GRID_SIZE
+        panel_width = 300  # Width of the info panel
+        panel_height = SCREEN_HEIGHT
+        padding = 10  # Padding inside the panel
+
+        # Draw panel background
+        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
+
+        # Render event log with word wrapping
+        font = pygame.font.Font(None, 24)
+        y_offset = padding
+        line_spacing = 5  # Spacing between lines
+        max_line_width = panel_width - 2 * padding
+
+        for event in reversed(self.event_log):  # Display from newest to oldest
+            # Split the text into multiple lines if necessary
+            words = event.split(" ")
+            current_line = ""
+            for word in words:
+                test_line = f"{current_line} {word}".strip()
+                text_surface = font.render(test_line, True, (255, 255, 255))
+                if text_surface.get_width() > max_line_width:
+                    # Render the current line and move to the next
+                    rendered_surface = font.render(current_line, True, (255, 255, 255))
+                    self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
+                    y_offset += rendered_surface.get_height() + line_spacing
+                    current_line = word
+                else:
+                    current_line = test_line
+            # Render the last line of the current event
+            if current_line:
+                rendered_surface = font.render(current_line, True, (255, 255, 255))
+                self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
+                y_offset += rendered_surface.get_height() + line_spacing
+
+            # Stop rendering if we've filled the panel
+            if y_offset > panel_height - padding:
+                break
 
 
     def create_units(self):
@@ -103,11 +152,20 @@ class Game:
                 and other_unit.y == unit.target_y
                 and other_unit.color != unit.color
             ):
-                unit.attack(other_unit)  # Use the Unit's attack method
+                damage=unit.attack(other_unit)  # Use the Unit's attack method
+                if damage > 0:
+                    self.log_event(
+                        f"{unit.name} attacked {other_unit.name} for {damage} damage!"
+                    )
+                    # Vérifier si l'unité est morte
+                    if not other_unit.alive:
+                        self.log_event(f"{other_unit.name} has been defeated!")
+                else:
+                    self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
                 target_hit = True
                 break
         if not target_hit:
-            print(f"{unit.name} attacked but missed!")
+            self.log_event(f"{unit.name} attacked but missed!")
 
         unit.state = "done"  # Mark the unit as done after the attack
         
