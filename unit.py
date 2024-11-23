@@ -62,7 +62,7 @@ class Unit:
 
         if target and self.in_range(target):
             print(f"{self.name} attacks {target.name}!")
-            target.health -= 100  # Example damage
+            target.health -= 30  # Example damage
             if target.health <= 0:
                 target.health = 0
                 target.alive = False
@@ -127,6 +127,19 @@ class Unit:
             (health_bar_x, health_bar_y, health_bar_width, health_bar_height),
             border_radius=border_radius,
         )
+        # Draw 20 HP markers
+        segment_size = 20  # Size of each HP segment
+        num_segments = self.health // segment_size  # Calculate the number of markers
+
+        for i in range(1, num_segments):
+            marker_x = health_bar_x + (health_bar_width * i / num_segments)  # Proportional spacing
+            pygame.draw.line(
+                screen,
+                (0, 0, 0),  # Black lines for markers
+                (marker_x, health_bar_y),
+                (marker_x, health_bar_y + health_bar_height),
+                1,  # Line thickness
+            )
 
         # Glossy overlay on the health bar
         gloss_surface = pygame.Surface((health_bar_width*0.85, int(health_bar_height / 3)), pygame.SRCALPHA)
