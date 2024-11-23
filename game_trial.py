@@ -9,6 +9,8 @@ GRID_SIZE = 21
 CELL_SIZE = 40
 SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE, CELL_SIZE * GRID_SIZE
 FPS = 60
+SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE  # 300px de panneau latéral
+
 
 # Load assets
 
@@ -44,24 +46,70 @@ class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("Tactical Grid Game")
+        pygame.display.set_caption("Tactical Grid Game - Info Panel")
         self.clock = pygame.time.Clock()
         self.unit_images = load_unit_images()
         self.indicators = load_indicators()
-        self.textures=load_textures()
+        self.textures = load_textures()
         self.grid = Grid(GRID_SIZE, self.textures)
         self.units = self.create_units()
         self.current_unit_index = 0
-        self.last_turn_time = 0  # Initialize turn delay tracking
-        self.last_move_time = 0  # Timestamp of the last movement
-        self.last_action_time = 0  # Timestamp of the last attack movement to target
-
-        
+        self.last_turn_time = 0
+        self.last_move_time = 0
+        self.last_action_time = 0
         self.visible_tiles = set()
-        
         starting_team_color = self.units[self.current_unit_index].color
-        Highlight.update_fog_visibility(self,starting_team_color)  # Pre-calculate fog for the starting team
+        Highlight.update_fog_visibility(self, starting_team_color)  # Pre-calculate fog for the starting team
 
+        # Initialize event log
+        self.event_log = []
+
+    def log_event(self, message):
+        """Add an event to the event log."""
+        self.event_log.append(message)
+        if len(self.event_log) > 10:  # Limit the log to the last 10 events
+            self.event_log.pop(0)
+
+    def draw_info_panel(self):
+        """Draw the information panel with word wrapping for long text."""
+        panel_x = CELL_SIZE * GRID_SIZE
+        panel_width = 300  # Width of the info panel
+        panel_height = SCREEN_HEIGHT
+        padding = 10  # Padding inside the panel
+
+        # Draw panel background
+        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
+
+        # Render event log with word wrapping
+        font = pygame.font.Font(None, 24)
+        y_offset = padding
+        line_spacing = 5  # Spacing between lines
+        max_line_width = panel_width - 2 * padding
+
+        for event in reversed(self.event_log):  # Display from newest to oldest
+            # Split the text into multiple lines if necessary
+            words = event.split(" ")
+            current_line = ""
+            for word in words:
+                test_line = f"{current_line} {word}".strip()
+                text_surface = font.render(test_line, True, (255, 255, 255))
+                if text_surface.get_width() > max_line_width:
+                    # Render the current line and move to the next
+                    rendered_surface = font.render(current_line, True, (255, 255, 255))
+                    self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
+                    y_offset += rendered_surface.get_height() + line_spacing
+                    current_line = word
+                else:
+                    current_line = test_line
+            # Render the last line of the current event
+            if current_line:
+                rendered_surface = font.render(current_line, True, (255, 255, 255))
+                self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
+                y_offset += rendered_surface.get_height() + line_spacing
+
+            # Stop rendering if we've filled the panel
+            if y_offset > panel_height - padding:
+                break
 
 
     def create_units(self):
@@ -94,7 +142,6 @@ class Game:
         """Resolve the attack at the current target location."""
         target_hit = False
 
-        # Find a valid target at the attack cursor location
         for other_unit in self.units:
             if (
                 other_unit.alive
@@ -102,14 +149,24 @@ class Game:
                 and other_unit.y == unit.target_y
                 and other_unit.color != unit.color
             ):
-                unit.attack(other_unit)  # Use the Unit's attack method
+                damage = unit.attack(other_unit)  # Capture les dégâts infligés
+                if damage > 0:
+                    self.log_event(
+                        f"{unit.name} attacked {other_unit.name} for {damage} damage!"
+                    )
+                    # Vérifier si l'unité est morte
+                    if not other_unit.alive:
+                        self.log_event(f"{other_unit.name} has been defeated!")
+                else:
+                    self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
                 target_hit = True
                 break
-        if not target_hit:
-            print(f"{unit.name} attacked but missed!")
 
-        unit.state = "done"  # Mark the unit as done after the attack
-        
+        if not target_hit:
+            self.log_event(f"{unit.name} attacked but missed!")
+
+        unit.state = "done"  # Marquer le tour comme terminé
+
 
 
     def advance_to_next_unit(self):
@@ -226,21 +283,19 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
 
-            # Draw grid and units
+            # Draw the main grid and units
             self.grid.draw(self.screen)
-            
-            # Render fog of war
-            Highlight.draw_fog(self,self.screen)
-
-            # Highlight range for the active unit
+            Highlight.draw_fog(self, self.screen)
             current_unit = self.units[self.current_unit_index]
-            Highlight.highlight_range(self,current_unit)
-            
-            
+            Highlight.highlight_range(self, current_unit)
             self.draw_units()
-            # Handle current unit's turn
+
+            # Draw the information panel
+            self.draw_info_panel()
+
+            # Handle the current unit's turn
             self.handle_turn()
-            
+
             pygame.display.flip()
             self.clock.tick(FPS)
 

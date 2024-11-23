@@ -68,21 +68,27 @@ class Unit:
         """Attack a target unit within range."""
         if self.state != "attack":
             print(f"{self.name} cannot attack: You must move first.")
-            return
+            return 0  # Aucun dégât infligé si l'état n'est pas "attack"
 
         if target and self.in_range(target):
             print(f"{self.name} attacks {target.name}!")
-            
-            target.health -= self.damage  # Example damage
-            target.damage_taken = self.damage  #############################################""""""
-            target.last_damage_time = pygame.time.get_ticks() 
+
+            # Calcul des dégâts infligés
+            damage = self.damage
+            target.health -= damage
+            target.damage_taken = damage
+            target.last_damage_time = pygame.time.get_ticks()
+
+            # Vérification si la cible est éliminée
             if target.health <= 0:
                 target.health = 0
                 target.alive = False
                 print(f"{target.name} has been defeated!")
-        else:
-            print(f"{self.name} can't attack: Target is out of range or invalid.")
 
+            return damage  # Retourner les dégâts infligés
+
+        print(f"{self.name} can't attack: Target is out of range or invalid.")
+        return 0  # Aucun dégât infligé si l'attaque échoue
 
 
     def in_range(self, target):
