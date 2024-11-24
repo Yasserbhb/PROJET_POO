@@ -56,9 +56,7 @@ class Game:
         self.grid = Grid(GRID_SIZE, self.textures)
         self.units = self.create_units()
         self.current_unit_index = 0
-        self.last_turn_time = 0  # Initialize turn delay tracking
         self.last_move_time = 0  # Timestamp of the last movement
-        self.last_action_time = 0  # Timestamp of the last attack movement to target
 
 
         self.visible_tiles = set()
@@ -122,9 +120,9 @@ class Game:
         
         return [
             
-            Unit(4, 10, "Garen", 1300, 6660, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
+            Unit(4, 10, "Garen", 400, 6660, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
             Unit(15,3, "Ashe", 700, 170, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
-            Unit(15, 2, "Darius",1090, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
+            Unit(15, 2, "Darius",2990, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
             Unit(18, 5, "Soraka",490, 50 ,self.unit_images["soraka"], "red",3,2,"player"),  # Red team player
 
 
@@ -212,10 +210,17 @@ class Game:
         """Handle movement and attacks for the current unit."""
         current_time = pygame.time.get_ticks()
         current_unit = self.units[self.current_unit_index]
-
-        
         keys = pygame.key.get_pressed()
         
+        action_key = pygame.K_SPACE
+
+        # debounce mechanism to avoid repeated triggers.
+        if not hasattr(self, "key_last_state"):
+            self.key_last_state = {}
+
+        key_just_pressed = keys[action_key] and not self.key_last_state.get(action_key, False)
+        self.key_last_state[action_key] = keys[action_key]
+
         # Movement Phase
         if current_unit.state == "move":
             if current_time - self.last_move_time > 100:  # Delay of 100ms between movements
@@ -231,7 +236,7 @@ class Game:
                 elif keys[pygame.K_RIGHT]:
                     current_unit.move(1, 0, self.grid)
                     self.last_move_time = current_time
-                elif keys[pygame.K_RETURN]:
+                elif key_just_pressed:
                     if not any(
                         unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
                         and unit.alive for unit in self.units 
@@ -268,25 +273,19 @@ class Game:
                     self.last_move_time = current_time
 
             # Confirm attack
-            if keys[pygame.K_SPACE] and current_time - self.last_action_time > 100:
+            if key_just_pressed :
                 self.resolve_attack(current_unit)
-                self.last_action_time = current_time
                 current_unit.state = "done"  # Mark attack as finished
 
         # End Turn
-        if  keys[pygame.K_r] and current_unit.state == "done" and current_time - self.last_turn_time > 1000:
-            self.last_turn_time = current_time  # Update the last turn time
+        if  keys[pygame.K_r] and current_unit.state == "done" :
             current_unit.state = "move"  # Reset state for the next turn
             current_unit.initial_x, current_unit.initial_y = current_unit.x, current_unit.y  # Reset initial position
-            #self.current_unit_index = (self.current_unit_index + 1) % len(self.units)  
-
-            # Advance to the next unit, skipping dead ones
-
             self.advance_to_next_unit()
 
             next_team_color = self.units[self.current_unit_index].color
             Highlight.update_fog_visibility(self,next_team_color)
-            # Reset state for the next unit
+
 
 
 

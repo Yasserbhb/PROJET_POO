@@ -122,13 +122,13 @@ class Unit:
             health_color = (200, 0 , 200)  # Default purple
         pygame.draw.rect(screen, health_color, (health_bar_x, health_bar_y, health_bar_width, health_bar_height), border_radius=border_radius)
 
-        # Draw 40 HP markers
+        # Draw 100 HP markers
         segment_size = 100  # Size of each HP segment
         num_segments = self.health // segment_size  # Calculate the number of markers
 
         for i in range(1, num_segments):
             marker_x = health_bar_x + (health_bar_width * i / num_segments)  # Proportional spacing
-            pygame.draw.line( screen, (0, 0, 0), (marker_x, health_bar_y), (marker_x, health_bar_y + health_bar_height-1), 1 )
+            pygame.draw.line( screen, (0, 0, 0), (marker_x, health_bar_y), (marker_x, health_bar_y + health_bar_height-3), 1 )
 
         # Glossy overlay on the health bar
         gloss_surface = pygame.Surface((health_bar_width*0.85, int(health_bar_height / 3)), pygame.SRCALPHA)
