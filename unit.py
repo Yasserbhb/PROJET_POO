@@ -53,7 +53,7 @@ class Unit:
     #neutral monsters reacting to attacks
     def react_to_attack(self, attacker):
         """Define the behavior when this unit is attacked.""" 
-
+        print("hahahahs")
         if self.alive:
             # Attack the attacker (if in range)    
             if self.in_range(attacker):

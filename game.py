@@ -19,7 +19,7 @@ def load_textures():
         "water": pygame.image.load("assets/water.jpg"),
         "rock": pygame.image.load("assets/rock.jpg"),
         "bush": pygame.image.load("assets/bush.png"),
-        "barrier": pygame.image.load("assets/barrier.png"),
+        "barrier": pygame.image.load("assets/inhibetor.png"),
         
         
     }
@@ -32,7 +32,8 @@ def load_unit_images():
         "bluebuff": "assets/BlueBuff.png",
         "redbuff": "assets/Redbuff.png",
         "bigbuff": "assets/BigBuff.png",
-        "base": "assets/base.png"
+        "baseblue": "assets/Nexus_Blue.png",
+        "basered": "assets/Nexus_Red.png"
     }
 def load_indicators():
     return {
@@ -67,11 +68,15 @@ class Game:
         # Initialize event log
         self.event_log = []
 
+
+
     def log_event(self, message):
         """Add an event to the event log."""
         self.event_log.append(message)
         if len(self.event_log) > 10:  # Limit the log to the last 10 events
             self.event_log.pop(0)
+
+
 
     def draw_info_panel(self):
         """Draw the information panel with word wrapping for long text."""
@@ -120,7 +125,7 @@ class Game:
         
         return [
             
-            Unit(4, 10, "Garen", 400, 6660, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
+            Unit(4, 10, "Garen", 400, 60, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
             Unit(15,3, "Ashe", 700, 170, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
             Unit(15, 2, "Darius",2990, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
             Unit(18, 5, "Soraka",490, 50 ,self.unit_images["soraka"], "red",3,2,"player"),  # Red team player
@@ -128,12 +133,12 @@ class Game:
 
             Unit(10, 10, "RedBuff",1500, 50 ,self.unit_images["bigbuff"], "neutral",0,0,"monster"),  #neutral monster
 
-            Unit(5, 7, "BlueBuff_t",390, 350 ,self.unit_images["bluebuff"], "neutral",3,1,"monster"),  #neutral monster
+            Unit(5, 7, "BlueBuff_t",390, 350 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             Unit(15, 13, "BlueBuff_b",390, 50 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"), #neutral monster
 
 
-            Unit(1, 19, "NexusBlue",390, 50 ,self.unit_images["base"], "blue",0,0,"base"),  #Blue team base
-            Unit(19, 1, "NexusRed",390, 50 ,self.unit_images["base"], "red",0,0,"base"), #Red team base
+            Unit(1, 19, "NexusBlue",390, 50 ,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
+            Unit(19, 1, "NexusRed",390, 50 ,self.unit_images["basered"], "red",0,0,"base"), #Red team base
 
         ]
     
@@ -352,3 +357,4 @@ if __name__ == "__main__":
 #2nd thing is creating an ability class and surely use inheretence 
 #create split screen
 #5th check if i want to make a cursor for moving phase , if yes i need to fix the move method so it is generalised bcs the unit will snap right in (so both fct tell me im not in a good spot , but if i need to call move without handler i'll be fine)
+#6th make subclasses 
