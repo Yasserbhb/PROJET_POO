@@ -7,7 +7,7 @@ from interface import Tile,Grid,Highlight
 # Constants
 GRID_SIZE = 21
 CELL_SIZE = 40
-SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
+SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE 
 FPS = 60
 
 # Load assets
@@ -122,7 +122,7 @@ class Game:
         
         return [
             
-            Unit(4, 10, "Garen", 1300, 60, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
+            Unit(4, 10, "Garen", 1300, 6660, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
             Unit(15,3, "Ashe", 700, 170, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
             Unit(15, 2, "Darius",1090, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
             Unit(18, 5, "Soraka",490, 50 ,self.unit_images["soraka"], "red",3,2,"player"),  # Red team player
@@ -130,7 +130,7 @@ class Game:
 
             Unit(10, 10, "RedBuff",1500, 50 ,self.unit_images["bigbuff"], "neutral",0,0,"monster"),  #neutral monster
 
-            Unit(5, 7, "BlueBuff_t",390, 50 ,self.unit_images["bluebuff"], "neutral",3,1,"monster"),  #neutral monster
+            Unit(5, 7, "BlueBuff_t",390, 350 ,self.unit_images["bluebuff"], "neutral",3,1,"monster"),  #neutral monster
             Unit(15, 13, "BlueBuff_b",390, 50 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"), #neutral monster
 
 

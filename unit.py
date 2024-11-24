@@ -53,19 +53,12 @@ class Unit:
     #neutral monsters reacting to attacks
     def react_to_attack(self, attacker):
         """Define the behavior when this unit is attacked.""" 
-        if self.unit_type == "monster" and self.alive:
-            print(f"{self.name} reacts to {attacker.name}'s attack!")
 
+        if self.alive:
             # Attack the attacker (if in range)    
             if self.in_range(attacker):
                 print(f"{self.name} counterattacks {attacker.name}!")
-                attacker.health -= int(attacker.max_health * 0.2)
-                attacker.damage_taken =int(attacker.max_health * 0.2) 
-                attacker.last_damage_time = pygame.time.get_ticks()
-
-                if attacker.health <= 0:
-                    attacker.alive = False
-                    print(f"{attacker.name} has been defeated by {self.name}!")
+                self.attack(attacker)
 
 
 
@@ -83,7 +76,7 @@ class Unit:
         if target.health <= 0:
             target.health = 0
             target.alive = False
-            print(f"{target.name} has been defeated!")
+            print(f"{target.name} has been defeated by {self.name}!")
         return self.damage
 
     
@@ -110,7 +103,7 @@ class Unit:
         border_height = health_bar_height + (2 * border_thickness)
 
         # Draw the black border
-        pygame.draw.rect(screen,(0, 0, 0), (border_x, border_y, border_width, border_height),border_radius)
+        pygame.draw.rect(screen,(0, 0, 0), (border_x, border_y, border_width, border_height),border_radius=border_radius)
 
         # Glow effect for the current player's turn
         if is_current_turn:
@@ -118,16 +111,16 @@ class Unit:
             pygame.draw.rect(screen, (255, 255, 0), glow_rect, border_radius=5)
 
         # Health bar background (gray for missing health)
-        pygame.draw.rect(screen, (0, 0, 0), (health_bar_x, health_bar_y, CELL_SIZE - 4, health_bar_height), border_radius)
+        pygame.draw.rect(screen, (0, 0, 0), (health_bar_x, health_bar_y, CELL_SIZE - 4, health_bar_height), border_radius=border_radius)
 
-        # Health bar foreground (green or purple for remaining health)
+        # Health bar foreground 
         if self.color == "blue":  # Blue team
             health_color = (90, 120, 200)  # Blue
         elif self.color == "red":  # Red team
             health_color = (255, 90, 90)  # Red
         else:
             health_color = (200, 0 , 200)  # Default purple
-        pygame.draw.rect(screen, health_color, (health_bar_x, health_bar_y, health_bar_width, health_bar_height), border_radius)
+        pygame.draw.rect(screen, health_color, (health_bar_x, health_bar_y, health_bar_width, health_bar_height), border_radius=border_radius)
 
         # Draw 40 HP markers
         segment_size = 100  # Size of each HP segment
@@ -135,7 +128,7 @@ class Unit:
 
         for i in range(1, num_segments):
             marker_x = health_bar_x + (health_bar_width * i / num_segments)  # Proportional spacing
-            pygame.draw.line( screen, (0, 0, 0), (marker_x, health_bar_y), (marker_x, health_bar_y + health_bar_height), 1 )
+            pygame.draw.line( screen, (0, 0, 0), (marker_x, health_bar_y), (marker_x, health_bar_y + health_bar_height-1), 1 )
 
         # Glossy overlay on the health bar
         gloss_surface = pygame.Surface((health_bar_width*0.85, int(health_bar_height / 3)), pygame.SRCALPHA)
