@@ -7,7 +7,7 @@ from interface import Tile,Grid,Highlight
 # Constants
 GRID_SIZE = 21
 CELL_SIZE = 40
-SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE
+SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
 FPS = 60
 
 # Load assets
@@ -20,7 +20,8 @@ def load_textures():
         "rock": pygame.image.load("assets/rock.jpg"),
         "bush": pygame.image.load("assets/bush.png"),
         "barrier": pygame.image.load("assets/barrier.png"),
-        "nexus": pygame.image.load("assets/nexus.png"),
+        
+        
     }
 def load_unit_images():
     return {
@@ -28,12 +29,18 @@ def load_unit_images():
         "garen": "assets/garen.png",
         "darius": "assets/darius.png",
         "soraka": "assets/soraka.png",
-        "barrier": "assets/barrier.jpg"
+        "bluebuff": "assets/BlueBuff.png",
+        "redbuff": "assets/Redbuff.png",
+        "bigbuff": "assets/BigBuff.png",
+        "base": "assets/base.png"
     }
 def load_indicators():
     return {
         "indicator": pygame.image.load("assets/indicator.png"),
+        "indicator1": pygame.image.load("assets/indicator1.jpg"),
+        "redsquare": pygame.image.load("assets/redsquare.png"),
     }
+
 
 
 # Game class
@@ -114,13 +121,21 @@ class Game:
         """Create units and place them on the grid."""
         
         return [
-            Unit(16, 4, "Ashe", 700, 170, self.unit_images["ashe"], (0, 0, 255),3,2),  # Blue team
-            Unit(4, 17, "Garen", 1300, 60, self.unit_images["garen"], (0, 0, 255),3,2),  # Blue team
-            Unit(16, 3, "Darius",1090, 80,self.unit_images["darius"], (255, 0, 0),3,2),  # Red team
-            Unit(17, 4, "Soraka",490, 50 ,self.unit_images["soraka"], (255, 0, 0),3,2),  # Red team
-            Unit(10, 10, "Monstera",390, 50 ,self.unit_images["barrier"], (255, 10, 0),0,0),  
-            Unit(5, 7, "Monsterb",390, 50 ,self.unit_images["barrier"], (255, 10, 0),0,0),  
-            Unit(15, 13, "Monsterc",390, 50 ,self.unit_images["barrier"], (255, 10, 0),0,0), 
+            
+            Unit(4, 10, "Garen", 1300, 60, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
+            Unit(15,3, "Ashe", 700, 170, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
+            Unit(15, 2, "Darius",1090, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
+            Unit(18, 5, "Soraka",490, 50 ,self.unit_images["soraka"], "red",3,2,"player"),  # Red team player
+
+
+            Unit(10, 10, "RedBuff",1500, 50 ,self.unit_images["bigbuff"], "neutral",0,0,"monster"),  #neutral monster
+
+            Unit(5, 7, "BlueBuff_t",390, 50 ,self.unit_images["bluebuff"], "neutral",3,1,"monster"),  #neutral monster
+            Unit(15, 13, "BlueBuff_b",390, 50 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"), #neutral monster
+
+
+            Unit(1, 19, "NexusBlue",390, 50 ,self.unit_images["base"], "blue",0,0,"base"),  #Blue team base
+            Unit(19, 1, "NexusRed",390, 50 ,self.unit_images["base"], "red",0,0,"base"), #Red team base
 
         ]
     
@@ -183,12 +198,12 @@ class Game:
 
             # Check if the unit is alive and that is part of either team red or team blue
             if (self.units[self.current_unit_index].alive 
-                and (self.units[self.current_unit_index].color==(255,0,0) or self.units[self.current_unit_index].color==(0,0,255))):
+                and self.units[self.current_unit_index].unit_type=="player"):
                 break
 
             # If we've cycled through all units and come back to the start, stop (prevents infinite loops)
             if self.current_unit_index == start_index:
-                print("No alive units remaining!")
+                self.log_event("No alive units remaining!")
                 return
 
 
@@ -221,13 +236,13 @@ class Game:
                         unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
                         and unit.alive for unit in self.units 
                     ):  
-                        print(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
+                        self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
                         current_unit.state = "attack"
                         current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
                         next_team_color = self.units[self.current_unit_index].color
                         Highlight.update_fog_visibility(self,next_team_color)
                     else:
-                        print("Cannot finalize move: Another unit is already occupying this position.")
+                        self.log_event("Cannot finalize move: Another unit is already occupying this position.")
                     
         # Attack Phase
         elif current_unit.state == "attack":
@@ -259,7 +274,7 @@ class Game:
                 current_unit.state = "done"  # Mark attack as finished
 
         # End Turn
-        if  current_unit.state == "done" and current_time - self.last_turn_time > 1000:
+        if  keys[pygame.K_r] and current_unit.state == "done" and current_time - self.last_turn_time > 1000:
             self.last_turn_time = current_time  # Update the last turn time
             current_unit.state = "move"  # Reset state for the next turn
             current_unit.initial_x, current_unit.initial_y = current_unit.x, current_unit.y  # Reset initial position
@@ -270,12 +285,11 @@ class Game:
             self.advance_to_next_unit()
 
             next_team_color = self.units[self.current_unit_index].color
-            print(next_team_color)
             Highlight.update_fog_visibility(self,next_team_color)
             # Reset state for the next unit
 
-    
-            
+
+
     def run(self):
         """Main game loop."""
         running = True
@@ -295,12 +309,18 @@ class Game:
             current_unit = self.units[self.current_unit_index]
             Highlight.highlight_range(self,current_unit)
             
-            
+            #Display units
             self.draw_units()
+
             # Handle current unit's turn
-            
             self.handle_turn()
+
+            #Show Info panel
             self.draw_info_panel()
+
+            #draw HUD
+            
+
             pygame.display.flip()
             self.clock.tick(FPS)
 
@@ -316,10 +336,9 @@ if __name__ == "__main__":
 # create a HUD as a class
 # add pick ups class
 # take in rnage verification to game instead of unit , so resolve attack checks all the enviromeent and confirms if we attack , and attack method only works after we confim that so it just modifies the hp and effects...
-# after done attacking add button so that it doesnt directly go to the enemy team to give me time to look at the impacts i did or to use the vision i gained from the move ability
 # i want the highlight for range to also be like the attack so the move phase only the cursor for target position moves than when we confirm , the unit snaps to that posotion
-
 # verify all conditions after creating TP and healings and effects 
+
 # add objective class it has a nexus also red and blue monster  (red and blue monster spawn once each 6 rounds)
 # each team has 2 keys 1 on each player and the third is hidden in a monster ( 2 keys 2 buffs , 1 for each team and there are 3 monsters total ) and one that spawns randomly
 # once u have 3 keys of the enemy (1 from monster 1 random and 1 from killing them) the barriere disappears and their nexus is visible and u can hit it )
@@ -329,9 +348,8 @@ if __name__ == "__main__":
 
 
 #work to do tomorrow
-#1st thing to do tmrrw morning : try movement cost and bush hiding units (maybe use inheretance) and add some pick ups
+#take the info panel to interface if possible
+#1st thing to do tmrrw morning : try movement cost and bush hiding units (maybe use inheretance) and add some pick ups && reacting to attacks (maybe make monsters and base to inheretance) and also fix all the attacking methods to remove what's redandent
 #2nd thing is creating an ability class and surely use inheretence 
-#3rd create more units 
-#4th
 #create split screen
 #5th check if i want to make a cursor for moving phase , if yes i need to fix the move method so it is generalised bcs the unit will snap right in (so both fct tell me im not in a good spot , but if i need to call move without handler i'll be fine)

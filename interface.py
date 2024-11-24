@@ -7,17 +7,7 @@ CELL_SIZE = 40
 
 
 
-orange = [
-    (1, 9),
-    (5,9),
-    (7, 1),
-    (8, 5),
-    (10, 10),
-    (12,15),
-    (13,19),
-    (15,11),
-    (19,11),  # Grand cercle orange central
-]
+
 # Tile Class
 class Tile:
     """Represents a single tile in the grid."""
@@ -25,7 +15,7 @@ class Tile:
         self.x = x
         self.y = y
         self.terrain = terrain  # "grass", "water", or "rock"
-        self.overlay = overlay  # Optional overlay: "bush", "barrier", "nexus"
+        self.overlay = overlay  # Optional overlay: "bush", "barrier"
         self.textures = textures
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
 
@@ -37,7 +27,7 @@ class Tile:
 
     def is_overlay_blocking(self):
         """Check if the overlay blocks visibility or movement."""
-        return self.overlay in ["barrier", "nexus"]
+        return self.overlay in ["barrier"]
 
     def draw(self, screen):
         """Draw the tile with its texture and overlay."""
@@ -93,11 +83,11 @@ class Grid:
             for x, y in hill:
                 grid[x][y] = Tile(x, y, "rock", self.textures)
 
-        # Add overlays (bushes, barriers, nexus)
+        # Add overlays (bushes, barriers)
         overlays = {
             "bush": [(0, 0), (1, 0), (0, 1), (20, 20), (19, 20), (20, 19), (3, 7), (3, 8), (8, 3), (17, 12), (17, 13), (12, 17)],
             "barrier": [(0, 17), (1, 17), (2, 17), (3, 17), (3, 18), (3, 19), (3, 20), (17, 0), (17, 1), (17, 2), (17, 3), (18, 3), (19, 3), (20, 3)],
-            "nexus": [(1, 19), (19, 1)],  # Nexus positions
+            
         }
         for overlay_type, positions in overlays.items():
             for x, y in positions:
@@ -151,16 +141,16 @@ class Highlight:
                     x, y = unit.x + dx, unit.y + dy
                     if (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and
                             abs(dx) + abs(dy) <= unit.attack_range):
-                        overlay.fill((250, 0, 0, 100))  # Red with transparency (alpha = 100)
+                        overlay.fill((250, 0, 0, 50))  # Red with transparency (alpha = 100)
                         rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                         self.screen.blit(overlay, rect)
 
             # Highlight the target cursor
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            beat_scale = 90  # Indicator scale percentage
+            beat_scale = 100  # Indicator scale percentage
             beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
             indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale the indicator image
-            indicator_image = pygame.transform.scale(self.indicators["indicator"], (indicator_size, indicator_size))
+            indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
             indicator_image.set_alpha(beat_alpha)
 
             # Center the scaled indicator within the target tile
@@ -171,15 +161,11 @@ class Highlight:
 
 
 
-
     def update_fog_visibility(self, team_color):
-
-
         """
         Update the set of visible tiles based on the current team's visibility.
         :param team_color: Color of the current team.
         """
-        
         self.visible_tiles = set()  # Reset visible tiles
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Light propagation directions
         
@@ -201,7 +187,6 @@ class Highlight:
                     # Propagate light in all directions
                     for dx, dy in directions:
                         nx, ny = x + dx, y + dy
-
                         if (
                             0 <= nx < GRID_SIZE
                             and 0 <= ny < GRID_SIZE
@@ -215,8 +200,7 @@ class Highlight:
 
                             # Add to queue to continue propagation
                             queue.append((nx, ny, distance + 1))
-                #if not (unit.color==(255,0,0) or unit.color==(0,0,255) ):
-                 #   self.visible_tiles = set()
+
 
     def draw_fog(self, screen):
         """Draw the fog of war and dim lighting based on the visible tiles."""
