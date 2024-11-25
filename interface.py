@@ -225,7 +225,7 @@ class Highlight:
                     # Dim lighting at the edges of visibility
                     self.screen.blit(dim_overlay, rect)   
 
-    def show_buff_animation(screen, buff_image, key_message="You won a key"):
+    def show_buff_animation(self, screen, buff_image, key_message="You won a key"):
         """Displays a buff animation after a monster is defeated."""
         clock = pygame.time.Clock()
         duration = 2000  # Total animation duration in ms
@@ -233,7 +233,7 @@ class Highlight:
 
         # Capture and blur the background
         background = pygame.Surface((CELL_SIZE*GRID_SIZE, CELL_SIZE*GRID_SIZE))
-        background.blit( screen, (0, 0))  # Copy the current screen into the background surface
+        background.blit( self.screen, (0, 0))  # Copy the current screen into the background surface
 
         blur_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         blur_surface.fill((0, 0, 0, 150))  # Semi-transparent black for the blur effect

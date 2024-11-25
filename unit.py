@@ -67,13 +67,12 @@ class Unit:
         target.health -= self.damage  
         target.damage_taken = self.damage 
         target.last_damage_time = pygame.time.get_ticks() 
-        if target.unit_type == "monster":
-            #pygame.time.wait(100)  # Add a delay
-            self.react_to_attack(self)  # Trigger monster reaction
-
         if target.health <= 0:
             target.health = 0
             target.alive = False
+        if target.unit_type == "monster" and target.alive==True:
+            #pygame.time.wait(100)  # Add a delay
+            target.react_to_attack(self)  # Trigger monster reaction
         return self.damage
 
 

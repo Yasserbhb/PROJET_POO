@@ -126,7 +126,7 @@ class Game:
         
         return [
             
-            Unit(4, 10, "Garen", 400, 60, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
+            Unit(4, 10, "Garen", 400, 600, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
             Unit(15,3, "Ashe", 700, 170, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
             Unit(15, 2, "Darius",2990, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
             Unit(18, 5, "Soraka",490, 50 ,self.unit_images["soraka"], "red",3,2,"player"),  # Red team player
@@ -172,6 +172,8 @@ class Game:
                 and other_unit.color != unit.color
             ):
                 damage=unit.attack(other_unit)  # Use the Unit's attack method
+                if other_unit.unit_type =="monster" and other_unit.alive==False :
+                    Highlight.show_buff_animation(self,self.screen,other_unit.image)
                 if damage > 0:
                     self.log_event(
                         f"{unit.name} attacked {other_unit.name} for {damage} damage!"
@@ -182,7 +184,7 @@ class Game:
                 else:
                     self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
                 target_hit = True
-
+                
                 break
                 
         if not target_hit:
