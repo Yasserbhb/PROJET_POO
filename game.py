@@ -126,13 +126,13 @@ class Game:
         
         return [
             
-            Unit(4, 10, "Garen", 400, 600, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
-            Unit(15,3, "Ashe", 700, 170, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
-            Unit(15, 2, "Darius",2990, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
+            Unit(9, 10, "Garen", 400, 6000, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
+            Unit(15,3, "Ashe", 500, 170, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
+            Unit(15, 2, "Darius",700, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
             Unit(18, 5, "Soraka",490, 50 ,self.unit_images["soraka"], "red",3,2,"player"),  # Red team player
 
 
-            Unit(10, 10, "RedBuff",1500, 50 ,self.unit_images["bigbuff"], "neutral",0,0,"monster"),  #neutral monster
+            Unit(10, 10, "RedBuff",1000, 50 ,self.unit_images["bigbuff"], "neutral",0,0,"monster"),  #neutral monster
 
             Unit(5, 7, "BlueBuff_t",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             Unit(15, 13, "BlueBuff_b",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"), #neutral monster

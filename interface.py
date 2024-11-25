@@ -225,10 +225,12 @@ class Highlight:
                     # Dim lighting at the edges of visibility
                     self.screen.blit(dim_overlay, rect)   
 
+
+
     def show_buff_animation(self, screen, buff_image, key_message="You won a key"):
         """Displays a buff animation after a monster is defeated."""
         clock = pygame.time.Clock()
-        duration = 2000  # Total animation duration in ms
+        duration = 2500  # Total animation duration in ms
         start_time = pygame.time.get_ticks()
 
         # Capture and blur the background
@@ -241,7 +243,7 @@ class Highlight:
         # Initial PNG size and position
         original_width, original_height = buff_image.get_width(), buff_image.get_height()
         center_x, center_y = (screen.get_width()-300) // 2, screen.get_height() // 2
-        shake_amplitude = 5  # Pixels for shaking
+        shake_amplitude = 2  # Pixels for shaking
 
         while True:
             current_time = pygame.time.get_ticks()
@@ -268,9 +270,12 @@ class Highlight:
             
             if time_elapsed > duration - 1500:
                 font = pygame.font.Font("assets/RussoOne.ttf", 50)
-                text_surface = font.render(key_message, True, (255, 255, 255))
+                text_surface = font.render(key_message, True, (0,0,0))
                 text_rect = text_surface.get_rect(center=(center_x, center_y + 100))
                 screen.blit(text_surface, text_rect)
+                text_surface1 = font.render(key_message, True, (0, 255,0))
+                text_rect1 = text_surface1.get_rect(center=(center_x + 2, center_y + 102))
+                screen.blit(text_surface1, text_rect1)
 
             pygame.display.flip()
             clock.tick(60)

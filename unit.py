@@ -165,8 +165,3 @@ class Unit:
             else:
                 # Clear the damage_taken attribute after animation ends
                 self.damage_taken = 0
-
-
-                
-
-
