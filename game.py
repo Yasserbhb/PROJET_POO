@@ -1,6 +1,6 @@
 import pygame
 import random
-from unit import Unit
+from unit import Unit , MonsterUnit
 from interface import Grid,Highlight 
 
 
@@ -126,16 +126,15 @@ class Game:
         
         return [
             
-            Unit(9, 10, "Garen", 400, 6000, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
-            Unit(15,3, "Ashe", 500, 170, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
-            Unit(15, 2, "Darius",700, 80,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
+            Unit(4, 10, "Garen", 400, 999, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
+            Unit(15,3, "Ashe", 500, 700, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
+            Unit(15, 2, "Darius",700, 900,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
             Unit(18, 5, "Soraka",490, 50 ,self.unit_images["soraka"], "red",3,2,"player"),  # Red team player
 
 
-            Unit(10, 10, "RedBuff",1000, 50 ,self.unit_images["bigbuff"], "neutral",0,0,"monster"),  #neutral monster
-
-            Unit(5, 7, "BlueBuff_t",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
-            Unit(15, 13, "BlueBuff_b",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"), #neutral monster
+            MonsterUnit(10, 10, "BigBuff",1000, 50 ,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(5, 7, "BlueBuff",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(15, 13, "RedBuff",390, 250 ,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
 
             Unit(1, 19, "NexusBlue",390, 50 ,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
@@ -153,7 +152,7 @@ class Game:
             if unit.alive:
                 is_current_turn = (index == self.current_unit_index)  # Check if it's the current unit's turn
                 # Draw units only if they belong to the current team or are in visible tiles
-                if unit.color == current_team_color or (unit.x, unit.y) in self.visible_tiles:
+                if unit.color == current_team_color or (unit.x, unit.y) in self.visible_tiles and self.grid.tiles[unit.x][unit.y].overlay != "bush":
                     unit.draw(self.screen, is_current_turn=is_current_turn)
 
 
@@ -256,8 +255,12 @@ class Game:
                         current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
                         next_team_color = self.units[self.current_unit_index].color
                         Highlight.update_fog_visibility(self,next_team_color)
-                    else:
-                        self.log_event("Cannot finalize move: Another unit is already occupying this position.")
+                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush":   #in the presence of an enemy on this position but it's a bush u just get assassinated
+                        self.log_event(f"{current_unit.name} got assassinated")
+                        current_unit.state="done"
+                        current_unit.alive=False
+                    else :      #if it's another unit u just can't finalise movement
+                        self.log_event("can't finalise movement , another unit is filling this position")
                     
         # Attack Phase
         elif current_unit.state == "attack":
@@ -358,7 +361,7 @@ if __name__ == "__main__":
 
 #work to do tomorrow
 #take the info panel to interface if possible
-#1st thing to do tmrrw morning : try movement cost and bush hiding units (maybe use inheretance) and add some pick ups && reacting to attacks (maybe make monsters and base to inheretance) and also fix all the attacking methods to remove what's redandent
+#1st thing to do tmrrw morning : and add some pick ups && reacting to attacks (maybe make monsters and base to inheretance) and also fix all the attacking methods to remove what's redandent
 #2nd thing is creating an ability class and surely use inheretence 
 #create split screen
 #5th check if i want to make a cursor for moving phase , if yes i need to fix the move method so it is generalised bcs the unit will snap right in (so both fct tell me im not in a good spot , but if i need to call move without handler i'll be fine)
@@ -366,4 +369,4 @@ if __name__ == "__main__":
 #add reviving system and lvl system but the pickups will tend to be closer to the losing team 
 # after killing  buff add an animation that covers eveyrhting and shows what the buff gave you
 
-
+#if u jump into a bush and there is a unit there u die bcs u get assassinated
