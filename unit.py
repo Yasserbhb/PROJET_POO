@@ -1,7 +1,7 @@
 import pygame
+from interface import Highlight
 
-
-CELL_SIZE = 40
+CELL_SIZE = 45
 class Unit:
     """A single unit in the game."""
     def __init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type):
@@ -53,7 +53,6 @@ class Unit:
     #neutral monsters reacting to attacks
     def react_to_attack(self, attacker):
         """Define the behavior when this unit is attacked.""" 
-        print("hahahahs")
         if self.alive:
             # Attack the attacker (if in range)    
             if self.in_range(attacker):
@@ -68,19 +67,17 @@ class Unit:
         target.health -= self.damage  
         target.damage_taken = self.damage 
         target.last_damage_time = pygame.time.get_ticks() 
-
         if target.unit_type == "monster":
             #pygame.time.wait(100)  # Add a delay
-            target.react_to_attack(self)  # Trigger monster reaction
+            self.react_to_attack(self)  # Trigger monster reaction
 
         if target.health <= 0:
             target.health = 0
             target.alive = False
-            print(f"{target.name} has been defeated by {self.name}!")
         return self.damage
 
-    
-    
+
+
     def draw(self, screen, is_current_turn):
         # Draw the unit's image inside the square
         rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
@@ -91,8 +88,8 @@ class Unit:
         health_bar_full_width = int (CELL_SIZE*0.95)  # width of the full bar not just the health part
         health_bar_width = int(CELL_SIZE * health_ratio * 0.95)  # Width of the health bar
         health_bar_height = 7  # Height of the health bar
-        health_bar_x = rect.x + 2  # Margin from the left
-        health_bar_y = rect.y + 2  # Margin from the top
+        health_bar_x = self.x * CELL_SIZE + 2  # Margin from the left
+        health_bar_y = self.y * CELL_SIZE + 2  # Margin from the top
         border_radius = 3  # Rounded corners
         
         # Border settings

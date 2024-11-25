@@ -1,12 +1,13 @@
 import pygame
 import random
 from unit import Unit
-from interface import Tile,Grid,Highlight 
+from interface import Grid,Highlight 
+
 
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 40
+CELL_SIZE = 45
 SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE 
 FPS = 60
 
@@ -49,7 +50,7 @@ class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("Tactical Grid Game")
+        pygame.display.set_caption("League on Budget")
         self.clock = pygame.time.Clock()
         self.unit_images = load_unit_images()
         self.indicators = load_indicators()
@@ -133,8 +134,8 @@ class Game:
 
             Unit(10, 10, "RedBuff",1500, 50 ,self.unit_images["bigbuff"], "neutral",0,0,"monster"),  #neutral monster
 
-            Unit(5, 7, "BlueBuff_t",390, 350 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
-            Unit(15, 13, "BlueBuff_b",390, 50 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"), #neutral monster
+            Unit(5, 7, "BlueBuff_t",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
+            Unit(15, 13, "BlueBuff_b",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"), #neutral monster
 
 
             Unit(1, 19, "NexusBlue",390, 50 ,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
@@ -181,7 +182,9 @@ class Game:
                 else:
                     self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
                 target_hit = True
+
                 break
+                
         if not target_hit:
             self.log_event(f"{unit.name} attacked but missed!")
 
@@ -358,3 +361,7 @@ if __name__ == "__main__":
 #create split screen
 #5th check if i want to make a cursor for moving phase , if yes i need to fix the move method so it is generalised bcs the unit will snap right in (so both fct tell me im not in a good spot , but if i need to call move without handler i'll be fine)
 #6th make subclasses 
+#add reviving system and lvl system but the pickups will tend to be closer to the losing team 
+# after killing  buff add an animation that covers eveyrhting and shows what the buff gave you
+
+

@@ -3,7 +3,7 @@ import random
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 40
+CELL_SIZE = 45
 
 
 
@@ -41,7 +41,7 @@ class Tile:
             screen.blit(pygame.transform.scale(overlay_texture, (CELL_SIZE, CELL_SIZE)), rect)
 
         # Optional: Draw tile border
-        pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
+        #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
 
 # Grid Class
 class Grid:
@@ -57,7 +57,7 @@ class Grid:
 
         # Add water (lakes)
         lakes = [
-            [(5, 5), (5, 6), (5, 7), (6, 5), (6, 6), (7, 6)],  
+            [(5, 5), (5, 6), (6, 5), (6, 6), (7, 6)],  
             [(10, 7), (11, 6), (11, 7), (12, 6),(12,7)],  
             [(8, 13),(9, 13), (8, 14), (9, 14), (10, 13)], 
             [(13, 14), (14, 14), (14, 15), (15, 14), (15, 15)],  
@@ -224,3 +224,53 @@ class Highlight:
                 ):
                     # Dim lighting at the edges of visibility
                     self.screen.blit(dim_overlay, rect)   
+
+    def show_buff_animation(screen, buff_image, key_message="You won a key"):
+        """Displays a buff animation after a monster is defeated."""
+        clock = pygame.time.Clock()
+        duration = 2000  # Total animation duration in ms
+        start_time = pygame.time.get_ticks()
+
+        # Capture and blur the background
+        background = pygame.Surface((CELL_SIZE*GRID_SIZE, CELL_SIZE*GRID_SIZE))
+        background.blit( screen, (0, 0))  # Copy the current screen into the background surface
+
+        blur_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        blur_surface.fill((0, 0, 0, 150))  # Semi-transparent black for the blur effect
+
+        # Initial PNG size and position
+        original_width, original_height = buff_image.get_width(), buff_image.get_height()
+        center_x, center_y = (screen.get_width()-300) // 2, screen.get_height() // 2
+        shake_amplitude = 5  # Pixels for shaking
+
+        while True:
+            current_time = pygame.time.get_ticks()
+            time_elapsed = current_time - start_time
+            if time_elapsed > duration:
+                break  # End the animation after the duration
+
+            screen.blit(background, (0, 0))  # Restore the background
+            screen.blit(blur_surface, (0, 0))  # Apply the blur overlay
+
+            # Calculate current PNG size (grows over time)
+            scale_factor = min(2, 1 + time_elapsed / (duration // 2))  # Scale up to 200%
+            scaled_width = int(original_width * scale_factor)
+            scaled_height = int(original_height * scale_factor)
+
+            # Apply shaking effect
+            offset_x = center_x - scaled_width // 2 + (shake_amplitude if (time_elapsed // 100) % 2 == 0 else -shake_amplitude)
+            offset_y = center_y - scaled_height // 2 + (shake_amplitude if (time_elapsed // 100) % 2 == 0 else -shake_amplitude)
+
+            # Draw the PNG image
+            scaled_image = pygame.transform.scale(buff_image, (scaled_width, scaled_height))
+            screen.blit(scaled_image, (offset_x, offset_y))
+
+            
+            if time_elapsed > duration - 1500:
+                font = pygame.font.Font("assets/RussoOne.ttf", 50)
+                text_surface = font.render(key_message, True, (255, 255, 255))
+                text_rect = text_surface.get_rect(center=(center_x, center_y + 100))
+                screen.blit(text_surface, text_rect)
+
+            pygame.display.flip()
+            clock.tick(60)
