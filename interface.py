@@ -18,16 +18,14 @@ class Tile:
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
         self.textures = textures
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
-
-        # Assign the texture based on terrain
+    
+                # Assign the texture based on terrain
         if self.terrain == "grass":
             self.texture = random.choice(self.textures["grass"])
         else:
             self.texture = self.textures[self.terrain]
 
-    def is_overlay_blocking(self):
-        """Check if the overlay blocks visibility or movement."""
-        return self.overlay in ["barrier"]
+
 
     def draw(self, screen):
         """Draw the tile with its texture and overlay."""
@@ -42,6 +40,7 @@ class Tile:
 
         # Optional: Draw tile border
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
+
 
 # Grid Class
 class Grid:
