@@ -52,14 +52,7 @@ class Unit:
 
     #neutral monsters reacting to attacks
     def react_to_attack(self, attacker):
-        """Define the behavior when this unit is attacked.""" 
-        if self.alive:
-            # Attack the attacker (if in range)    
-            if self.in_range(attacker):
-                print(f"{self.name} counterattacks {attacker.name}!")
-                self.attack(attacker)
-
-
+        return
 
     def attack(self, target):
 
@@ -70,9 +63,7 @@ class Unit:
         if target.health <= 0:
             target.health = 0
             target.alive = False
-        if target.unit_type == "monster" and target.alive==True:
-            #pygame.time.wait(100)  # Add a delay
-            target.react_to_attack(self)  # Trigger monster reaction
+        target.react_to_attack(self)  # Trigger monster reaction
         return self.damage
 
 
@@ -168,4 +159,13 @@ class Unit:
 
 
                 
+class MonsterUnit(Unit):
+    def __init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type):  
+        Unit.__init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type)
 
+    def react_to_attack(self, attacker):
+        if self.alive:
+            # Attack the attacker (if in range)    
+            if self.in_range(attacker):
+                self.attack(attacker)
+                
