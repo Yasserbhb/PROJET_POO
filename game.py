@@ -18,7 +18,7 @@ def load_textures():
     return {
         "grass": pygame.image.load("assets/grass4.jpg"),
         "water": pygame.image.load("assets/water.jpg"),
-        "rock": pygame.image.load("assets/rock.png"),
+        "rock": pygame.image.load("assets/rock.jpg"),
         "bush": pygame.image.load("assets/bush.png"),
         "barrier": pygame.image.load("assets/inhibetor.png"),
         
@@ -457,7 +457,7 @@ class Game:
                             selected_units.append(selected_unit_info)
                             selected_unit_info = None
                             # End selection if both teams have 2 units each
-                            if len(blue_team) == 2 and len(red_team) == 2 and event.key==pygame.K_D:
+                            if len(blue_team) == 2 and len(red_team) == 2 :
                                 for i in range(3, 0, -1):  # Countdown from 3 to 1
                                     rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
                                     self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
