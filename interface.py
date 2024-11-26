@@ -10,6 +10,7 @@ CELL_SIZE = 45
 
 # Tile Class
 class Tile:
+    """Represents a single tile in the grid."""
     def __init__(self, x, y, terrain, textures, overlay=None):
         self.x = x
         self.y = y
@@ -17,21 +18,11 @@ class Tile:
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
         self.textures = textures
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
+    
+                # Assign the texture based on terrain
+        self.texture = self.textures[self.terrain]
 
-        # Assign the texture based on terrain
-        if self.terrain == "grass":
-            self.texture = random.choice(self.textures["grass"])
-            self.movement_cost = 1  # Grass has normal movement cost
-        elif self.terrain == "water":
-            self.texture = self.textures["water"]
-            self.movement_cost = 3 # Water has a higher movement cost
-        elif self.terrain == "rock":
-            self.texture = self.textures["rock"]
-            self.movement_cost = float('inf')  # Rocks are impassable
 
-    def is_overlay_blocking(self):
-        """Check if the overlay blocks visibility or movement."""
-        return self.overlay in ["barrier"]
 
     def draw(self, screen):
         """Draw the tile with its texture and overlay."""
@@ -46,6 +37,7 @@ class Tile:
 
         # Optional: Draw tile border
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
+
 
 # Grid Class
 class Grid:
@@ -99,11 +91,43 @@ class Grid:
 
         return grid
 
+    #def draw(self, screen):
+     #       """Draw all tiles in the grid."""
+     #       for row in self.tiles:
+      #          for tile in row:
+      #              tile.draw(screen)
+
+
     def draw(self, screen):
-        """Draw all tiles in the grid."""
+        """Draw a visually enhanced grid with textures, gradients, and rounded grid lines."""
+        # Gradient background
+        for y in range(CELL_SIZE*GRID_SIZE):
+            color = (0, int(255 * (y / (CELL_SIZE*GRID_SIZE))), int(255 * (y / (CELL_SIZE*GRID_SIZE))))  # Gradient from dark to light
+            pygame.draw.line(screen, color, (0, y), (CELL_SIZE*GRID_SIZE, y))
+
+        # Draw the grid
         for row in self.tiles:
             for tile in row:
-                tile.draw(screen)
+                # Draw the texture for each tile
+                tile_texture = pygame.transform.scale(self.textures[tile.terrain], (CELL_SIZE, CELL_SIZE))
+                screen.blit(tile_texture, (tile.x * CELL_SIZE, tile.y * CELL_SIZE))
+
+                # If the tile has an overlay, draw it on top
+                if tile.overlay:
+                    overlay_texture = pygame.transform.scale(self.textures[tile.overlay], (CELL_SIZE, CELL_SIZE))
+                    screen.blit(overlay_texture, (tile.x * CELL_SIZE, tile.y * CELL_SIZE))
+
+                # Draw rounded grid lines for smoother visuals
+                pygame.draw.rect(
+                    screen,
+                    (255, 255, 255),  # Line color (white)
+                    pygame.Rect(tile.x * CELL_SIZE, tile.y * CELL_SIZE, CELL_SIZE, CELL_SIZE),
+                    width=1,  # Line thickness
+                    border_radius=5,  # Rounded corners
+                )
+
+
+    
 
 # Highlight Class
 class Highlight:
@@ -113,77 +137,76 @@ class Highlight:
         self.visible_tiles = set()
 
     def highlight_range(self, unit):
-    
         """Highlight movement or attack range based on the unit's state."""
         overlay = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)  # Transparent overlay
 
         if unit.state == "move":
-            visited = set()  # Tiles already checked
-            queue = [(unit.initial_x, unit.initial_y, 0)]  # (x, y, accumulated_cost)
-
+            visited = set()
+            queue = [(unit.initial_x, unit.initial_y, 0)]  # (x, y, current_distance)
+            
             while queue:
-                x, y, accumulated_cost = queue.pop(0)
-
-                # Skip if already visited or cost exceeds movement range
-                if (x, y) in visited or accumulated_cost > unit.move_range:
+                x, y, dist = queue.pop(0)
+                if (x, y) in visited or dist > unit.move_range:  # Skip already visited or out-of-range tiles
                     continue
                 visited.add((x, y))
-
-                # Highlight the current tile
-                overlay.fill((50, 150, 255, 100))  # Blue with transparency
-                rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                self.screen.blit(overlay, rect)
-
-                # Explore neighboring tiles
-                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Cardinal directions
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE:  # Bounds check
-                        neighbor_tile = self.grid.tiles[nx][ny]
-                        if neighbor_tile.traversable and (nx, ny) not in visited:
-                            # Add the movement cost of the neighbor tile
-                            new_cost = accumulated_cost + neighbor_tile.movement_cost
-                            if new_cost <= unit.move_range:  # Only add if within range
-                                queue.append((nx, ny, new_cost))
-
+            
+                    
+                if (self.grid.tiles[x][y].traversable ):
+                    overlay.fill((50, 150, 255, 100))  # Blue with transparency (alpha = 100)
+                    rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                    self.screen.blit(overlay, rect)
+                    
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Check cardinal directions
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE:  # Ensure within bounds
+                            if self.grid.tiles[nx][ny].traversable and (nx, ny) not in visited:
+                                queue.append((nx, ny, dist + 1))
+                        
         elif unit.state == "attack":
             # Highlight attack range
             for dx in range(-unit.attack_range, unit.attack_range + 1):
                 for dy in range(-unit.attack_range, unit.attack_range + 1):
                     x, y = unit.x + dx, unit.y + dy
-                    # Ensure within bounds and within attack range
                     if (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and
                             abs(dx) + abs(dy) <= unit.attack_range):
-                        overlay.fill((250, 0, 0, 50))  # Red with transparency
+                        overlay.fill((250, 0, 0, 50))  # Red with transparency (alpha = 100)
                         rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                         self.screen.blit(overlay, rect)
 
             # Highlight the target cursor
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             beat_scale = 100  # Indicator scale percentage
-            beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Alpha animation
-            indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale indicator image
+            beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
+            indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale the indicator image
             indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
             indicator_image.set_alpha(beat_alpha)
 
             # Center the scaled indicator within the target tile
             indicator_x = target_rect.x + (CELL_SIZE - indicator_size) // 2
             indicator_y = target_rect.y + (CELL_SIZE - indicator_size) // 2
+
             self.screen.blit(indicator_image, (indicator_x, indicator_y))
 
 
 
     def update_fog_visibility(self, team_color):
         """
-        Update the set of visible tiles based on the current team's visibility.
+        Update the set of visible tiles based on all members of the team.
         :param team_color: Color of the current team.
         """
         self.visible_tiles = set()  # Reset visible tiles
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Light propagation directions
-        
+
+        # Process visibility for each unit on the team
         for unit in self.units:
             if unit.color == team_color and unit.alive:
+
+                # BFS for this unit's visibility
                 queue = [(unit.x, unit.y, 0)]  # BFS queue: (x, y, distance)
                 max_visibility = unit.move_range + 2  # Visibility range slightly larger than movement
+
+                # Local set to track tiles visible by this unit
+                unit_visible_tiles = set()
 
                 while queue:
                     x, y, distance = queue.pop(0)
@@ -192,8 +215,8 @@ class Highlight:
                     if distance > max_visibility:
                         continue
 
-                    # Mark tile as visible
-                    self.visible_tiles.add((x, y))
+                    # Mark tile as visible for this unit
+                    unit_visible_tiles.add((x, y))
 
                     # Propagate light in all directions
                     for dx, dy in directions:
@@ -201,16 +224,23 @@ class Highlight:
                         if (
                             0 <= nx < GRID_SIZE
                             and 0 <= ny < GRID_SIZE
-                            and (nx, ny) not in self.visible_tiles
+                            and (nx, ny) not in unit_visible_tiles
                             and distance + 1 <= max_visibility
                         ):
                             # If the tile is non-traversable, stop propagation in this direction
                             if not self.grid.tiles[nx][ny].traversable:
-                                self.visible_tiles.add((nx, ny))  # Add for visual accuracy
+                                unit_visible_tiles.add((nx, ny))  # Add for visual accuracy
                                 continue
 
                             # Add to queue to continue propagation
                             queue.append((nx, ny, distance + 1))
+
+                # Add this unit's visibility to the team's visibility
+                self.visible_tiles.update(unit_visible_tiles)
+
+        # Final combined visible tiles
+
+
 
 
     def draw_fog(self, screen):
@@ -236,10 +266,12 @@ class Highlight:
                     # Dim lighting at the edges of visibility
                     self.screen.blit(dim_overlay, rect)   
 
+
+
     def show_buff_animation(self, screen, buff_image, key_message="You won a key"):
         """Displays a buff animation after a monster is defeated."""
         clock = pygame.time.Clock()
-        duration = 2000  # Total animation duration in ms
+        duration = 2500  # Total animation duration in ms
         start_time = pygame.time.get_ticks()
 
         # Capture and blur the background
@@ -252,7 +284,7 @@ class Highlight:
         # Initial PNG size and position
         original_width, original_height = buff_image.get_width(), buff_image.get_height()
         center_x, center_y = (screen.get_width()-300) // 2, screen.get_height() // 2
-        shake_amplitude = 5  # Pixels for shaking
+        shake_amplitude = 2  # Pixels for shaking
 
         while True:
             current_time = pygame.time.get_ticks()
@@ -279,9 +311,12 @@ class Highlight:
             
             if time_elapsed > duration - 1500:
                 font = pygame.font.Font("assets/RussoOne.ttf", 50)
-                text_surface = font.render(key_message, True, (255, 255, 255))
+                text_surface = font.render(key_message, True, (0,0,0))
                 text_rect = text_surface.get_rect(center=(center_x, center_y + 100))
                 screen.blit(text_surface, text_rect)
+                text_surface1 = font.render(key_message, True, (0, 255,0))
+                text_rect1 = text_surface1.get_rect(center=(center_x + 2, center_y + 102))
+                screen.blit(text_surface1, text_rect1)
 
             pygame.display.flip()
             clock.tick(60)

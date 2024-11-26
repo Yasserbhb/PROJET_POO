@@ -16,7 +16,7 @@ FPS = 60
 def load_textures():
     """Load textures for different terrain and overlays."""
     return {
-        "grass": [pygame.image.load("assets/grass4.jpg")],
+        "grass": pygame.image.load("assets/grass4.jpg"),
         "water": pygame.image.load("assets/water.jpg"),
         "rock": pygame.image.load("assets/rock.jpg"),
         "bush": pygame.image.load("assets/bush.png"),
@@ -30,6 +30,7 @@ def load_unit_images():
         "garen": "assets/garen.png",
         "darius": "assets/darius.png",
         "soraka": "assets/soraka.png",
+        "rengar": "assets/rengar.png",
         "bluebuff": "assets/BlueBuff.png",
         "redbuff": "assets/Redbuff.png",
         "bigbuff": "assets/BigBuff.png",
@@ -56,28 +57,28 @@ class Game:
         self.indicators = load_indicators()
         self.textures=load_textures()
         self.grid = Grid(GRID_SIZE, self.textures)
-        self.units = self.create_units()
+        self.units = [] 
         self.current_unit_index = 0
         self.last_move_time = 0  # Timestamp of the last movement
-
-
         self.visible_tiles = set()
+        self.event_log = [] # Initialize event log
+        # Pre-calculate fog for the starting team (blue)
         
-        starting_team_color = self.units[self.current_unit_index].color
-        Highlight.update_fog_visibility(self,starting_team_color)  # Pre-calculate fog for the starting team
+        #initilizing main menu
+        self.font_title = pygame.font.Font("assets/League.otf", 65)
+        self.font_small = pygame.font.Font("assets/RussoOne.ttf", 36)
+        self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background
+        self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load main menu background
+        
 
-        # Initialize event log
-        self.event_log = []
-
-
+        
+ 
 
     def log_event(self, message):
         """Add an event to the event log."""
         self.event_log.append(message)
         if len(self.event_log) > 10:  # Limit the log to the last 10 events
             self.event_log.pop(0)
-
-
 
     def draw_info_panel(self):
         """Draw the information panel with word wrapping for long text."""
@@ -121,15 +122,15 @@ class Game:
                 break
 
 
+
     def create_units(self):
-        """Create units and place them on the grid."""
-        
-        return [
-            
-            Unit(4, 10, "Garen", 400, 999, self.unit_images["garen"], "blue",3,2,"player"),  # Blue team player
-            Unit(15,3, "Ashe", 500, 700, self.unit_images["ashe"], "blue",3,2,"player"),  # Blue team player
-            Unit(15, 2, "Darius",700, 900,self.unit_images["darius"], "red",3,2,"player"),  # Red team player
-            Unit(18, 5, "Soraka",490, 50 ,self.unit_images["soraka"], "red",3,2,"player"),  # Red team player
+        """Create units and place them on the grid."""       
+        return [            
+            Unit(3,15, "Garen", 400, 99, self.unit_images["garen"], None,3,2,"player"),  # Blue team player
+            Unit(4,16, "Ashe", 500, 70, self.unit_images["ashe"], None,3,2,"player"),  # Blue team player
+            Unit(15,3, "Darius",700, 90,self.unit_images["darius"], None,3,2,"player"),  # Red team player
+            Unit(16,4, "Soraka",490, 50 ,self.unit_images["soraka"], None,3,2,"player"),  # Red team player
+            Unit(0,0, "Rengar",700, 180 ,self.unit_images["rengar"], None,3,2,"player"),  # Red team player
 
 
             MonsterUnit(10, 10, "BigBuff",1000, 50 ,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
@@ -139,15 +140,13 @@ class Game:
 
             Unit(1, 19, "NexusBlue",390, 50 ,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
             Unit(19, 1, "NexusRed",390, 50 ,self.unit_images["basered"], "red",0,0,"base"), #Red team base
-
-        ]
+       ]
     
 
 
     def draw_units(self):
         """Draw all units on the grid with visibility logic."""
         current_team_color = self.units[self.current_unit_index].color
-
         for index, unit in enumerate(self.units):
             if unit.alive:
                 is_current_turn = (index == self.current_unit_index)  # Check if it's the current unit's turn
@@ -174,18 +173,14 @@ class Game:
                 if other_unit.unit_type =="monster" and other_unit.alive==False :
                     Highlight.show_buff_animation(self,self.screen,other_unit.image)
                 if damage > 0:
-                    self.log_event(
-                        f"{unit.name} attacked {other_unit.name} for {damage} damage!"
-                    )
+                    self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
                     # Vérifier si l'unité est morte
                     if not other_unit.alive:
                         self.log_event(f"{other_unit.name} has been defeated!")
                 else:
                     self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
                 target_hit = True
-                
                 break
-                
         if not target_hit:
             self.log_event(f"{unit.name} attacked but missed!")
 
@@ -220,7 +215,7 @@ class Game:
         current_time = pygame.time.get_ticks()
         current_unit = self.units[self.current_unit_index]
         keys = pygame.key.get_pressed()
-        
+
         action_key = pygame.K_SPACE
 
         # debounce mechanism to avoid repeated triggers.
@@ -255,6 +250,7 @@ class Game:
                         current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
                         next_team_color = self.units[self.current_unit_index].color
                         Highlight.update_fog_visibility(self,next_team_color)
+
                     elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush":   #in the presence of an enemy on this position but it's a bush u just get assassinated
                         self.log_event(f"{current_unit.name} got assassinated")
                         current_unit.state="done"
@@ -301,16 +297,204 @@ class Game:
 
 
 
+    
+        
+
+
+
+
+
+    def main_menu(self):
+        """Display the main menu with options to start or quit."""
+        menu_running = True
+
+        while menu_running:
+            rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
+
+            # Render game title
+            title_text = self.font_title.render("League on Budget", True, (200, 156, 56))
+            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 4  ))
+            title_text1 = self.font_title.render("League on Budget", True, (0,0,0))
+            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 +2, SCREEN_HEIGHT // 4+ 2))
+
+            self.screen.blit(title_text1, title_rect1)
+            self.screen.blit(title_text, title_rect)
+            
+            
+            # Render instructions
+            start_text = self.font_small.render("Press ENTER to Play", True, (200, 200, 200))
+            quit_text = self.font_small.render("Press ESC to Quit", True, (200, 200, 200))
+
+            start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            quit_rect = quit_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
+
+            self.screen.blit(start_text, start_rect)
+            self.screen.blit(quit_text, quit_rect)
+
+            pygame.display.flip()
+
+            # Handle events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:  # Start the game
+                        menu_running = False
+                    elif event.key == pygame.K_ESCAPE:  # Quit the game
+                        pygame.quit()
+                        exit()
+
+
+
+
+
+    def show_menu(self):
+        """Enhanced team selection menu."""
+        menu_running = True
+        
+        # Initialize assets
+        font = self.font_title
+        small_font = self.font_small
+
+        # Get all units from create_units
+        all_units = self.create_units()
+
+        # Filter player units for selection (those with team=None)
+        available_units = [unit for unit in all_units if unit.color is None]
+
+        # Track selected units and predefined positions
+        blue_team = []
+        red_team = []
+        blue_positions = [(3, 15), (4, 16)]
+        red_positions = [(15, 2), (17, 4)]
+        current_team = "blue"  # Start with Blue's turn
+        selected_units = []
+        selected_unit_info = None  # Track which unit's details are displayed
+
+        while menu_running:
+            rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.screen.blit(pygame.transform.scale(self.champ_select_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
+
+            # Render the middle section with available units
+            y_offset = SCREEN_HEIGHT // 3
+            for i, unit in enumerate(available_units):
+                color = (200, 100, 100) if unit in selected_units else (255, 255, 255)
+                unit_text = small_font.render(f"{i + 1}: {unit.name}", True, color)
+                self.screen.blit(unit_text, (SCREEN_WIDTH // 2 - 50, y_offset))
+                y_offset += 40
+
+            # Display currently selected unit's attributes
+            if selected_unit_info:
+                attributes_text = [
+                    f"Name: {selected_unit_info.name}",
+                    f"HP: {selected_unit_info.health}",
+                    f"ATK: {selected_unit_info.damage}",
+                ]
+                y_offset = SCREEN_HEIGHT // 3
+                for line in attributes_text:
+                    attr_text = small_font.render(line, True, (255, 255, 255))
+                    self.screen.blit(attr_text, (SCREEN_WIDTH // 2 + 200, y_offset))
+                    y_offset += 40
+                     # Show the selected champion's image larger
+                selected_image = pygame.transform.scale(selected_unit_info.image, (150, 150))
+                self.screen.blit(selected_image, (SCREEN_WIDTH - 420, y_offset+30))
+
+            # Render team rosters
+            blue_text = font.render("Blue Team", True, (0, 0, 255))
+            red_text = font.render("Red Team", True, (255, 0, 0))
+            self.screen.blit(blue_text, (50, 50))
+            self.screen.blit(red_text, (SCREEN_WIDTH-400, 50))
+
+            y_offset_blue = 200
+            for unit in blue_team:
+                unit_text = small_font.render(unit.name, True, (0, 0, 255))
+                self.screen.blit(unit_text, (100, y_offset_blue))
+                selected_image = pygame.transform.scale(unit.image, (50, 50))
+                self.screen.blit(selected_image, (250, y_offset_blue-10))
+                y_offset_blue += 60
+
+            y_offset_red = 200
+            for unit in red_team:
+                unit_text = small_font.render(unit.name, True, (255, 0, 0))
+                self.screen.blit(unit_text, (SCREEN_WIDTH-400+50, y_offset_red))
+                selected_image = pygame.transform.scale(unit.image, (50, 50))
+                self.screen.blit(selected_image, (SCREEN_WIDTH-200, y_offset_red-10))
+                y_offset_red += 60
+
+            pygame.display.flip()
+
+            # Handle menu events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if pygame.K_1 <= event.key <= pygame.K_9:
+                        index = event.key - pygame.K_1
+                        if 0 <= index < len(available_units):
+                            selected_unit_info = available_units[index]  # Show attributes for this unit
+                    elif event.key == pygame.K_RETURN and selected_unit_info:
+                        if selected_unit_info not in selected_units:
+                            # Assign the current team and position to the selected unit
+                            if current_team == "blue":
+                                selected_unit_info.color = "blue"
+                                selected_unit_info.initial_x = blue_positions[len(blue_team)][0]
+                                selected_unit_info.initial_y = blue_positions[len(blue_team)][1]
+                                selected_unit_info.x = blue_positions[len(blue_team)][0]
+                                selected_unit_info.y = blue_positions[len(blue_team)][1]
+                                blue_team.append(selected_unit_info)
+                                current_team = "red"
+                            else:
+                                selected_unit_info.color = "red"
+                                selected_unit_info.initial_x = red_positions[len(red_team)][0]
+                                selected_unit_info.initial_y = red_positions[len(red_team)][1]
+                                selected_unit_info.x = red_positions[len(red_team)][0]
+                                selected_unit_info.y = red_positions[len(red_team)][1]
+                                red_team.append(selected_unit_info)
+                                current_team = "blue"
+                            selected_units.append(selected_unit_info)
+                            selected_unit_info = None
+                            # End selection if both teams have 2 units each
+                            if len(blue_team) == 2 and len(red_team) == 2 :
+                                for i in range(3, 0, -1):  # Countdown from 3 to 1
+                                    rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+                                    self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
+                                    countdown_text = small_font.render(f"Starting in {i}...", True, (55, 255, 55))
+                                    countdown_rect = countdown_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+                                    self.screen.blit(countdown_text, countdown_rect)
+                                    pygame.display.flip()
+                                    pygame.time.delay(1000)  # Delay for 1 second
+                                menu_running = False
+
+        # Build self.units in the required order: blue team → red team → monsters
+        monsters = [unit for unit in all_units if unit.unit_type == "monster"]
+        bases = [unit for unit in all_units if unit.unit_type == "base"]
+        self.units = blue_team + red_team + monsters + bases
+
+        return self.units
+    
+
+
 
     def run(self):
         """Main game loop."""
+        self.main_menu()  # Display main menu
+        self.units = self.show_menu()
+         
+        starting_team_color = self.units[self.current_unit_index].color
+        Highlight.update_fog_visibility(self, starting_team_color)
+        
+
         running = True
         while running:
             self.screen.fill((0, 0, 0))  # Clear the screen
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-
+            
+            
             # Draw grid and units
             self.grid.draw(self.screen)
             
