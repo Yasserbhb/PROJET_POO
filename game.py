@@ -18,7 +18,7 @@ def load_textures():
     return {
         "grass": pygame.image.load("assets/grass4.jpg"),
         "water": pygame.image.load("assets/water.jpg"),
-        "rock": pygame.image.load("assets/rock.jpg"),
+        "rock": pygame.image.load("assets/rock.png"),
         "bush": pygame.image.load("assets/bush.png"),
         "barrier": pygame.image.load("assets/inhibetor.png"),
         
@@ -65,8 +65,8 @@ class Game:
         # Pre-calculate fog for the starting team (blue)
         
         #initilizing main menu
-        self.font_title = pygame.font.Font("assets/RussoOne.ttf", 65)
-        self.font_small = pygame.font.Font(None, 36)
+        self.font_title = pygame.font.Font("assets/League.otf", 65)
+        self.font_small = pygame.font.Font("assets/RussoOne.ttf", 36)
         self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background
         self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load main menu background
         
@@ -313,10 +313,15 @@ class Game:
             self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
 
             # Render game title
-            title_text = self.font_title.render("League on Budget", True, (255, 255, 55))
-            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
-            self.screen.blit(title_text, title_rect)
+            title_text = self.font_title.render("League on Budget", True, (200, 156, 56))
+            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 4  ))
+            title_text1 = self.font_title.render("League on Budget", True, (0,0,0))
+            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 +2, SCREEN_HEIGHT // 4+ 2))
 
+            self.screen.blit(title_text1, title_rect1)
+            self.screen.blit(title_text, title_rect)
+            
+            
             # Render instructions
             start_text = self.font_small.render("Press ENTER to Play", True, (200, 200, 200))
             quit_text = self.font_small.render("Press ESC to Quit", True, (200, 200, 200))
@@ -402,16 +407,20 @@ class Game:
             self.screen.blit(blue_text, (50, 50))
             self.screen.blit(red_text, (SCREEN_WIDTH-400, 50))
 
-            y_offset_blue = 150
+            y_offset_blue = 200
             for unit in blue_team:
                 unit_text = small_font.render(unit.name, True, (0, 0, 255))
-                self.screen.blit(unit_text, (50, y_offset_blue))
+                self.screen.blit(unit_text, (100, y_offset_blue))
+                selected_image = pygame.transform.scale(unit.image, (50, 50))
+                self.screen.blit(selected_image, (250, y_offset_blue-10))
                 y_offset_blue += 60
 
-            y_offset_red = 150
+            y_offset_red = 200
             for unit in red_team:
                 unit_text = small_font.render(unit.name, True, (255, 0, 0))
-                self.screen.blit(unit_text, (SCREEN_WIDTH-400, y_offset_red))
+                self.screen.blit(unit_text, (SCREEN_WIDTH-400+50, y_offset_red))
+                selected_image = pygame.transform.scale(unit.image, (50, 50))
+                self.screen.blit(selected_image, (SCREEN_WIDTH-200, y_offset_red-10))
                 y_offset_red += 60
 
             pygame.display.flip()
@@ -448,7 +457,7 @@ class Game:
                             selected_units.append(selected_unit_info)
                             selected_unit_info = None
                             # End selection if both teams have 2 units each
-                            if len(blue_team) == 2 and len(red_team) == 2:
+                            if len(blue_team) == 2 and len(red_team) == 2 and event.key==pygame.K_D:
                                 for i in range(3, 0, -1):  # Countdown from 3 to 1
                                     rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
                                     self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
