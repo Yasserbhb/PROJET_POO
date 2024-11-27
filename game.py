@@ -160,18 +160,18 @@ class Game:
 
     def resolve_attack(self, unit): # resolution d'une attaque
         """Resolve the attack at the current target location."""
-        target_hit = False # 
+        target_hit = False 
 
         # Find a valid target at the attack cursor location
-        for other_unit in self.units:
+        for other_unit in self.units: # condition pour une cible valide
             if (
-                other_unit.alive
-                and other_unit.x == unit.target_x
+                other_unit.alive # l'unite cible est vivante
+                and other_unit.x == unit.target_x 
                 and other_unit.y == unit.target_y
-                and other_unit.color != unit.color
+                and other_unit.color != unit.color # le cible appartient a une equipe diff 
             ):
                 damage=unit.attack(other_unit)  # Use the Unit's attack method
-                if other_unit.unit_type =="monster" and other_unit.alive==False :
+                if other_unit.unit_type =="monster" and other_unit.alive==False :#unite est tuee
                     Highlight.show_buff_animation(self,self.screen,other_unit.image)
                 if damage > 0:
                     self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
