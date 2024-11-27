@@ -1,5 +1,5 @@
 import pygame
-from interface import Highlight
+
 
 CELL_SIZE = 45
 class Unit:
@@ -94,8 +94,13 @@ class Unit:
 
         # Glow effect for the current player's turn
         if is_current_turn:
+            #contour on the unit
+            #glow_rect = pygame.Rect(self.x * CELL_SIZE - 5, self.y * CELL_SIZE - 5, CELL_SIZE + 10, CELL_SIZE + 10)
+            #pygame.draw.rect(screen, (255, 255, 0), glow_rect, width=3, border_radius=10)
+            #contour on the health bar
             glow_rect = pygame.Rect(health_bar_x - 2, health_bar_y - 2, health_bar_full_width + 4, health_bar_height + 4)
             pygame.draw.rect(screen, (255, 255, 0), glow_rect, border_radius=5)
+
 
         # Health bar background (gray for missing health)
         pygame.draw.rect(screen, (0, 0, 0), (health_bar_x, health_bar_y, CELL_SIZE - 4, health_bar_height), border_radius=border_radius)
