@@ -1,7 +1,7 @@
 import pygame
 import random
 from unit import Unit , MonsterUnit
-from interface import Grid,Highlight 
+from interface import Grid,Highlight,Pickup
 
 
 
@@ -16,11 +16,16 @@ FPS = 60
 def load_textures():
     """Load textures for different terrain and overlays."""
     return {
+        #grid 
         "grass": pygame.image.load("assets/grass4.jpg"),
         "water": pygame.image.load("assets/water.jpg"),
         "rock": pygame.image.load("assets/rock.jpg"),
+        #overlays
         "bush": pygame.image.load("assets/bush.png"),
         "barrier": pygame.image.load("assets/inhibetor.png"),
+        #pick ups
+        "brown_potion": pygame.image.load("assets/brown_potion.png"),
+        "blue_potion": pygame.image.load("assets/blue_potion.png"),
         
         
     }
@@ -55,9 +60,10 @@ class Game:
         self.clock = pygame.time.Clock()
         self.unit_images = load_unit_images()
         self.indicators = load_indicators()
-        self.textures=load_textures()
-        self.grid = Grid(GRID_SIZE, self.textures)
+        self.textures_file=load_textures()
+        self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
+        self.pickups=[]
         self.current_unit_index = 0
         self.last_move_time = 0  # Timestamp of the last movement
         self.visible_tiles = set()
@@ -126,7 +132,7 @@ class Game:
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
-            Unit(3,15, "Garen", 400, 99, self.unit_images["garen"], None,3,2,"player"),  # Blue team player
+            Unit(3,15, "Garen", 900, 99, self.unit_images["garen"], None,3,2,"player"),  # Blue team player
             Unit(4,16, "Ashe", 500, 70, self.unit_images["ashe"], None,3,2,"player"),  # Blue team player
             Unit(15,3, "Darius",700, 90,self.unit_images["darius"], None,3,2,"player"),  # Red team player
             Unit(16,4, "Soraka",490, 50 ,self.unit_images["soraka"], None,3,2,"player"),  # Red team player
@@ -134,7 +140,7 @@ class Game:
 
 
             MonsterUnit(10, 10, "BigBuff",1000, 50 ,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(5, 7, "BlueBuff",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(1, 13, "BlueBuff",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(15, 13, "RedBuff",390, 250 ,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
 
@@ -153,6 +159,20 @@ class Game:
                 # Draw units only if they belong to the current team or are in visible tiles
                 if unit.color == current_team_color or (unit.x, unit.y) in self.visible_tiles and self.grid.tiles[unit.x][unit.y].overlay != "bush":
                     unit.draw(self.screen, is_current_turn=is_current_turn)
+                    
+
+
+    def draw_pickups(self):
+        types_of_pickups = {
+            "brown_potion": [(15,1),(1,14)],
+            "blue_potion":[(16,1),(2,13)],
+        }
+        for name_of_pickup,position in types_of_pickups.items():
+            for x,y in position :
+                p=Pickup(x, y, self.textures_file,self.visible_tiles,name_of_pickup) 
+                self.pickups.append(p)
+                p.draw_tile(self.screen)  
+        
 
 
 
@@ -246,8 +266,13 @@ class Game:
                         and unit.alive for unit in self.units 
                     ):  
                         self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
+                        for pickup in self.pickups:
+                            if (pickup.x, pickup.y) == (current_unit.x, current_unit.y):
+                                pickup.picked_used(current_unit)  # Apply the effect if the pickup is still active
                         current_unit.state = "attack"
+                        
                         current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
+
                         next_team_color = self.units[self.current_unit_index].color
                         Highlight.update_fog_visibility(self,next_team_color)
 
@@ -497,13 +522,16 @@ class Game:
             
             # Draw grid and units
             self.grid.draw(self.screen)
-            
-            # Render fog of war
-            Highlight.draw_fog(self,self.screen)
 
             # Highlight range for the active unit
             current_unit = self.units[self.current_unit_index]
             Highlight.highlight_range(self,current_unit)
+
+            # Render fog of war
+            Highlight.draw_fog(self,self.screen)
+            
+            #Display pcikups
+            self.draw_pickups()
             
             #Display units
             self.draw_units()
