@@ -7,7 +7,7 @@ from interface import Grid,Highlight
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 45
+CELL_SIZE = 35
 SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE 
 FPS = 60
 
