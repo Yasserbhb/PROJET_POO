@@ -11,45 +11,79 @@ CELL_SIZE = 45
 # Tile Class
 class Tile:
     """Represents a single tile in the grid."""
-    def __init__(self, x, y, terrain, textures, overlay=None):
+    def __init__(self, x, y, terrain, textures_file, overlay=None):
         self.x = x
         self.y = y
         self.terrain = terrain  # "grass", "water", or "rock"
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
-        self.textures = textures
+        self.textures_file = textures_file
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
-    
-                # Assign the texture based on terrain
-        self.texture = self.textures[self.terrain]
+        
 
-
-
-    def draw(self, screen):
+    def draw_tile(self, screen):
         """Draw the tile with its texture and overlay."""
         rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         # Draw the base terrain
+        self.texture = self.textures_file[self.terrain]
         screen.blit(pygame.transform.scale(self.texture, (CELL_SIZE, CELL_SIZE)), rect)
 
         # Draw overlay on top, if present
-        if self.overlay:
-            overlay_texture = self.textures[self.overlay]
+        if self.overlay :
+            overlay_texture = self.textures_file[self.overlay]
             screen.blit(pygame.transform.scale(overlay_texture, (CELL_SIZE, CELL_SIZE)), rect)
 
         # Optional: Draw tile border
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
 
 
+class Pickup(Tile):
+    def __init__(self, x, y, textures_file,visible_tiles, overlay=None):
+        super().__init__(x, y, textures_file,visible_tiles, overlay=None)
+        self.x = x
+        self.y = y
+        self.overlay = overlay  # Optional overlay: "bush", "barrier"
+        self.textures_file = textures_file
+        self.visible_tiles=visible_tiles
+        self.picked= False
+        
+        
+    def draw_tile(self, screen):
+        """Draw the tile with its texture and overlay."""
+        rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+
+        # Draw overlay on top, if present
+        if (self.x,self.y) in self.visible_tiles and self.picked==False :
+            overlay_texture = self.textures_file[self.overlay]
+            screen.blit(pygame.transform.scale(overlay_texture, (CELL_SIZE, CELL_SIZE)), rect)
+
+    def picked_used(self, player):
+        if player.state=="move" and player.x==self.x and player.y==self.y  and self.picked==False:
+            if player.health < player.max_health and self.picked==False:
+                self.k=1
+                heal_amount = 10  # Define how much the potion heals
+                player.health = min(player.max_health, player.health + heal_amount)  # Heal but cap at max_health
+                print(f"{player.name} healed for {heal_amount} HP!")  # Debug output
+                print(f"{player.state}")
+                self.picked=True
+                #print(f"{self.x},{self.y}:{self.picked}")
+        
+
+        
+
+
 # Grid Class
 class Grid:
     """Manages the entire grid."""
-    def __init__(self, size, textures):
+    def __init__(self, size, textures_file):
         self.size = size
-        self.textures = textures
+        self.textures_file = textures_file
         self.tiles = self.create_grid()
+        self.highlight=Highlight(self.textures_file)
+        
 
     def create_grid(self):
         """Create the grid with predefined terrain and overlays."""
-        grid = [[Tile(x, y, "grass", self.textures) for y in range(self.size)] for x in range(self.size)]
+        grid = [[Tile(x, y, "grass", self.textures_file) for y in range(self.size)] for x in range(self.size)]
 
         # Add water (lakes)
         lakes = [
@@ -60,7 +94,7 @@ class Grid:
         ]
         for lake in lakes:
             for x, y in lake:
-                grid[x][y] = Tile(x, y, "water", self.textures)
+                grid[x][y] = Tile(x, y, "water", self.textures_file)
 
         # Add rocks (hills)
         hills = [
@@ -77,12 +111,13 @@ class Grid:
             ]
         for hill in hills:
             for x, y in hill:
-                grid[x][y] = Tile(x, y, "rock", self.textures)
+                grid[x][y] = Tile(x, y, "rock", self.textures_file)
 
         # Add overlays (bushes, barriers)
         overlays = {
             "bush": [(0, 0), (1, 0), (0, 1), (20, 20), (19, 20), (20, 19), (3, 7), (3, 8), (8, 3), (17, 12), (17, 13), (12, 17)],
             "barrier": [(0, 17), (1, 17), (2, 17), (3, 17), (3, 18), (3, 19), (3, 20), (17, 0), (17, 1), (17, 2), (17, 3), (18, 3), (19, 3), (20, 3)],
+
             
         }
         for overlay_type, positions in overlays.items():
@@ -91,40 +126,14 @@ class Grid:
 
         return grid
 
-    #def draw(self, screen):
-     #       """Draw all tiles in the grid."""
-     #       for row in self.tiles:
-      #          for tile in row:
-      #              tile.draw(screen)
-
-
     def draw(self, screen):
-        """Draw a visually enhanced grid with textures, gradients, and rounded grid lines."""
-        # Gradient background
-        for y in range(CELL_SIZE*GRID_SIZE):
-            color = (0, int(255 * (y / (CELL_SIZE*GRID_SIZE))), int(255 * (y / (CELL_SIZE*GRID_SIZE))))  # Gradient from dark to light
-            pygame.draw.line(screen, color, (0, y), (CELL_SIZE*GRID_SIZE, y))
-
-        # Draw the grid
+        """Draw all tiles in the grid."""
         for row in self.tiles:
             for tile in row:
-                # Draw the texture for each tile
-                tile_texture = pygame.transform.scale(self.textures[tile.terrain], (CELL_SIZE, CELL_SIZE))
-                screen.blit(tile_texture, (tile.x * CELL_SIZE, tile.y * CELL_SIZE))
+                tile.draw_tile(screen)
 
-                # If the tile has an overlay, draw it on top
-                if tile.overlay:
-                    overlay_texture = pygame.transform.scale(self.textures[tile.overlay], (CELL_SIZE, CELL_SIZE))
-                    screen.blit(overlay_texture, (tile.x * CELL_SIZE, tile.y * CELL_SIZE))
 
-                # Draw rounded grid lines for smoother visuals
-                pygame.draw.rect(
-                    screen,
-                    (255, 255, 255),  # Line color (white)
-                    pygame.Rect(tile.x * CELL_SIZE, tile.y * CELL_SIZE, CELL_SIZE, CELL_SIZE),
-                    width=1,  # Line thickness
-                    border_radius=5,  # Rounded corners
-                )
+
 
 
     
@@ -132,9 +141,12 @@ class Grid:
 # Highlight Class
 class Highlight:
     """Manages highlighting for movement and attack ranges."""
-    def __init__(self, grid):
-        self.grid = grid
+    def __init__(self,textures_file):
+        
         self.visible_tiles = set()
+        self.textures_file=textures_file
+        self.grid=Grid
+        
 
     def highlight_range(self, unit):
         """Highlight movement or attack range based on the unit's state."""
@@ -237,13 +249,16 @@ class Highlight:
 
                 # Add this unit's visibility to the team's visibility
                 self.visible_tiles.update(unit_visible_tiles)
+                
+                
 
         # Final combined visible tiles
 
 
 
 
-    def draw_fog(self, screen):
+    def draw_fog(self,screen):
+ 
         """Draw the fog of war and dim lighting based on the visible tiles."""
         
         fog_overlay = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
@@ -259,12 +274,15 @@ class Highlight:
                 rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                 if (x, y) not in self.visible_tiles:
                     # Fully fogged areas
-                    self.screen.blit(fog_overlay, rect)   
+                    screen.blit(fog_overlay, rect)   
                 elif (x, y) in self.visible_tiles and any(
                     (x + dx, y + dy) not in self.visible_tiles for dx, dy in directions
                 ):
                     # Dim lighting at the edges of visibility
-                    self.screen.blit(dim_overlay, rect)   
+                    screen.blit(dim_overlay, rect)
+
+
+                    
 
 
 
