@@ -170,61 +170,61 @@ class Game:
                 and other_unit.y == unit.target_y
                 and other_unit.color != unit.color # le cible appartient a une equipe diff 
             ):
-                damage=unit.attack(other_unit)  # Use the Unit's attack method
+                damage=unit.attack(other_unit)  # Utilise la méthode attack de l'unité
                 if other_unit.unit_type =="monster" and other_unit.alive==False :#unite est tuee
-                    Highlight.show_buff_animation(self,self.screen,other_unit.image)
-                if damage > 0:
+                    Highlight.show_buff_animation(self,self.screen,other_unit.image) # Si la cible est un monstre qui vient de mourir, une animation de "buff" est affichée.
+                if damage > 0: # Enregistre un événement indiquant que des dégâts ont été infligés.
                     self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
                     # Vérifier si l'unité est morte
-                    if not other_unit.alive:
+                    if not other_unit.alive: #  Si la cible est morte après l'attaque, enregistre un message indiquant sa défaite.
                         self.log_event(f"{other_unit.name} has been defeated!")
-                else:
+                else: # Si aucun dégât n'a été infligé (attaque ratée), un message est enregistré.
                     self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
-                target_hit = True
+                target_hit = True # Une fois la cible touchée, on termine la recherche de cible.
                 break
-        if not target_hit:
+        if not target_hit: # Si aucune cible valide n’a été trouvée, un message est enregistré pour indiquer un échec.
             self.log_event(f"{unit.name} attacked but missed!")
 
         unit.state = "done"  # Mark the unit as done after the attack
         
 
 
-    def advance_to_next_unit(self):
+    def advance_to_next_unit(self): # avancer au tour suivant 
         """Advance to the next unit, skipping dead ones."""
         # Start from the current unit
-        start_index = self.current_unit_index
+        start_index = self.current_unit_index # peemet de savoir ou commencer pour eviter dee tourner en boucle infinie si toutes les unites sont mortes
 
         #we keep incrementing the index untill we fullfil the conditions
         while True:
             # Move to the next unit
-            self.current_unit_index = (self.current_unit_index + 1) % len(self.units)
+            self.current_unit_index = (self.current_unit_index + 1) % len(self.units) # len pour revenir au debut apres la dernier unite
 
             # Check if the unit is alive and that is part of either team red or team blue
-            if (self.units[self.current_unit_index].alive 
-                and self.units[self.current_unit_index].unit_type=="player"):
+            if (self.units[self.current_unit_index].alive  
+                and self.units[self.current_unit_index].unit_type=="player"): # verification que l'unite est valide (vivante et d'un joueur)
                 break
 
             # If we've cycled through all units and come back to the start, stop (prevents infinite loops)
-            if self.current_unit_index == start_index:
+            if self.current_unit_index == start_index: # on a parcouru toutes les unites sans sen rouver une vivante
                 self.log_event("No alive units remaining!")
-                return
+                return # la methode s'arrete ici 
 
 
     
-    def handle_turn(self):
+    def handle_turn(self): # gére les diff phases du tour d'une unite dans un jeu de strategie: deplacement , attaque et fin de tour
         """Handle movement and attacks for the current unit."""
-        current_time = pygame.time.get_ticks()
-        current_unit = self.units[self.current_unit_index]
-        keys = pygame.key.get_pressed()
+        current_time = pygame.time.get_ticks() # gerer les delais entre actions
+        current_unit = self.units[self.current_unit_index] # recupere l'unite en cours
+        keys = pygame.key.get_pressed() # capture l'etat actuel de toute des touches du clavier, qlls touches sont pressees
 
-        action_key = pygame.K_SPACE
+        action_key = pygame.K_SPACE # touceh espace comme touche d'action
 
         # debounce mechanism to avoid repeated triggers.
-        if not hasattr(self, "key_last_state"):
-            self.key_last_state = {}
+        if not hasattr(self, "key_last_state"): 
+            self.key_last_state = {} # enregistre l'etat de la touche espace
 
-        key_just_pressed = keys[action_key] and not self.key_last_state.get(action_key, False)
-        self.key_last_state[action_key] = keys[action_key]
+        key_just_pressed = keys[action_key] and not self.key_last_state.get(action_key, False) # verifier si la touche espace a ete pressee pour la premiere fois dans le tour actuel
+        self.key_last_state[action_key] = keys[action_key] # mettre a jour l'etat de la touche espace pour le tour actuel
 
         # Movement Phase
         if current_unit.state == "move":
