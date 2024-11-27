@@ -3,7 +3,7 @@ import random
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 45
+CELL_SIZE = 35
 
 
 
@@ -18,9 +18,13 @@ class Tile:
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
         self.textures = textures
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
-    
-                # Assign the texture based on terrain
+        
+        # Assign move cost based on terrain type
+        self.move_cost = {"grass": 1, "water": 2, "rock": float("inf")}[terrain]
+        
+        # Assign the texture based on terrain
         self.texture = self.textures[self.terrain]
+
 
 
 
@@ -145,8 +149,8 @@ class Highlight:
             queue = [(unit.initial_x, unit.initial_y, 0)]  # (x, y, current_distance)
             
             while queue:
-                x, y, dist = queue.pop(0)
-                if (x, y) in visited or dist > unit.move_range:  # Skip already visited or out-of-range tiles
+                x, y, cost = queue.pop(0)
+                if (x, y) in visited or cost > unit.move_range:  # Skip already visited or out-of-range tiles
                     continue
                 visited.add((x, y))
             
@@ -159,8 +163,9 @@ class Highlight:
                     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Check cardinal directions
                         nx, ny = x + dx, y + dy
                         if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE:  # Ensure within bounds
-                            if self.grid.tiles[nx][ny].traversable and (nx, ny) not in visited:
-                                queue.append((nx, ny, dist + 1))
+                            next_cost = cost + self.grid.tiles[nx][ny].move_cost
+                            if next_cost <= unit.move_range and (nx, ny) not in visited:
+                                queue.append((nx, ny, next_cost))
                         
         elif unit.state == "attack":
             # Highlight attack range
