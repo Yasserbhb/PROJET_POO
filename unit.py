@@ -1,7 +1,7 @@
 import pygame
 from interface import Highlight
 
-CELL_SIZE = 40
+CELL_SIZE = 35
 class Unit:
     """A single unit in the game."""
     def __init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type):

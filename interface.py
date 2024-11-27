@@ -3,7 +3,7 @@ import random
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 40
+CELL_SIZE = 35
 
 
 
@@ -18,16 +18,11 @@ class Tile:
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
         self.textures = textures
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
+    
+                # Assign the texture based on terrain
+        self.texture = self.textures[self.terrain]
 
-        # Assign the texture based on terrain
-        if self.terrain == "grass":
-            self.texture = random.choice(self.textures["grass"])
-        else:
-            self.texture = self.textures[self.terrain]
 
-    def is_overlay_blocking(self):
-        """Check if the overlay blocks visibility or movement."""
-        return self.overlay in ["barrier"]
 
     def draw(self, screen):
         """Draw the tile with its texture and overlay."""
@@ -42,6 +37,7 @@ class Tile:
 
         # Optional: Draw tile border
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
+
 
 # Grid Class
 class Grid:
@@ -95,11 +91,43 @@ class Grid:
 
         return grid
 
+    #def draw(self, screen):
+     #       """Draw all tiles in the grid."""
+     #       for row in self.tiles:
+      #          for tile in row:
+      #              tile.draw(screen)
+
+
     def draw(self, screen):
-        """Draw all tiles in the grid."""
+        """Draw a visually enhanced grid with textures, gradients, and rounded grid lines."""
+        # Gradient background
+        for y in range(CELL_SIZE*GRID_SIZE):
+            color = (0, int(255 * (y / (CELL_SIZE*GRID_SIZE))), int(255 * (y / (CELL_SIZE*GRID_SIZE))))  # Gradient from dark to light
+            pygame.draw.line(screen, color, (0, y), (CELL_SIZE*GRID_SIZE, y))
+
+        # Draw the grid
         for row in self.tiles:
             for tile in row:
-                tile.draw(screen)
+                # Draw the texture for each tile
+                tile_texture = pygame.transform.scale(self.textures[tile.terrain], (CELL_SIZE, CELL_SIZE))
+                screen.blit(tile_texture, (tile.x * CELL_SIZE, tile.y * CELL_SIZE))
+
+                # If the tile has an overlay, draw it on top
+                if tile.overlay:
+                    overlay_texture = pygame.transform.scale(self.textures[tile.overlay], (CELL_SIZE, CELL_SIZE))
+                    screen.blit(overlay_texture, (tile.x * CELL_SIZE, tile.y * CELL_SIZE))
+
+                # Draw rounded grid lines for smoother visuals
+                pygame.draw.rect(
+                    screen,
+                    (255, 255, 255),  # Line color (white)
+                    pygame.Rect(tile.x * CELL_SIZE, tile.y * CELL_SIZE, CELL_SIZE, CELL_SIZE),
+                    width=1,  # Line thickness
+                    border_radius=5,  # Rounded corners
+                )
+
+
+    
 
 # Highlight Class
 class Highlight:
@@ -163,16 +191,22 @@ class Highlight:
 
     def update_fog_visibility(self, team_color):
         """
-        Update the set of visible tiles based on the current team's visibility.
+        Update the set of visible tiles based on all members of the team.
         :param team_color: Color of the current team.
         """
         self.visible_tiles = set()  # Reset visible tiles
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Light propagation directions
-        
+
+        # Process visibility for each unit on the team
         for unit in self.units:
             if unit.color == team_color and unit.alive:
+
+                # BFS for this unit's visibility
                 queue = [(unit.x, unit.y, 0)]  # BFS queue: (x, y, distance)
                 max_visibility = unit.move_range + 2  # Visibility range slightly larger than movement
+
+                # Local set to track tiles visible by this unit
+                unit_visible_tiles = set()
 
                 while queue:
                     x, y, distance = queue.pop(0)
@@ -181,8 +215,8 @@ class Highlight:
                     if distance > max_visibility:
                         continue
 
-                    # Mark tile as visible
-                    self.visible_tiles.add((x, y))
+                    # Mark tile as visible for this unit
+                    unit_visible_tiles.add((x, y))
 
                     # Propagate light in all directions
                     for dx, dy in directions:
@@ -190,16 +224,23 @@ class Highlight:
                         if (
                             0 <= nx < GRID_SIZE
                             and 0 <= ny < GRID_SIZE
-                            and (nx, ny) not in self.visible_tiles
+                            and (nx, ny) not in unit_visible_tiles
                             and distance + 1 <= max_visibility
                         ):
                             # If the tile is non-traversable, stop propagation in this direction
                             if not self.grid.tiles[nx][ny].traversable:
-                                self.visible_tiles.add((nx, ny))  # Add for visual accuracy
+                                unit_visible_tiles.add((nx, ny))  # Add for visual accuracy
                                 continue
 
                             # Add to queue to continue propagation
                             queue.append((nx, ny, distance + 1))
+
+                # Add this unit's visibility to the team's visibility
+                self.visible_tiles.update(unit_visible_tiles)
+
+        # Final combined visible tiles
+
+
 
 
     def draw_fog(self, screen):
