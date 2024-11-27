@@ -1,5 +1,5 @@
 import pygame
-import random
+import random 
 
 # Constants
 GRID_SIZE = 21
@@ -36,36 +36,46 @@ class Tile:
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
 
 
-class Pickup(Tile):
-    def __init__(self, x, y, textures_file,visible_tiles, overlay=None):
-        super().__init__(x, y, textures_file,visible_tiles, overlay=None)
+class Pickup:
+    def __init__(self, x, y, textures_file ,overlay):
+ 
         self.x = x
         self.y = y
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
         self.textures_file = textures_file
-        self.visible_tiles=visible_tiles
+
         self.picked= False
         
         
-    def draw_tile(self, screen):
+    def draw_pickup(self, screen,visible_tiles):
         """Draw the tile with its texture and overlay."""
         rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
 
         # Draw overlay on top, if present
-        if (self.x,self.y) in self.visible_tiles and self.picked==False :
+        if (self.x,self.y) in visible_tiles and not self.picked :
             overlay_texture = self.textures_file[self.overlay]
             screen.blit(pygame.transform.scale(overlay_texture, (CELL_SIZE, CELL_SIZE)), rect)
 
-    def picked_used(self, player):
-        if player.state=="move" and player.x==self.x and player.y==self.y  and self.picked==False:
-            if player.health < player.max_health and self.picked==False:
-                self.k=1
-                heal_amount = 10  # Define how much the potion heals
+
+
+    def picked_used(self, player,pickups):
+            
+            if player.health < player.max_health and not self.picked:
+                heal_amount = 200  # Define how much the potion heals
                 player.health = min(player.max_health, player.health + heal_amount)  # Heal but cap at max_health
                 print(f"{player.name} healed for {heal_amount} HP!")  # Debug output
                 print(f"{player.state}")
-                self.picked=True
+                
+            self.picked=True
+            self.remove_pickup(pickups)
                 #print(f"{self.x},{self.y}:{self.picked}")
+
+
+
+    def remove_pickup(self,pickups):
+        pickups.remove(self)
+        print(f"Pickup at ({self.x}, {self.y}) removed.")
+
         
 
         

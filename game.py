@@ -67,6 +67,7 @@ class Game:
         self.current_unit_index = 0
         self.last_move_time = 0  # Timestamp of the last movement
         self.visible_tiles = set()
+        self.create_pickups()
         self.event_log = [] # Initialize event log
         # Pre-calculate fog for the starting team (blue)
         
@@ -162,16 +163,19 @@ class Game:
                     
 
 
-    def draw_pickups(self):
+    def create_pickups(self):
         types_of_pickups = {
             "brown_potion": [(15,1),(1,14)],
             "blue_potion":[(16,1),(2,13)],
         }
         for name_of_pickup,position in types_of_pickups.items():
             for x,y in position :
-                p=Pickup(x, y, self.textures_file,self.visible_tiles,name_of_pickup) 
+                p=Pickup(x, y, self.textures_file,name_of_pickup) 
                 self.pickups.append(p)
-                p.draw_tile(self.screen)  
+
+    def draw_pickups(self):
+        for  pickup in self.pickups:
+            pickup.draw_pickup(self.screen, self.visible_tiles)  
         
 
 
@@ -268,7 +272,7 @@ class Game:
                         self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
                         for pickup in self.pickups:
                             if (pickup.x, pickup.y) == (current_unit.x, current_unit.y):
-                                pickup.picked_used(current_unit)  # Apply the effect if the pickup is still active
+                                pickup.picked_used(current_unit,self.pickups)  # Apply the effect if the pickup is still active
                         current_unit.state = "attack"
                         
                         current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
@@ -531,6 +535,7 @@ class Game:
             Highlight.draw_fog(self,self.screen)
             
             #Display pcikups
+            
             self.draw_pickups()
             
             #Display units
