@@ -53,8 +53,8 @@ class Unit:
             if not target_tile.highlighted:
                 print(f"Cannot move to ({new_x}, {new_y}) because it's not highlighted.")
                 return  # Can't move if the tile is not highlighted
-
-            # Get the move cost for the target tile
+            else : self.x, self.y = new_x, new_y
+            """# Get the move cost for the target tile
             move_cost = target_tile.move_cost
 
             # Calculate the total movement cost from the initial position
@@ -69,7 +69,7 @@ class Unit:
                 return  # Invalid move due to cost or non-traversable tile
         else:
             print(f"Invalid move: position ({new_x}, {new_y}) is out of bounds.")
-            return  # Invalid move out of bounds
+            return  # Invalid move out of bounds """
 
 
 
