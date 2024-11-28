@@ -145,6 +145,10 @@ class Highlight:
         """Highlight movement or attack range based on the unit's state."""
         overlay = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)  # Transparent overlay
 
+        for row in self.grid.tiles:
+            for tile in row:
+                tile.highlighted = False 
+
         if unit.state == "move":
             visited = set()
             queue = [(unit.initial_x, unit.initial_y, 0)]  # (x, y, current_distance)
