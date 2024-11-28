@@ -18,7 +18,8 @@ class Tile:
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
         self.textures = textures
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
-        
+        self.highlighted = False  
+                
         # Assign move cost based on terrain type
         self.move_cost = {"grass": 1, "water": 2, "rock": float("inf")}[terrain]
         
@@ -141,41 +142,33 @@ class Highlight:
         self.visible_tiles = set()
 
     def highlight_range(self, unit):
-        
         """Highlight movement or attack range based on the unit's state."""
         overlay = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)  # Transparent overlay
 
         if unit.state == "move":
             visited = set()
-            queue = [(unit.initial_x, unit.initial_y, 0)]  # (x, y, current_cost)
-
+            queue = [(unit.initial_x, unit.initial_y, 0)]  # (x, y, current_distance)
+            
             while queue:
-                x, y, current_cost = queue.pop(0)
-
-                # Ignore already visited tiles
-                if (x, y) in visited:
+                x, y, cost = queue.pop(0)
+                if (x, y) in visited or cost > unit.move_range:  # Skip already visited or out-of-range tiles
                     continue
                 visited.add((x, y))
 
-                # Check if the current tile is traversable
-                tile = self.grid.tiles[x][y]
-                if tile.traversable:
+                if self.grid.tiles[x][y].traversable:
+                    self.grid.tiles[x][y].highlighted = True
                     overlay.fill((50, 150, 255, 100))  # Blue with transparency
                     rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                    self.screen.blit(overlay, rect)
+                    self.screen.blit(overlay, rect)  # Highlight this tile
 
-                    # Explore neighboring tiles
+                    # Check cardinal directions for next tiles
                     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                         nx, ny = x + dx, y + dy
-
-                        # Ensure the neighbor is within bounds and the cost is within move range
-                        if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE:
-                            neighbor_cost = current_cost + self.grid.tiles[nx][ny].move_cost
-
-                            # Enqueue the neighbor if it's within the movement range
-                            if neighbor_cost <= unit.move_range and (nx, ny) not in visited:
-                                queue.append((nx, ny, neighbor_cost))
-                                    
+                        if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE:  # Ensure within bounds
+                            next_cost = cost + self.grid.tiles[nx][ny].move_cost
+                            if next_cost <= unit.move_range and (nx, ny) not in visited:
+                                queue.append((nx, ny, next_cost))
+                        
         elif unit.state == "attack":
             # Highlight attack range
             for dx in range(-unit.attack_range, unit.attack_range + 1):

@@ -38,27 +38,41 @@ class Unit:
 
 
     def move(self, dx, dy, grid):
-        """Move the unit if within movement range and traversable."""
+    
+        """Move the unit if within movement range, traversable, and highlighted."""
         new_x = self.x + dx
         new_y = self.y + dy
 
-        # Check if the current position is traversable
-        current_tile = grid.tiles[self.x][self.y]
-        if not current_tile.traversable:
-            return  # Can't move if the current tile is not traversable (e.g., water)
-
-        # Check if the new position is within grid bounds
+        # Check if the current position is within grid bounds
         if 0 <= new_x < len(grid.tiles) and 0 <= new_y < len(grid.tiles[0]):
-            move_cost = grid.tiles[new_x][new_y].move_cost
+
+            # Get the target tile at the new position
+            target_tile = grid.tiles[new_x][new_y]
+
+            # Check if the target tile is highlighted
+            if not target_tile.highlighted:
+                print(f"Cannot move to ({new_x}, {new_y}) because it's not highlighted.")
+                return  # Can't move if the tile is not highlighted
+
+            # Get the move cost for the target tile
+            move_cost = target_tile.move_cost
+
+            # Calculate the total movement cost from the initial position
+            distance_cost = (abs(self.initial_x - new_x) + abs(self.initial_y - new_y)) * move_cost
+
+            # Check if the move is valid and if the target tile is traversable
+            if distance_cost <= self.move_range and target_tile.traversable:
+                self.x, self.y = new_x, new_y  # Update position
+                print(f"Moved to ({new_x}, {new_y}).")
+            else:
+                print(f"Invalid move due to cost or non-traversable tile at ({new_x}, {new_y}).")
+                return  # Invalid move due to cost or non-traversable tile
         else:
+            print(f"Invalid move: position ({new_x}, {new_y}) is out of bounds.")
             return  # Invalid move out of bounds
 
-        # Calculate the total movement cost from the initial position
-        distance_cost = (abs(self.initial_x - new_x) + abs(self.initial_y - new_y)) * move_cost
 
-        # Check if the move is valid
-        if distance_cost <= self.move_range and grid.tiles[new_x][new_y].traversable:
-            self.x, self.y = new_x, new_y  # Update position
+
 
 
 
