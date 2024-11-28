@@ -303,7 +303,6 @@ class Game:
 
 
 
-
     def main_menu(self):
         """Display the main menu with options to start or quit."""
         menu_running = True

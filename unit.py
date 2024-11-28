@@ -42,17 +42,24 @@ class Unit:
         new_x = self.x + dx
         new_y = self.y + dy
 
-        # Calculate the cost to move to the new position
+        # Check if the current position is traversable
+        current_tile = grid.tiles[self.x][self.y]
+        if not current_tile.traversable:
+            return  # Can't move if the current tile is not traversable (e.g., water)
+
+        # Check if the new position is within grid bounds
         if 0 <= new_x < len(grid.tiles) and 0 <= new_y < len(grid.tiles[0]):
             move_cost = grid.tiles[new_x][new_y].move_cost
         else:
-            move_cost = float('inf')  # Invalid move out of bounds
+            return  # Invalid move out of bounds
 
         # Calculate the total movement cost from the initial position
-        distance_cost = (abs(self.initial_x - new_x) + abs(self.initial_y - new_y) )* move_cost
+        distance_cost = (abs(self.initial_x - new_x) + abs(self.initial_y - new_y)) * move_cost
 
-        if (distance_cost <= self.move_range and grid.tiles[new_x][new_y].traversable):
+        # Check if the move is valid
+        if distance_cost <= self.move_range and grid.tiles[new_x][new_y].traversable:
             self.x, self.y = new_x, new_y  # Update position
+
 
 
     #neutral monsters reacting to attacks
