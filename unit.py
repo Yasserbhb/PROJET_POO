@@ -38,15 +38,22 @@ class Unit:
 
 
     def move(self, dx, dy, grid):
-        """Move the unit if within movement range and traversable."""
+    
+        """Move the unit if within movement range, traversable, and highlighted."""
         new_x = self.x + dx
         new_y = self.y + dy
-        distance = abs(self.initial_x - new_x) + abs(self.initial_y - new_y)
 
-        if (0 <= new_x < len(grid.tiles) and 0 <= new_y < len(grid.tiles[0])  # Ensure within bounds
-                and distance <= self.move_range  # Within movement range
-                and grid.tiles[new_x][new_y].traversable) :  # Traversable tile
-            self.x, self.y = new_x, new_y  # Update position
+        # Check if the current position is within grid bounds
+        if 0 <= new_x < len(grid.tiles) and 0 <= new_y < len(grid.tiles[0]):
+
+            # Get the target tile at the new position
+            target_tile = grid.tiles[new_x][new_y]
+
+            # Check if the target tile is highlighted
+            if not target_tile.highlighted:
+                print(f"Cannot move to ({new_x}, {new_y}) because it's not highlighted.")
+                return  # Can't move if the tile is not highlighted
+            else : self.x, self.y = new_x, new_y
 
 
 
