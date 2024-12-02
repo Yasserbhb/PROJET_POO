@@ -3,10 +3,7 @@ import random
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 35
-
-
-
+CELL_SIZE = 30 
 
 # Tile Class
 class Tile:
@@ -18,9 +15,14 @@ class Tile:
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
         self.textures = textures
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
-    
-                # Assign the texture based on terrain
+        self.highlighted = False  
+                
+        # Assign move cost based on terrain type
+        self.move_cost = {"grass": 1, "water": 2, "rock": float("inf")}[terrain]
+        
+        # Assign the texture based on terrain
         self.texture = self.textures[self.terrain]
+
 
 
 
@@ -140,27 +142,33 @@ class Highlight:
         """Highlight movement or attack range based on the unit's state."""
         overlay = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)  # Transparent overlay
 
+        for row in self.grid.tiles:
+            for tile in row:
+                tile.highlighted = False 
+
         if unit.state == "move":
             visited = set()
             queue = [(unit.initial_x, unit.initial_y, 0)]  # (x, y, current_distance)
             
             while queue:
-                x, y, dist = queue.pop(0)
-                if (x, y) in visited or dist > unit.move_range:  # Skip already visited or out-of-range tiles
+                x, y, cost = queue.pop(0)
+                if (x, y) in visited or cost > unit.move_range:  # Skip already visited or out-of-range tiles
                     continue
                 visited.add((x, y))
-            
-                    
-                if (self.grid.tiles[x][y].traversable ):
-                    overlay.fill((50, 150, 255, 100))  # Blue with transparency (alpha = 100)
+
+                if self.grid.tiles[x][y].traversable:
+                    self.grid.tiles[x][y].highlighted = True
+                    overlay.fill((50, 150, 255, 100))  # Blue with transparency
                     rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                    self.screen.blit(overlay, rect)
-                    
-                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # Check cardinal directions
+                    self.screen.blit(overlay, rect)  # Highlight this tile
+
+                    # Check cardinal directions for next tiles
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                         nx, ny = x + dx, y + dy
                         if 0 <= nx < GRID_SIZE and 0 <= ny < GRID_SIZE:  # Ensure within bounds
-                            if self.grid.tiles[nx][ny].traversable and (nx, ny) not in visited:
-                                queue.append((nx, ny, dist + 1))
+                            next_cost = cost + self.grid.tiles[nx][ny].move_cost
+                            if next_cost <= unit.move_range and (nx, ny) not in visited:
+                                queue.append((nx, ny, next_cost))
                         
         elif unit.state == "attack":
             # Highlight attack range

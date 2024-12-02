@@ -2,18 +2,17 @@ import pygame
 import random
 from unit import Unit , MonsterUnit
 from interface import Grid,Highlight 
-
-
+from abilities import Abilities
 
 # Constants
-GRID_SIZE = 21 # TAILLE DE GRILLE
-CELL_SIZE = 35 # TAILLE D'UNE CELLULE
-SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE # Dimension de l'ecran
-FPS = 60 # image par seconde
+GRID_SIZE = 21
+CELL_SIZE = 30
+SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE 
+FPS = 60
 
 # Load assets
 
-def load_textures(): # charger les textures 
+def load_textures():
     """Load textures for different terrain and overlays."""
     return {
         "grass": pygame.image.load("assets/grass4.jpg"),
@@ -44,60 +43,68 @@ def load_indicators():
         "redsquare": pygame.image.load("assets/redsquare.png"),
     }
 
-
+# Abilities
+abilities = [
+    Abilities("Fireball", 50, 10, "damage", attack=10000, description="Deals fire damage to a single target."),
+    Abilities("Heal", 40, 15, "heal", attack=50, description="Restores health to an ally."),
+    Abilities("Shield", 30, 20, "buff", defense=30, description="Increases defense temporarily."),
+    Abilities("Frostbite", 60, 12, "debuff", attack=20, description="Reduces enemy attack power."),
+]
 
 # Game class
 class Game:
     def __init__(self):
-        pygame.init() # configure audio , video, entrees clavier , souris
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT)) #la taille de la fenetre du jeu en pixels
-        pygame.display.set_caption("League on Budget") # le titre de la fenetre
-        self.clock = pygame.time.Clock() #clock pour controler la frequence d'actualisation des images , synchroniser les animations et de limiter la vitesse
-        self.unit_images = load_unit_images() 
+        pygame.init()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("League on Budget")
+        self.clock = pygame.time.Clock()
+        self.unit_images = load_unit_images()
         self.indicators = load_indicators()
         self.textures=load_textures()
-        self.grid = Grid(GRID_SIZE, self.textures) # le terrain de jeu (la taille de la grille , images )
-        self.units = [] # listes des unites
-        self.current_unit_index = 0 # garde une trace de l'unite actuellement active dans le tour de jeu
+        self.grid = Grid(GRID_SIZE, self.textures)
+        self.units = [] 
+        self.current_unit_index = 0
         self.last_move_time = 0  # Timestamp of the last movement
-        self.visible_tiles = set() # la vision des unites
-        self.event_log = [] # Initialize event log , gestion des evenements , historique des actions (max 10 even)
+        self.visible_tiles = set()
+        self.event_log = [] # Initialize event log
+        self.mana = 1000
+        self.max_mana = 1000
         # Pre-calculate fog for the starting team (blue)
         
         #initilizing main menu
         self.font_title = pygame.font.Font("assets/League.otf", 65)
         self.font_small = pygame.font.Font("assets/RussoOne.ttf", 36)
-        self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background # fond pour la 1er page
-        self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load main menu background # ??
-        
+        self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background
+        self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load main menu background
+
+        self.key_last_state = {} # prevent repeated actions
 
         
  
 
     def log_event(self, message):
         """Add an event to the event log."""
-        self.event_log.append(message) # ajouter un nv mssg a la fin de la liste event_log
+        self.event_log.append(message)
         if len(self.event_log) > 10:  # Limit the log to the last 10 events
             self.event_log.pop(0)
 
-    def draw_info_panel(self): # panneau noire contenant des inforations
+    def draw_info_panel(self):
         """Draw the information panel with word wrapping for long text."""
-        panel_x = CELL_SIZE * GRID_SIZE # pann situe apres la grille principale ,largeur x
+        panel_x = CELL_SIZE * GRID_SIZE
         panel_width = 300  # Width of the info panel
         panel_height = SCREEN_HEIGHT
-        padding = 10  # marge internes
+        padding = 10  # Padding inside the panel
 
         # Draw panel background
-        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
-        # dessiner l'arriere-plan    (couleur,noire) (position,0, dimensions )      
+        pygame.draw.rect(self.screen, (20, 20, 20), (panel_x, 0, panel_width, panel_height))
 
         # Render event log with word wrapping
-        font = pygame.font.Font(None, 24) # police par defaut avec une taille de 24
-        y_offset = padding  # position verticale initiale pour dessiner les lignes
-        line_spacing = 5  # espacement entre deux lignes de texte
-        max_line_width = panel_width - 2 * padding #largeur max pour une ligne de texte
+        font = pygame.font.Font(None, 24)
+        y_offset = padding
+        line_spacing = 5  # Spacing between lines
+        max_line_width = panel_width - 2 * padding
 
-        for event in reversed(self.event_log):  # parcourt la liste des evenements dans l'ordre inverse
+        for event in reversed(self.event_log):  # Display from newest to oldest
             # Split the text into multiple lines if necessary
             words = event.split(" ")
             current_line = ""
@@ -122,109 +129,200 @@ class Game:
             if y_offset > panel_height - padding:
                 break
 
+        # Current unit's abilities
+        #current_unit = self.units[self.current_unit_index]
+        #if hasattr(current_unit, "abilities"):
+            # for i, ability in enumerate(current_unit.abilities):
+                #ability_text = f"Key {i + 1}: {ability.name} (Mana: {ability.mana_cost}, CD: {ability.remaining_cooldown}s)"
+                #text_surface = font.render(ability_text, True, (255, 255, 255))
+                #self.screen.blit(text_surface, (panel_x + padding, y_offset))
+                #y_offset += text_surface.get_height() + 5
 
 
-    def create_units(self): #place des unites sur une grille
-        """Create units and place them on the grid."""       
-        return [            
-            Unit(3,15, "Garen", 400, 99, self.unit_images["garen"], None,3,2,"player"),  # Blue team player
-            Unit(4,16, "Ashe", 500, 70, self.unit_images["ashe"], None,3,2,"player"),  # Blue team player
-            Unit(15,3, "Darius",700, 90,self.unit_images["darius"], None,3,2,"player"),  # Red team player
-            Unit(16,4, "Soraka",490, 50 ,self.unit_images["soraka"], None,3,2,"player"),  # Red team player
-            Unit(0,0, "Rengar",700, 180 ,self.unit_images["rengar"], None,3,2,"player"),  # Red team player
-            #(x,y,name,health,damage,image,equipe, speed , portee d'attaque de l'unite,type)
+    def draw_abilities_bar(self):
+        """Draw the abilities of the current unit at the top of the screen with dynamic sizing."""
+        # Définir la barre d'abilities
+        panel_x = 0  # La barre commence en haut à gauche
+        panel_width = SCREEN_WIDTH - 300  # La largeur de la barre 
+        panel_height = 40  # Hauteur de la barre
+        padding = 10  # Espacement interne pour les textes
 
-            MonsterUnit(10, 10, "BigBuff",1000, 50 ,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(5, 7, "BlueBuff",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(15, 13, "RedBuff",390, 250 ,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
+        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
+        font = pygame.font.Font(None, 16)
+        current_unit = self.units[self.current_unit_index]  # Récupérer l'unité actuelle
+        if hasattr(current_unit, "abilities"): # Vérifier que l'unité a des abilities
+            num_abilities = len(current_unit.abilities)
+            max_width_per_ability = (panel_width - 2 * padding) // max(1, num_abilities)  # Assurer au moins 1 espace
+            # Dessiner chaque ability
+            for i, ability in enumerate(current_unit.abilities):
+                ability_text = f"{i + 1}: {ability.name} (Mana: {ability.mana_cost}, CD: {ability.remaining_cooldown}s)"
+                # Calculer la position pour cette ability
+                ability_x = panel_x + padding + i * max_width_per_ability  # Décalage horizontal
+                text_surface = font.render(ability_text, True, (255, 255, 255))
+                # Centrer le texte dans son espace alloué
+                centered_x = ability_x + (max_width_per_ability - text_surface.get_width()) // 2
+                self.screen.blit(text_surface, (centered_x, panel_height // 4))
 
 
-            Unit(1, 19, "NexusBlue",390, 50 ,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
-            Unit(19, 1, "NexusRed",390, 50 ,self.unit_images["basered"], "red",0,0,"base"), #Red team base
-       ]
+    def create_units(self):
+        """Create units and assign abilities."""
     
+        return [
+            Unit(3, 15, "Garen", 400, 99, self.unit_images["garen"], None, 3, 2, "player", mana=120, abilities=[
+                Abilities("Slash", 30, 5, "damage", attack=800, description="A quick slash attack."),
+                Abilities("Defend", 20, 10, "buff", defense=40, description="Increases defense temporarily."),
+                Abilities("Charge", 40, 8, "damage", attack=120, description="A powerful charging attack."),
+            ]), # ("cout de mana 30", portee 5 cases )
+
+            Unit(4, 16, "Ashe", 500, 70, self.unit_images["ashe"], None, 3, 2, "player", mana=100, abilities=[
+                Abilities("Arrow Shot", 20, 5, "damage", attack=500, description="Shoots an arrow at the target."),
+                Abilities("Frost Arrow", 30, 10, "debuff", attack=20, description="Slows the target."),
+                Abilities("Healing Wind", 50, 15, "heal", attack=60, description="Heals an ally."),
+            ]),
+
+            Unit(15, 3, "Darius", 700, 90, self.unit_images["darius"], None, 3, 2, "player", abilities=[
+                Abilities("Decimate", 50, 7, "damage", attack=100, description="Spins his axe, dealing damage to nearby enemies."),
+                Abilities("Crip Strike", 40, 8, "damage", attack=120, description="A heavy strike that slows the target."),
+                Abilities("Nox Guillot", 80, 15, "damage", attack=200, description="Executes an enemy below a health threshold."),
+            ]),
+
+            Unit(16, 4, "Soraka", 490, 50, self.unit_images["soraka"], None, 3, 2, "player", abilities=[
+                Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
+                Abilities("Astr Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
+                Abilities("Wish", 100, 20, "heal", attack=150, description="Restores health to all allies."),
+            ]),
+
+            Unit(0, 0, "Rengar", 700, 180, self.unit_images["rengar"], None, 3, 2, "player", abilities=[
+                Abilities("Savagery", 30, 5, "damage", attack=150, description="Empowered strike dealing extra damage."),
+                Abilities("Battle Roar", 40, 8, "buff", defense=30, description="Boosts defense and deals minor damage."),
+                Abilities("Thrill ", 80, 20, "buff", defense=50, description="Enhances vision and movement speed."),
+            ]),
+
+            MonsterUnit(10, 10, "BigBuff", 1000, 50, self.unit_images["bigbuff"], "neutral", 3, 2, "monster"),
+            MonsterUnit(5, 7, "BlueBuff", 390, 250, self.unit_images["bluebuff"], "neutral", 3, 2, "monster"),
+            MonsterUnit(15, 13, "RedBuff", 390, 250, self.unit_images["redbuff"], "neutral", 3, 2, "monster"),
+
+            Unit(1, 19, "NexusBlue", 390, 50, self.unit_images["baseblue"], "blue", 0, 0, "base"),
+            Unit(19, 1, "NexusRed", 390, 50, self.unit_images["basered"], "red", 0, 0, "base"),
+        ]
 
 
-    def draw_units(self): # 
+    def draw_units(self):
         """Draw all units on the grid with visibility logic."""
-        current_team_color = self.units[self.current_unit_index].color # recuperer la couleur de l'equipe de l'unite en cours
+        current_team_color = self.units[self.current_unit_index].color
         for index, unit in enumerate(self.units):
-            if unit.alive: # verifier si l'unite est vivante
+            if unit.alive:
                 is_current_turn = (index == self.current_unit_index)  # Check if it's the current unit's turn
                 # Draw units only if they belong to the current team or are in visible tiles
-                # unite dessinee uniquement si elle partient a l'equipe en cours ou elle est visible
                 if unit.color == current_team_color or (unit.x, unit.y) in self.visible_tiles and self.grid.tiles[unit.x][unit.y].overlay != "bush":
                     unit.draw(self.screen, is_current_turn=is_current_turn)
 
+    def resolve_attack(self, unit):
+        """Resolve the attack or ability use at the current target location."""
+        target_hit = False
 
+    # Vérifie si une ability est sélectionnée
+        if hasattr(unit, "selected_ability") and unit.selected_ability is not None:
+            ability = unit.selected_ability
+            target_unit = None
 
-    def resolve_attack(self, unit): # resolution d'une attaque
-        """Resolve the attack at the current target location."""
-        target_hit = False 
+        # Trouver la cible à la position indiquée
+            for other_unit in self.units:
+                if other_unit.alive and other_unit.x == unit.target_x and other_unit.y == unit.target_y:
+                    target_unit = other_unit
+                    break
 
-        # Find a valid target at the attack cursor location
-        for other_unit in self.units: # condition pour une cible valide
-            if (
-                other_unit.alive # l'unite cible est vivante
-                and other_unit.x == unit.target_x 
-                and other_unit.y == unit.target_y
-                and other_unit.color != unit.color # le cible appartient a une equipe diff 
-            ):
-                damage=unit.attack(other_unit)  # Utilise la méthode attack de l'unité
-                if other_unit.unit_type =="monster" and other_unit.alive==False :#unite est tuee
-                    Highlight.show_buff_animation(self,self.screen,other_unit.image) # Si la cible est un monstre qui vient de mourir, une animation de "buff" est affichée.
-                if damage > 0: # Enregistre un événement indiquant que des dégâts ont été infligés.
-                    self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
-                    # Vérifier si l'unité est morte
-                    if not other_unit.alive: #  Si la cible est morte après l'attaque, enregistre un message indiquant sa défaite.
-                        self.log_event(f"{other_unit.name} has been defeated!")
-                else: # Si aucun dégât n'a été infligé (attaque ratée), un message est enregistré.
-                    self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
-                target_hit = True # Une fois la cible touchée, on termine la recherche de cible.
-                break
-        if not target_hit: # Si aucune cible valide n’a été trouvée, un message est enregistré pour indiquer un échec.
+            if target_unit:
+            # Appliquer les effets de l'ability
+                if ability.type == "damage":
+                    target_unit.health -= ability.attack
+                    if target_unit.health <= 0:
+                        target_unit.alive = False
+                        self.log_event(f"{unit.name} used {ability.name} on {target_unit.name} and defeated them!")
+                    else:
+                        self.log_event(f"{unit.name} used {ability.name} on {target_unit.name}, dealing {ability.attack} damage!")
+                elif ability.type == "heal":
+                    target_unit.health = min(target_unit.max_health, target_unit.health + ability.attack)
+                    self.log_event(f"{unit.name} used {ability.name} on {target_unit.name}, healing {ability.attack} HP!")
+                elif ability.type == "buff":
+                    target_unit.defense += ability.defense
+                    self.log_event(f"{unit.name} used {ability.name} on {target_unit.name}, increasing defense by {ability.defense}!")
+                elif ability.type == "debuff":
+                    target_unit.attack = max(0, target_unit.attack - ability.attack)
+                    self.log_event(f"{unit.name} used {ability.name} on {target_unit.name}, reducing their attack power by {ability.attack}!")
+
+            # Ability has been used, so clear it
+                unit.selected_ability = None
+                target_hit = True
+            else:
+                self.log_event(f"{unit.name} tried to use {ability.name} but missed!")
+
+    # Si aucune ability n'est sélectionnée, effectuer une attaque normale
+        if not target_hit:
+            for other_unit in self.units:
+                if (
+                    other_unit.alive
+                    and other_unit.x == unit.target_x
+                    and other_unit.y == unit.target_y
+                    and other_unit.color != unit.color
+                ):
+                    damage = unit.attack(other_unit)  # Use the Unit's attack method
+                    if other_unit.unit_type == "monster" and not other_unit.alive:
+                        Highlight.show_buff_animation(self, self.screen, other_unit.image)
+                    if damage > 0:
+                        self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
+                        if not other_unit.alive:
+                            self.log_event(f"{other_unit.name} has been defeated!")
+                    else:
+                        self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
+                    target_hit = True
+                    break
+
+        if not target_hit:
             self.log_event(f"{unit.name} attacked but missed!")
 
-        unit.state = "done"  # Mark the unit as done after the attack
+        unit.state = "done"  # Mark the unit as done after the attack or ability use
+
         
 
 
-    def advance_to_next_unit(self): # avancer au tour suivant 
+    def advance_to_next_unit(self):
         """Advance to the next unit, skipping dead ones."""
         # Start from the current unit
-        start_index = self.current_unit_index # peemet de savoir ou commencer pour eviter dee tourner en boucle infinie si toutes les unites sont mortes
+        start_index = self.current_unit_index
 
         #we keep incrementing the index untill we fullfil the conditions
         while True:
             # Move to the next unit
-            self.current_unit_index = (self.current_unit_index + 1) % len(self.units) # len pour revenir au debut apres la dernier unite
+            self.current_unit_index = (self.current_unit_index + 1) % len(self.units)
 
             # Check if the unit is alive and that is part of either team red or team blue
-            if (self.units[self.current_unit_index].alive  
-                and self.units[self.current_unit_index].unit_type=="player"): # verification que l'unite est valide (vivante et d'un joueur)
+            if (self.units[self.current_unit_index].alive 
+                and self.units[self.current_unit_index].unit_type=="player"):
                 break
 
             # If we've cycled through all units and come back to the start, stop (prevents infinite loops)
-            if self.current_unit_index == start_index: # on a parcouru toutes les unites sans sen rouver une vivante
+            if self.current_unit_index == start_index:
                 self.log_event("No alive units remaining!")
-                return # la methode s'arrete ici 
+                return
 
 
     
-    def handle_turn(self): # gére les diff phases du tour d'une unite dans un jeu de strategie: deplacement , attaque et fin de tour
+    def handle_turn(self):
         """Handle movement and attacks for the current unit."""
-        current_time = pygame.time.get_ticks() # gerer les delais entre actions
-        current_unit = self.units[self.current_unit_index] # recupere l'unite en cours
-        keys = pygame.key.get_pressed() # capture l'etat actuel de toute des touches du clavier, qlls touches sont pressees
+        current_time = pygame.time.get_ticks()
+        current_unit = self.units[self.current_unit_index]
+        keys = pygame.key.get_pressed()
 
-        action_key = pygame.K_SPACE # touceh espace comme touche d'action
+        # Debounce mechanism to track key states
+        if not hasattr(self, "key_last_state"):
+            self.key_last_state = {}  # Initialize key state tracker
 
-        # debounce mechanism to avoid repeated triggers.
-        if not hasattr(self, "key_last_state"): 
-            self.key_last_state = {} # enregistre l'etat de la touche espace
-
-        key_just_pressed = keys[action_key] and not self.key_last_state.get(action_key, False) # verifier si la touche espace a ete pressee pour la premiere fois dans le tour actuel
-        self.key_last_state[action_key] = keys[action_key] # mettre a jour l'etat de la touche espace pour le tour actuel
+        def is_key_just_pressed(key):
+            """Check if a key was just pressed."""
+            pressed = keys[key] and not self.key_last_state.get(key, False)
+            self.key_last_state[key] = keys[key]
+            return pressed
 
         # Movement Phase
         if current_unit.state == "move":
@@ -241,27 +339,14 @@ class Game:
                 elif keys[pygame.K_RIGHT]:
                     current_unit.move(1, 0, self.grid)
                     self.last_move_time = current_time
-                elif key_just_pressed:
-                    if not any(
-                        unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
-                        and unit.alive for unit in self.units 
-                    ):  
-                        self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
-                        current_unit.state = "attack"
-                        current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
-                        next_team_color = self.units[self.current_unit_index].color
-                        Highlight.update_fog_visibility(self,next_team_color)
+                elif is_key_just_pressed(pygame.K_SPACE):  # Finalize movement
+                    self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
+                    current_unit.state = "attack"
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
 
-                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush":   #in the presence of an enemy on this position but it's a bush u just get assassinated
-                        self.log_event(f"{current_unit.name} got assassinated")
-                        current_unit.state="done"
-                        current_unit.alive=False
-                    else :      #if it's another unit u just can't finalise movement
-                        self.log_event("can't finalise movement , another unit is filling this position")
-                    
         # Attack Phase
         elif current_unit.state == "attack":
-            if current_time - self.last_move_time > 100:  # Delay of 100ms between movements
+            if current_time - self.last_move_time > 100:  # Delay of 100ms between cursor movements
                 new_target_x, new_target_y = current_unit.target_x, current_unit.target_y
 
                 # Move the attack cursor
@@ -282,28 +367,35 @@ class Game:
                     current_unit.target_x, current_unit.target_y = new_target_x, new_target_y
                     self.last_move_time = current_time
 
-            # Confirm attack
-            if key_just_pressed :
+            # Using Abilities
+            target = next(
+                (unit for unit in self.units if unit.alive and unit.x == current_unit.target_x and unit.y == current_unit.target_y),
+                None,
+            )
+            if hasattr(current_unit, "abilities"):
+                if is_key_just_pressed(pygame.K_1) and len(current_unit.abilities) > 0:
+                    if current_unit.abilities[0].use(current_unit, target):
+                        current_unit.state = "done"  # Mark turn as done after using an ability
+                elif is_key_just_pressed(pygame.K_2) and len(current_unit.abilities) > 1:
+                    if current_unit.abilities[1].use(current_unit, target):
+                        current_unit.state = "done"
+                elif is_key_just_pressed(pygame.K_3) and len(current_unit.abilities) > 2:
+                    if current_unit.abilities[2].use(current_unit, target):
+                        current_unit.state = "done"
+
+            # Standard attack logic if no ability is used
+            if is_key_just_pressed(pygame.K_SPACE):
                 self.resolve_attack(current_unit)
-                current_unit.state = "done"  # Mark attack as finished
+                current_unit.state = "done"
 
         # End Turn
-        if  keys[pygame.K_r] and current_unit.state == "done" :
+        if is_key_just_pressed(pygame.K_r) and current_unit.state == "done":
             current_unit.state = "move"  # Reset state for the next turn
             current_unit.initial_x, current_unit.initial_y = current_unit.x, current_unit.y  # Reset initial position
             self.advance_to_next_unit()
 
             next_team_color = self.units[self.current_unit_index].color
             Highlight.update_fog_visibility(self,next_team_color)
-
-
-
-    
-        
-
-
-
-
 
     def main_menu(self):
         """Display the main menu with options to start or quit."""
@@ -350,7 +442,7 @@ class Game:
 
 
 
-
+    
     def show_menu(self):
         """Enhanced team selection menu."""
         menu_running = True
@@ -398,7 +490,7 @@ class Game:
                     attr_text = small_font.render(line, True, (255, 255, 255))
                     self.screen.blit(attr_text, (SCREEN_WIDTH // 2 + 200, y_offset))
                     y_offset += 40
-                     # Show the selected champion's image larger
+                    # Show the selected champion's image larger
                 selected_image = pygame.transform.scale(selected_unit_info.image, (150, 150))
                 self.screen.blit(selected_image, (SCREEN_WIDTH - 420, y_offset+30))
 
@@ -477,13 +569,34 @@ class Game:
         return self.units
     
 
-
+    def select_abilities(self):
+        menu_running = True
+        selected_ability = None
+        while menu_running:
+            self.screen.fill((30, 30, 30))
+            y_offset = 100
+            for i, ability in enumerate(abilities):
+                text = self.font_small.render(f"{i + 1}: {ability.name} - {ability.description}", True, (255, 255, 255))
+                self.screen.blit(text, (50, y_offset))
+                y_offset += 40
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if pygame.K_1 <= event.key <= pygame.K_9:
+                        index = event.key - pygame.K_1
+                        if 0 <= index < len(abilities):
+                            selected_ability = abilities[index]
+                            menu_running = False
+        return selected_ability
 
     def run(self):
         """Main game loop."""
         self.main_menu()  # Display main menu
         self.units = self.show_menu()
-         
+        
         starting_team_color = self.units[self.current_unit_index].color
         Highlight.update_fog_visibility(self, starting_team_color)
         
@@ -508,12 +621,13 @@ class Game:
             
             #Display units
             self.draw_units()
-
+            self.draw_abilities_bar()
             # Handle current unit's turn
             self.handle_turn()
 
             #Show Info panel
             self.draw_info_panel()
+            
 
             #draw HUD
             
