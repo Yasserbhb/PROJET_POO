@@ -5,7 +5,7 @@ import random
 GRID_SIZE = 21
 CELL_SIZE = 45
 
-
+##addign the types of potions 
 
 
 # Tile Class
