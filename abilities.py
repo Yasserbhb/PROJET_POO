@@ -1,5 +1,6 @@
 import pygame
 
+
 class Abilities:
     def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description=""):
         self.name = name
