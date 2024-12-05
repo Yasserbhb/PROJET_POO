@@ -85,15 +85,16 @@ class Unit:
 
     def attack(self, target):
 
-        print(f"{self.name} attacks {target.name}!")
-        target.health -= self.damage  
-        target.damage_taken = self.damage 
+        effective_damage = max(0, self.damage - target.defense)  # Prevent negative damage
+        print(f"{self.name} attacks {target.name}, dealing {effective_damage} damage!")
+        target.health -= effective_damage  
+        target.damage_taken = effective_damage
         target.last_damage_time = pygame.time.get_ticks() 
         if target.health <= 0:
             target.health = 0
             target.alive = False
         target.react_to_attack(self)  # Trigger monster reaction
-        return self.damage
+        return effective_damage
 
 
 
