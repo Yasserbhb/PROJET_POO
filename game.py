@@ -573,6 +573,8 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
             
+            # Update buffs and debuffs
+            self.update_buffs_and_debuffs()
             
             # Draw grid and units
             self.grid.draw(self.screen)
