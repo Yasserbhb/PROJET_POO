@@ -216,70 +216,32 @@ class Game:
         """Resolve the attack or ability use at the current target location."""
         target_hit = False
 
-    # Vérifie si une ability est sélectionnée
-        if hasattr(unit, "selected_ability") and unit.selected_ability is not None:
-            ability = unit.selected_ability
-            target_unit = None
+    # Find a valid target at the attack cursor location
+        for other_unit in self.units:
+            if (
+                other_unit.alive
+                and other_unit.x == unit.target_x
+                and other_unit.y == unit.target_y
+                and other_unit.color != unit.color
+            ):
 
-        # Trouver la cible à la position indiquée
-            for other_unit in self.units:
-                if other_unit.alive and other_unit.x == unit.target_x and other_unit.y == unit.target_y:
-                    target_unit = other_unit
-                    break
-
-            if target_unit:
-            # Appliquer les effets de l'ability
-                if ability.type == "damage":
-                    target_unit.health -= ability.attack
-                    if target_unit.health <= 0:
-                        target_unit.alive = False
-                        self.log_event(f"{unit.name} used {ability.name} on {target_unit.name} and defeated them!")
-                    else:
-                        self.log_event(f"{unit.name} used {ability.name} on {target_unit.name}, dealing {ability.attack} damage!")
-                elif ability.type == "heal":
-                    target_unit.health = min(target_unit.max_health, target_unit.health + ability.attack)
-                    self.log_event(f"{unit.name} used {ability.name} on {target_unit.name}, healing {ability.attack} HP!")
-                elif ability.type == "buff":
-                    target_unit.defense += ability.defense
-                    self.log_event(f"{unit.name} used {ability.name} on {target_unit.name}, increasing defense by {ability.defense}!")
-                elif ability.type == "debuff":
-                    target_unit.attack = max(0, target_unit.attack - ability.attack)
-                    self.log_event(f"{unit.name} used {ability.name} on {target_unit.name}, reducing their attack power by {ability.attack}!")
-
-            # Ability has been used, so clear it
-                unit.selected_ability = None
+                damage=unit.attack(other_unit)  # Use the Unit's attack method
+                if other_unit.unit_type =="monster" and other_unit.alive==False :
+                    Highlight.show_buff_animation(self,self.screen,other_unit.image)
+                if damage > 0:
+                    self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
+                    # Vérifier si l'unité est morte
+                    if not other_unit.alive:
+                        self.log_event(f"{other_unit.name} has been defeated!")
+                else:
+                    self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
                 target_hit = True
-            else:
-                self.log_event(f"{unit.name} tried to use {ability.name} but missed!")
-
-    # Si aucune ability n'est sélectionnée, effectuer une attaque normale
-        if not target_hit:
-            for other_unit in self.units:
-                if (
-                    other_unit.alive
-                    and other_unit.x == unit.target_x
-                    and other_unit.y == unit.target_y
-                    and other_unit.color != unit.color
-                ):
-                    damage = unit.attack(other_unit)  # Use the Unit's attack method
-                    if other_unit.unit_type == "monster" and not other_unit.alive:
-                        Highlight.show_buff_animation(self, self.screen, other_unit.image)
-                    if damage > 0:
-                        self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
-                        if not other_unit.alive:
-                            self.log_event(f"{other_unit.name} has been defeated!")
-                    else:
-                        self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
-                    target_hit = True
-                    break
-
+                break
         if not target_hit:
             self.log_event(f"{unit.name} attacked but missed!")
 
-        unit.state = "done"  # Mark the unit as done after the attack or ability use
-
+        unit.state = "done"  # Mark the unit as done after the attack
         
-
 
     def advance_to_next_unit(self):
         """Advance to the next unit, skipping dead ones."""
