@@ -3,6 +3,8 @@ import random
 from unit import Unit , MonsterUnit
 from interface import Grid,Highlight 
 from abilities import Abilities
+from abilities import BuffAbility
+from abilities import DebuffAbility
 
 # Constants
 GRID_SIZE = 21
