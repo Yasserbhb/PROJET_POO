@@ -48,16 +48,14 @@ class Abilities:
         return True
 
 
-
-    def reduce_cooldown(self, time_passed):
+    def reduce_cooldown(self):
         """
-        Réduit le cooldown de l'ability en fonction du temps écoulé.
-
-        :param time_passed: Temps écoulé en secondes.
+        Réduit le cooldown de l'ability à chaque tour.
         """
         if self.remaining_cooldown > 0:
-            self.remaining_cooldown = max(0, self.remaining_cooldown - time_passed)
-
+            self.remaining_cooldown -= 1  # Réduit de 1 à chaque tour
+            if self.remaining_cooldown < 0:
+                self.remaining_cooldown = 0  # Assure que le cooldown ne soit pas négatif
 class BuffAbility(Abilities):
     def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=3):
         # Call the parent constructor with "buff" as the ability type
@@ -71,14 +69,18 @@ class BuffAbility(Abilities):
             return False
 
         target = target or user  
+        if target.color != user.color:  # Si la cible est un ennemi
+            print(f"{self.name}: You cannot use this ability on an enemy!")
+            return False
+        
         if self.attack:
             target.attack += self.attack
         if self.defense:
             target.defense += self.defense
 
-        target.is_buffed = True
-        if target.buff_duration == 0:  
-            target.buff_duration = 3  
+        target.is_buffed = True 
+        if target.buff_duration == 0: 
+            target.buff_duration = 3 
 
         print(f"{self.name}: {target.name} is buffed for 3 turns!")
         user.mana -= self.mana_cost
@@ -99,6 +101,10 @@ class DebuffAbility(Abilities):
 
         if target is None:
             print(f"{self.name}: No valid target to debuff!")
+            return False
+        
+        if target.color == user.color:
+            print(f"{self.name}: You cannot use this on an ally!")
             return False
 
         if self.attack:

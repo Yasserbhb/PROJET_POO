@@ -141,30 +141,6 @@ class Game:
                 #y_offset += text_surface.get_height() + 5
 
 
-    def draw_abilities_bar(self):
-        """Draw the abilities of the current unit at the top of the screen with dynamic sizing."""
-        # Définir la barre d'abilities
-        panel_x = 0  # La barre commence en haut à gauche
-        panel_width = SCREEN_WIDTH - 300  # La largeur de la barre 
-        panel_height = 40  # Hauteur de la barre
-        padding = 10  # Espacement interne pour les textes
-
-        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
-        font = pygame.font.Font(None, 16)
-        current_unit = self.units[self.current_unit_index]  # Récupérer l'unité actuelle
-        if hasattr(current_unit, "abilities"): # Vérifier que l'unité a des abilities
-            num_abilities = len(current_unit.abilities)
-            max_width_per_ability = (panel_width - 2 * padding) // max(1, num_abilities)  # Assurer au moins 1 espace
-            # Dessiner chaque ability
-            for i, ability in enumerate(current_unit.abilities):
-                ability_text = f"{i + 1}: {ability.name} (Mana: {ability.mana_cost}, CD: {ability.remaining_cooldown}s)"
-                # Calculer la position pour cette ability
-                ability_x = panel_x + padding + i * max_width_per_ability  # Décalage horizontal
-                text_surface = font.render(ability_text, True, (255, 255, 255))
-                # Centrer le texte dans son espace alloué
-                centered_x = ability_x + (max_width_per_ability - text_surface.get_width()) // 2
-                self.screen.blit(text_surface, (centered_x, panel_height // 4))
-
 
     def create_units(self):
         """Create units and assign abilities."""
@@ -247,10 +223,8 @@ class Game:
 
     def advance_to_next_unit(self):
         """Advance to the next unit, skipping dead ones."""
-        # Start from the current unit
         start_index = self.current_unit_index
 
-        #we keep incrementing the index untill we fullfil the conditions
         while True:
             # Move to the next unit
             self.current_unit_index = (self.current_unit_index + 1) % len(self.units)
