@@ -180,7 +180,25 @@ class Unit:
             else:
                 # Clear the damage_taken attribute after animation ends
                 self.damage_taken = 0
+        # Draw upward arrow if buffed and duration > 0
+        if self.is_buffed and self.buff_duration > 0:
+            arrow_color = (0, 255, 0)  # Green arrow for buffs
+            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE - 10)
+            pygame.draw.polygon(screen, arrow_color, [
+                (arrow_center[0], arrow_center[1] - 10),  # Top point
+                (arrow_center[0] - 5, arrow_center[1]),  # Bottom left
+                (arrow_center[0] + 5, arrow_center[1])   # Bottom right
+            ])
 
+        # Draw downward arrow if debuffed and duration > 0
+        if self.is_debuffed and self.debuff_duration > 0:
+            arrow_color = (255, 0, 0)  # Red arrow for debuffs
+            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE + 10)
+            pygame.draw.polygon(screen, arrow_color, [
+                (arrow_center[0], arrow_center[1] + 10),  # Bottom point
+                (arrow_center[0] - 5, arrow_center[1]),  # Top left
+                (arrow_center[0] + 5, arrow_center[1])   # Top right
+            ])
 
                 
 class MonsterUnit(Unit):
