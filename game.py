@@ -141,7 +141,61 @@ class Game:
                 #y_offset += text_surface.get_height() + 5
 
 
+    def draw_abilities_bar(self):
+        """Draw the abilities of the current unit at the top of the screen with dynamic sizing."""
+        panel_x = 0  # La barre commence en haut à gauche
+        panel_width = SCREEN_WIDTH - 300  # La largeur de la barre (réduite pour laisser de l'espace pour les autres éléments)
+        panel_height = 40  # Hauteur de la barre
+        padding = 10  # Espacement interne pour les textes
 
+        # Dessiner le fond de la barre
+        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
+        
+        # Définir la police
+        font = pygame.font.Font(None, 16)
+        
+        # Récupérer l'unité actuelle
+        current_unit = self.units[self.current_unit_index]  
+        if hasattr(current_unit, "abilities"):  # Vérifier que l'unité a des abilities
+            num_abilities = len(current_unit.abilities)
+            if num_abilities > 0:
+                max_width_per_ability = (panel_width - 2 * padding) // num_abilities  # Largeur de chaque capacité
+
+                # Dessiner chaque capacité
+                for i, ability in enumerate(current_unit.abilities):
+                    # Format du texte avec le nom, coût en mana et cooldown
+                    ability_text = f"{i + 1}: {ability.name} (Mana: {ability.mana_cost})"
+                    
+                    # Calculer la position pour cette capacité
+                    ability_x = panel_x + padding + i * max_width_per_ability  # Décalage horizontal
+                    text_surface = font.render(ability_text, True, (255, 255, 255))
+                    
+                    # Centrer le texte dans son espace alloué
+                    centered_x = ability_x + (max_width_per_ability - text_surface.get_width()) // 2
+                    self.screen.blit(text_surface, (centered_x, panel_height // 4))
+                    
+                    # Afficher le cooldown restant
+                    cooldown_text = f"CD: {ability.remaining_cooldown}s"
+                    cooldown_surface = font.render(cooldown_text, True, (255, 0, 0))  # Utiliser une couleur rouge pour le cooldown
+                    cooldown_x = ability_x + (max_width_per_ability - cooldown_surface.get_width()) // 2
+                    self.screen.blit(cooldown_surface, (cooldown_x, panel_height // 2))
+
+                    # Dessiner une barre de progression pour le cooldown
+                    if ability.remaining_cooldown > 0:
+                        cooldown_bar_width = int(max_width_per_ability * (1 - ability.remaining_cooldown / ability.cooldown))  # Fraction du cooldown
+                        pygame.draw.rect(self.screen, (255, 0, 0), (ability_x, panel_height - 5, cooldown_bar_width, 5))  # La barre de cooldown
+                    else:
+                        # Dessiner une barre pleine si le cooldown est terminé
+                        pygame.draw.rect(self.screen, (0, 255, 0), (ability_x, panel_height - 5, max_width_per_ability, 5))  # Barre pleine (cooldown terminé)
+
+            else:
+                # Si aucune capacité n'est disponible pour l'unité
+                no_abilities_text = "No abilities available"
+                text_surface = font.render(no_abilities_text, True, (255, 255, 255))
+                centered_x = (panel_width - text_surface.get_width()) // 2
+                self.screen.blit(text_surface, (centered_x, panel_height // 4))
+    
+    
     def create_units(self):
         """Create units and assign abilities."""
         return [
