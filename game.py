@@ -118,7 +118,7 @@ class Game:
                     rendered_surface = font.render(current_line, True, (255, 255, 255))
                     self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
                     y_offset += rendered_surface.get_height() + line_spacing
-                    current_line = word
+                    current_line = wordgit 
                 else:
                     current_line = test_line
             # Render the last line of the current event
@@ -226,17 +226,23 @@ class Game:
         start_index = self.current_unit_index
 
         while True:
-            # Move to the next unit
+            # Avancer à l'unité suivante
             self.current_unit_index = (self.current_unit_index + 1) % len(self.units)
+            current_unit = self.units[self.current_unit_index]
 
-            # Check if the unit is alive and that is part of either team red or team blue
-            if (self.units[self.current_unit_index].alive 
-                and self.units[self.current_unit_index].unit_type=="player"):
-                break
+            # Vérifier si l'unité est vivante et de type 'player'
+            if current_unit.alive and current_unit.unit_type == "player":
+                self.log_event(f"Advancing to next unit: {current_unit.name} (Player)")
 
-            # If we've cycled through all units and come back to the start, stop (prevents infinite loops)
+                # Réduire le cooldown de toutes les capacités de l'unité
+                for ability in current_unit.abilities:
+                    ability.reduce_cooldown()  # Appeler la méthode pour réduire le cooldown de chaque ability
+
+                break  # Sortir de la boucle une fois l'unité sélectionnée
+
+            # Si on revient à l'unité de départ, arrêter (empêche les boucles infinies)
             if self.current_unit_index == start_index:
-                self.log_event("No alive units remaining!")
+                self.log_event("No alive 'player' units remaining! Ending turn.")
                 return
 
 
