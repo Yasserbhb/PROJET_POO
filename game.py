@@ -118,7 +118,7 @@ class Game:
                     rendered_surface = font.render(current_line, True, (255, 255, 255))
                     self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
                     y_offset += rendered_surface.get_height() + line_spacing
-                    current_line = wordgit 
+                    current_line = word
                 else:
                     current_line = test_line
             # Render the last line of the current event
@@ -277,7 +277,7 @@ class Game:
 
     def advance_to_next_unit(self):
         """Advance to the next unit, skipping dead ones."""
-        start_index = self.current_unit_index
+        start_index = self.current_unit_index  # Enregistrer l'indice de départ pour éviter une boucle infinie
 
         while True:
             # Avancer à l'unité suivante
@@ -294,13 +294,17 @@ class Game:
 
                 break  # Sortir de la boucle une fois l'unité sélectionnée
 
-            # Si on revient à l'unité de départ, arrêter (empêche les boucles infinies)
+            # Si on revient à l'unité de départ ou s'il n'y a plus de joueur vivant
             if self.current_unit_index == start_index:
                 self.log_event("No alive 'player' units remaining! Ending turn.")
-                return
+                break  # Sortir de la boucle et terminer le tour
+
+        # Vérification si on a trouvé une unité valide ou non
+        if not any(unit.alive and unit.unit_type == "player" for unit in self.units):
+            self.log_event("No alive 'player' units remaining! Ending turn.")
 
 
-    
+        
     def handle_turn(self):
         """Handle movement and attacks for the current unit."""
         current_time = pygame.time.get_ticks()

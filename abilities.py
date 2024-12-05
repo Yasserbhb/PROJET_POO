@@ -56,6 +56,7 @@ class Abilities:
             self.remaining_cooldown -= 1  # Réduit de 1 à chaque tour
             if self.remaining_cooldown < 0:
                 self.remaining_cooldown = 0  # Assure que le cooldown ne soit pas négatif
+                
 class BuffAbility(Abilities):
     def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=3):
         # Call the parent constructor with "buff" as the ability type
