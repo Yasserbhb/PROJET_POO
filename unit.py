@@ -25,7 +25,15 @@ class Unit:
         self.target_x = x
         self.target_y = y
         self.abilities = abilities if abilities else []  # Default to an empty list if no abilities are provided
-
+        
+        # new attributes
+        self.attack = damage 
+        self.defense = 0  
+        self.is_buffed = False
+        self.is_debuffed = False
+        self.buff_duration = 0
+        self.debuff_duration = 0
+        
         # Initialize for damage display
         self.last_damage_time = None 
         self.damage_taken = 0 
