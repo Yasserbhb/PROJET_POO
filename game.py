@@ -549,6 +549,14 @@ class Game:
                             menu_running = False
         return selected_ability
 
+    def update_buffs_and_debuffs(self):
+        """Update active buffs and debuffs on all units."""
+        for unit in self.units:
+            if hasattr(unit, "abilities"):
+                for ability in unit.abilities:
+                    if isinstance(ability, (BuffAbility, DebuffAbility)) and ability.remaining_duration > 0:
+                        ability.update_duration(unit)
+                        
     def run(self):
         """Main game loop."""
         self.main_menu()  # Display main menu
