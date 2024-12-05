@@ -57,3 +57,30 @@ class Abilities:
         """
         if self.remaining_cooldown > 0:
             self.remaining_cooldown = max(0, self.remaining_cooldown - time_passed)
+
+class BuffAbility(Abilities):
+    def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=3):
+        # Call the parent constructor with "buff" as the ability type
+        super().__init__(name, mana_cost, cooldown, "buff", attack=attack, defense=defense, description=description)
+        self.duration = duration  # Number of turns the buff lasts
+        self.remaining_duration = 0
+
+    def use(self, user, target=None):
+        if self.remaining_cooldown > 0:
+            print(f"{self.name} is on cooldown!")
+            return False
+
+        target = target or user  
+        if self.attack:
+            target.attack += self.attack
+        if self.defense:
+            target.defense += self.defense
+
+        target.is_buffed = True
+        if target.buff_duration == 0:  
+            target.buff_duration = 3  
+
+        print(f"{self.name}: {target.name} is buffed for 3 turns!")
+        user.mana -= self.mana_cost
+        self.remaining_cooldown = self.cooldown
+        return True
