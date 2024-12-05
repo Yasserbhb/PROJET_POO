@@ -166,37 +166,33 @@ class Game:
 
     def create_units(self):
         """Create units and assign abilities."""
-    
         return [
             Unit(3, 15, "Garen", 400, 99, self.unit_images["garen"], None, 3, 2, "player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=800, description="A quick slash attack."),
-                Abilities("Defend", 20, 10, "buff", defense=40, description="Increases defense temporarily."),
-                Abilities("Charge", 40, 8, "damage", attack=120, description="A powerful charging attack."),
-            ]), # ("cout de mana 30", portee 5 cases )
-
+                Abilities("Slash", 30, 5, "damage", attack=200, description="A quick slash attack."),
+                BuffAbility("Fortify", 20, 10, defense=50, description="Increases defense temporarily for 3 turns."),
+                Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target."),
+            ]),
             Unit(4, 16, "Ashe", 500, 70, self.unit_images["ashe"], None, 3, 2, "player", mana=100, abilities=[
-                Abilities("Arrow Shot", 20, 5, "damage", attack=500, description="Shoots an arrow at the target."),
-                Abilities("Frost Arrow", 30, 10, "debuff", attack=20, description="Slows the target."),
-                Abilities("Healing Wind", 50, 15, "heal", attack=60, description="Heals an ally."),
+                Abilities("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
+                DebuffAbility("Frost Arrow", 30, 10, attack=20, defense=10, description="Slows and weakens the target."),
+                BuffAbility("Healing Wind", 50, 15, defense=20, description="Restores health to an ally and grants temporary defense."),
             ]),
-
-            Unit(15, 3, "Darius", 700, 90, self.unit_images["darius"], None, 3, 2, "player", abilities=[
-                Abilities("Decimate", 50, 7, "damage", attack=100, description="Spins his axe, dealing damage to nearby enemies."),
-                Abilities("Crip Strike", 40, 8, "damage", attack=120, description="A heavy strike that slows the target."),
-                Abilities("Nox Guillot", 80, 15, "damage", attack=200, description="Executes an enemy below a health threshold."),
+            Unit(15, 3, "Darius", 700, 90, self.unit_images["darius"], None, 3, 2, "player", mana=120, abilities=[
+                Abilities("Decimate", 50, 7, "damage", attack=250, description="Spins his axe, dealing damage to nearby enemies."),
+                DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
+                Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
             ]),
-
-            Unit(16, 4, "Soraka", 490, 50, self.unit_images["soraka"], None, 3, 2, "player", abilities=[
+            Unit(16, 4, "Soraka", 490, 50, self.unit_images["soraka"], None, 3, 2, "player", mana=150, abilities=[
                 Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
-                Abilities("Astr Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
-                Abilities("Wish", 100, 20, "heal", attack=150, description="Restores health to all allies."),
+                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
+                BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
+            ]),
+            Unit(0, 0, "Rengar", 700, 180, self.unit_images["rengar"], None, 3, 2, "player", mana=120, abilities=[
+                Abilities("Savagery", 30, 5, "damage", attack=300, description="Empowered strike dealing extra damage."),
+                BuffAbility("Battle Roar", 40, 8, defense=40, description="Boosts defense and regenerates health."),
+                DebuffAbility("Thrill of the Hunt", 80, 20, attack=20, description="Tracks the enemy, reducing their attack temporarily."),
             ]),
 
-            Unit(0, 0, "Rengar", 700, 180, self.unit_images["rengar"], None, 3, 2, "player", abilities=[
-                Abilities("Savagery", 30, 5, "damage", attack=150, description="Empowered strike dealing extra damage."),
-                Abilities("Battle Roar", 40, 8, "buff", defense=30, description="Boosts defense and deals minor damage."),
-                Abilities("Thrill ", 80, 20, "buff", defense=50, description="Enhances vision and movement speed."),
-            ]),
 
             MonsterUnit(10, 10, "BigBuff", 1000, 50, self.unit_images["bigbuff"], "neutral", 3, 2, "monster"),
             MonsterUnit(5, 7, "BlueBuff", 390, 250, self.unit_images["bluebuff"], "neutral", 3, 2, "monster"),
@@ -205,7 +201,6 @@ class Game:
             Unit(1, 19, "NexusBlue", 390, 50, self.unit_images["baseblue"], "blue", 0, 0, "base"),
             Unit(19, 1, "NexusRed", 390, 50, self.unit_images["basered"], "red", 0, 0, "base"),
         ]
-
 
     def draw_units(self):
         """Draw all units on the grid with visibility logic."""
