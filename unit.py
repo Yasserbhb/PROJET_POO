@@ -1,7 +1,7 @@
 import pygame
 
 
-CELL_SIZE = 45
+CELL_SIZE = 40
 class Unit:
     """A single unit in the game."""
     def __init__(self, x, y, name, health, damage,defense,image_path, color, move_range, attack_range, unit_type, mana=100, abilities=None):
@@ -16,31 +16,31 @@ class Unit:
         self.max_health = health
         self.defense=defense
         self.damage=damage
-        # Buff and debuff trackers
-        self.buffed_damage_increase = 0
-        self.buffed_defense_increase = 0
-        self.debuffed_attack_reduction = 0
-        self.debuffed_defense_reduction = 0
-
         self.mana = mana
         self.max_mana = mana
         self.move_range = move_range
         self.attack_range = attack_range
-        
         self.unit_type=unit_type   #player or neutral or base_blue or base_red
         self.alive = True
         self.state = "move"  # "move" or "attack"
+        self.selected_ability = None  # Currently selected ability
 
         # Attack targeting cursor
         self.target_x = x
         self.target_y = y
         self.abilities = abilities if abilities else []  # Default to an empty list if no abilities are provided
 
-        # new attributes
+
+        # Buff and debuff trackers
+        self.buffed_damage_increase = 0
+        self.buffed_defense_increase = 0
+        self.debuffed_attack_reduction = 0
+        self.debuffed_defense_reduction = 0
         self.buff_duration = 0
         self.debuff_duration = 0
         self.is_buffed = False
         self.is_debuffed = False
+
         # Initialize for damage display
         self.last_damage_time = None 
         self.damage_taken = 0 
