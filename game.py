@@ -274,51 +274,6 @@ class Game:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
@@ -337,7 +292,7 @@ class Game:
                 DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
                 Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
             ]), 
-            Unit(16,4, "Soraka",490, 50 ,0,self.unit_images["soraka"], None,3,2,"player", mana=150, abilities=[
+            Unit(16,4, "Soraka",490, 50 ,0,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
                 Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
                 Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
@@ -399,7 +354,7 @@ class Game:
                 and other_unit.y == unit.target_y
                 and other_unit.color != unit.color
             ):
-                damage=unit.attack(other_unit)  # Use the Unit's attack method
+                damage=unit.attack(other_unit,unit.damage)  # Use the Unit's attack method
                 if other_unit.unit_type =="monster" and other_unit.alive==False :
                     Highlight.show_buff_animation(self,self.screen,other_unit.image)
                 if damage > 0:
@@ -523,15 +478,19 @@ class Game:
             if hasattr(current_unit, "abilities"):
                 if keys[pygame.K_1] and len(current_unit.abilities) > 0:
                     current_unit.selected_ability = current_unit.abilities[0]
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
                    
                 elif keys[pygame.K_2] and len(current_unit.abilities) > 1:
                     current_unit.selected_ability = current_unit.abilities[1]
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
 
                 elif keys[pygame.K_3] and len(current_unit.abilities) > 2:
                     current_unit.selected_ability = current_unit.abilities[2]
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
                    
                 elif keys[pygame.K_c]:  # Cancel ability selection
                     current_unit.selected_ability = None
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
 
 
             # Execute Selected Ability or Basic Attack
