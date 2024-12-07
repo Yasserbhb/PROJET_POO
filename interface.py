@@ -3,7 +3,7 @@ import random
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 45
+CELL_SIZE = 40
 
 ##addign the types of potions 
 
@@ -197,15 +197,23 @@ class Highlight:
 
                         
         elif unit.state == "attack":
-            # Highlight attack range
-            for dx in range(-unit.attack_range, unit.attack_range + 1):
-                for dy in range(-unit.attack_range, unit.attack_range + 1):
+            # Determine the current attack range based on the selected ability
+            if hasattr(unit, "selected_ability") and unit.selected_ability is not None:
+                attack_range = unit.selected_ability.attack_radius
+            else:
+                attack_range = unit.attack_range
+
+            # Highlight the attack range
+            for dx in range(-attack_range, attack_range + 1):
+                for dy in range(-attack_range, attack_range + 1):
                     x, y = unit.x + dx, unit.y + dy
                     if (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and
-                            abs(dx) + abs(dy) <= unit.attack_range):
-                        overlay.fill((250, 0, 0, 50))  # Red with transparency (alpha = 100)
+                            abs(dx) + abs(dy) <= attack_range):  # Manhattan distance restriction
+                        overlay.fill((250, 0, 250, 50) if unit.selected_ability else (250, 0, 0, 50))  
+                        # Green for ability, red for normal attack
                         rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                         self.screen.blit(overlay, rect)
+
 
             # Highlight the target cursor
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
