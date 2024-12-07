@@ -83,7 +83,29 @@ class Unit:
     #neutral monsters reacting to attacks
     def react_to_attack(self, attacker):
         return
-
+    def select_ability(self):
+        """Allow the player to select an ability."""
+        if not self.abilities:
+            print("No abilities available.")
+            return None
+        
+        print("Please select an ability:")
+        for idx, ability in enumerate(self.abilities):
+            print(f"{idx + 1}: {ability.name} - {ability.description}")
+        
+        # Loop until the user selects a valid ability
+        while True:
+            try:
+                choice = int(input(f"Select ability (1-{len(self.abilities)}): "))
+                if 1 <= choice <= len(self.abilities):
+                    self.current_ability = self.abilities[choice - 1]
+                    print(f"You selected: {self.current_ability.name}")
+                    self.has_selected_ability = True  # Mark that an ability was selected
+                    break  # Exit the loop after selecting an ability
+                else:
+                    print(f"Invalid choice. Please select between 1 and {len(self.abilities)}.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
     def attack(self, target):
 
         effective_damage = max(0, self.damage - target.defense)  # Prevent negative damage

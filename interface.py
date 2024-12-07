@@ -175,7 +175,11 @@ class Highlight:
                         
         elif unit.state == "attack":
             # Vérifie si une capacité est sélectionnée
-            
+            if not unit.current_ability:
+                if not getattr(unit, 'ability_error_printed', False):  # Vérifie si l'erreur a déjà été imprimée
+                    print("No ability selected.")
+                    unit.ability_error_printed = True  # Marque que l'erreur a été imprimée
+                return 
 
             # Vérifie que la capacité a un radius d'attaque
             if not hasattr(unit.current_ability, "attack_radius"):
