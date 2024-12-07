@@ -1,8 +1,8 @@
 import pygame
 import random
-from unit import Unit , MonsterUnit
+from unit import Unit 
 from interface import Grid,Highlight,Pickup
-from abilities import Abilities,DebuffAbility,BuffAbility
+
 
 
 # Constants
@@ -24,8 +24,10 @@ def load_textures():
         "bush": pygame.image.load("assets/bush.png"),
         "barrier": pygame.image.load("assets/inhibetor.png"),
         #pick ups
-        "brown_potion": pygame.image.load("assets/brown_potion.png"),
+        "red_potion": pygame.image.load("assets/red_potion.png"),
         "blue_potion": pygame.image.load("assets/blue_potion.png"),
+        "green_potion": pygame.image.load("assets/green_potion.png"),
+        "golden_potion": pygame.image.load("assets/golden_potion.png"),
         
         
     }
@@ -49,7 +51,15 @@ def load_indicators():
         "redsquare": pygame.image.load("assets/redsquare.png"),
     }
 
-
+def load_pickups():
+    """Load the different potion types"""
+    return{
+        #pick ups
+        "red_potion": pygame.image.load("assets/red_potion.png"),
+        "blue_potion": pygame.image.load("assets/blue_potion.png"),
+        "green_potion": pygame.image.load("assets/green_potion.png"),
+        "golden_potion": pygame.image.load("assets/golden_potion.png"),
+    }
 
 
 
@@ -63,6 +73,7 @@ class Game:
         self.unit_images = load_unit_images()
         self.indicators = load_indicators()
         self.textures_file=load_textures()
+        self.pickup_textures=load_pickups()
         self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
         self.pickups=[]
@@ -81,7 +92,7 @@ class Game:
         self.font_title = pygame.font.Font("assets/League.otf", 65)
         self.font_small = pygame.font.Font("assets/RussoOne.ttf", 36)
         self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background
-        self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load main menu background
+        self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load champion selection background
         
         self.key_last_state = {} # prevent repeated actions
         
@@ -267,50 +278,6 @@ class Game:
 
 
 
-
-
-
-
-
-
-
-    def create_units(self):
-        """Create units and place them on the grid."""       
-        return [            
-            Unit(3,15, "Garen", 900, 99,0, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=200, description="A quick slash attack.",attack_radius=3),
-                BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
-                Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
-            ]),  
-            Unit(4,16, "Ashe", 500, 70,0, self.unit_images["ashe"], None,3,2,"player", mana=100, abilities=[
-                Abilities("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
-                DebuffAbility("Frost Arrow", 30, 10, attack=20, defense=10, description="Slows and weakens the target."),
-                BuffAbility("Healing Wind", 50, 15, defense=20, description="Restores health to an ally and grants temporary defense."),
-            ]),  
-            Unit(15,3, "Darius",700, 90,0,self.unit_images["darius"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Decimate", 50, 7, "damage", attack=250, description="Spins his axe, dealing damage to nearby enemies."),
-                DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
-                Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
-            ]), 
-            Unit(16,4, "Soraka",490, 50 ,0,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
-                Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
-                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
-                BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
-            ]),  
-            Unit(0,0, "Rengar",700, 180 ,0,self.unit_images["rengar"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Savagery", 30, 5, "damage", attack=300, description="Empowered strike dealing extra damage."),
-                BuffAbility("Battle Roar", 40, 8, defense=40, description="Boosts defense and regenerates health."),
-                DebuffAbility("Thrill of the Hunt", 80, 20, attack=20, description="Tracks the enemy, reducing their attack temporarily."),
-            ]),  
-
-
-            MonsterUnit(10, 10, "BigBuff",1000, 50 ,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(1, 13, "BlueBuff",390, 250 ,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(15, 13, "RedBuff",390, 250 ,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
-
-            Unit(1, 19, "NexusBlue",390, 50 ,0,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
-            Unit(19, 1, "NexusRed",390, 50 ,0,self.unit_images["basered"], "red",0,0,"base"), #Red team base
-       ]
     
     def draw_units(self):
         """Draw all units on the grid with visibility logic."""
@@ -326,12 +293,14 @@ class Game:
 
     def create_pickups(self):
         types_of_pickups = {
-            "brown_potion": [(15,1),(1,14)],
+            "red_potion": [(15,1),(1,14)],
             "blue_potion":[(16,1),(2,13)],
+            "green_potion": [(15,0),(0,14)],
+            "golden_potion":[(10,1),(1,12)],
         }
         for name_of_pickup,position in types_of_pickups.items():
             for x,y in position :
-                p=Pickup(x, y, self.textures_file,name_of_pickup) 
+                p=Pickup(x, y, self.pickup_textures,name_of_pickup) 
                 self.pickups.append(p)
 
     def draw_pickups(self):
@@ -394,7 +363,8 @@ class Game:
                 return
 
 
-    
+#add a mana and health regen for each round (2% mana ,1%hp)   
+
     def handle_turn(self):
         """Handle movement and attacks for the current unit."""
         current_time = pygame.time.get_ticks()
@@ -529,12 +499,6 @@ class Game:
 
 
 
-    
-        
-
-
-
-
 
     def main_menu(self):
         """Display the main menu with options to start or quit."""
@@ -591,7 +555,7 @@ class Game:
         small_font = self.font_small
 
         # Get all units from create_units
-        all_units = self.create_units()
+        all_units = Unit.create_units(self)
 
         # Filter player units for selection (those with team=None)
         available_units = [unit for unit in all_units if unit.color is None]
@@ -738,7 +702,6 @@ class Game:
             Highlight.draw_fog(self,self.screen)
             
             #Display pcikups
-            
             self.draw_pickups()
             
             #Display units
@@ -763,31 +726,23 @@ if __name__ == "__main__":
     Game().run()
 
 
-#make grid have 3 different maps , everything related to grid stays in grid and make ice make you slower next round (less range) , and add a hiding place that we can use as a dmg boost if you hit from it
-#make an ability class that has a name, description, and a function that gets called when the ability is used and a lot of attributes
+#everything related to grid stays in grid , and add a hiding place that we can use as a dmg boost if you hit from it
 #take the turn handler to a diffrent class ?
-# create a HUD as a class
-# add pick ups class
 # take in rnage verification to game instead of unit , so resolve attack checks all the enviromeent and confirms if we attack , and attack method only works after we confim that so it just modifies the hp and effects...
-# i want the highlight for range to also be like the attack so the move phase only the cursor for target position moves than when we confirm , the unit snaps to that posotion
-# verify all conditions after creating TP and healings and effects 
+ 
 
 # add objective class it has a nexus also red and blue monster  (red and blue monster spawn once each 6 rounds)
 # each team has 2 keys 1 on each player and the third is hidden in a monster ( 2 keys 2 buffs , 1 for each team and there are 3 monsters total ) and one that spawns randomly
-# once u have 3 keys of the enemy (1 from monster 1 random and 1 from killing them) the barriere disappears and their nexus is visible and u can hit it )
+# once u have 3 keys of the enemy  the barriere disappears and their nexus is visible and u can hit it 
 # game ends with nexus exploding 
-# USE INHERETENCE FOR TILES UNITS AND ABILITIES to let the main class focus on basic tasks and add more complexity
 
 
-
-#work to do tomorrow
-#take the info panel to interface if possible
-#1st thing to do tmrrw morning : and add some pick ups && reacting to attacks (maybe make monsters and base to inheretance) and also fix all the attacking methods to remove what's redandent
-#2nd thing is creating an ability class and surely use inheretence 
 #create split screen
-#5th check if i want to make a cursor for moving phase , if yes i need to fix the move method so it is generalised bcs the unit will snap right in (so both fct tell me im not in a good spot , but if i need to call move without handler i'll be fine)
-#6th make subclasses 
 #add reviving system and lvl system but the pickups will tend to be closer to the losing team 
-# after killing  buff add an animation that covers eveyrhting and shows what the buff gave you
 
-#if u jump into a bush and there is a unit there u die bcs u get assassinated
+
+#to do:
+#add types of potions (all details under the pickup class)
+#add crit chance to unit
+#take defense into consideration before taking dmg
+#new abilities deatiled under the abilities files

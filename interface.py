@@ -42,12 +42,12 @@ class Tile:
 
 
 class Pickup:
-    def __init__(self, x, y, textures_file ,overlay):
+    def __init__(self, x, y, pickup_textures ,overlay):
  
         self.x = x
         self.y = y
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
-        self.textures_file = textures_file
+        self.pickup_textures = pickup_textures
 
         self.picked= False
         
@@ -58,24 +58,42 @@ class Pickup:
 
         # Draw overlay on top, if present
         if (self.x,self.y) in visible_tiles and not self.picked :
-            overlay_texture = self.textures_file[self.overlay]
+            overlay_texture = self.pickup_textures[self.overlay]
             screen.blit(pygame.transform.scale(overlay_texture, (CELL_SIZE, CELL_SIZE)), rect)
 
 
-
-    def picked_used(self, player,pickups):
+    def picked_used(self, unit,pickups):
             
-            if player.health < player.max_health and not self.picked:
-                heal_amount = 200  # Define how much the potion heals
-                player.health = min(player.max_health, player.health + heal_amount)  # Heal but cap at max_health
-                print(f"{player.name} healed for {heal_amount} HP!")  # Debug output
-                print(f"{player.state}")
+            if not self.picked:
+                if self.overlay == "red_potion":
+                    # +20% of max HP
+                    heal_amount = int(unit.max_health * 0.2)
+                    unit.attack(unit, -heal_amount)
+                    print("20 max hp healed")
+
+                elif self.overlay == "blue_potion":
+                    # Restore full mana
+                    unit.mana = unit.max_mana
+                    print("fully restored mana")
+                elif self.overlay == "green_potion":
+                    # Increase max HP and heal fully
+                    increase = 200  
+                    unit.max_health += increase
+                    heal_amount = unit.max_health - unit.health
+                    unit.attack(unit, -heal_amount)  
+                    print("max hp increased")
+
+                elif self.overlay == "golden_potion":
+                    # Reduce all cooldowns by half
+                    for ability in unit.abilities:
+                        ability.remaining_cooldown = ability.remaining_cooldown // 2
+                    print("cooldowns reduced")
+
+
                 
             self.picked=True
             self.remove_pickup(pickups)
                 #print(f"{self.x},{self.y}:{self.picked}")
-
-
 
     def remove_pickup(self,pickups):
         pickups.remove(self)
@@ -83,7 +101,9 @@ class Pickup:
 
         
 
-        
+
+# black gives you a short teleport ability u can use whenever , only 1 spawns per game
+# permanently increases the critical chance by 10%        
 
 
 # Grid Class

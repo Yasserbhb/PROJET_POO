@@ -137,6 +137,5 @@ class DebuffAbility(Abilities):
         self.remaining_cooldown = self.cooldown
         return True
     
-
-#vision ability 
-#teleport ability
+#using inheretence : vision ability teleport ability
+#for buffs : crit and attack range(lasts long)
