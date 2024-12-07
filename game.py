@@ -7,8 +7,8 @@ from abilities import Abilities,DebuffAbility,BuffAbility
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 45
-SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE 
+CELL_SIZE = 40
+SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
 FPS = 60
 
 # Load assets
@@ -137,11 +137,132 @@ class Game:
 
 #space for the abilities abr
 
+    def draw_abilities_bar(self):
+        """Draw the abilities bar and HUD for the current unit at the bottom of the screen."""
+        # Bar dimensions
+        bar_height = 100
+        bar_y = SCREEN_HEIGHT - bar_height
+        padding = 10  # Padding for internal elements
+        icon_size = 80  # Size for the champion's icon
 
+        # Background panel for the HUD
+        pygame.draw.rect(self.screen, (30, 30, 30), (0, bar_y, SCREEN_WIDTH, bar_height))
 
+        # Get the current unit
+        current_unit = self.units[self.current_unit_index]
 
+        # Define fonts
+        font_large = pygame.font.Font(None, 24)
+        font_small = pygame.font.Font(None, 16)
 
+        # Champion icon
+        if current_unit.image:
+            self.screen.blit(
+                current_unit.image, (padding, bar_y + (bar_height - icon_size) // 2)
+            )
 
+        # Unit Stats Display (Name, HP, Mana)
+        stats_x = padding + icon_size + padding
+        stats_y = bar_y + padding
+
+        # Unit name
+        name_surface = font_large.render(current_unit.name, True, (255, 255, 255))
+        self.screen.blit(name_surface, (stats_x, stats_y))
+
+        # HP Bar
+        hp_bar_width = 200
+        hp_bar_height = 15
+        hp_x = stats_x
+        hp_y = stats_y + name_surface.get_height() + padding
+        pygame.draw.rect(
+            self.screen, (255, 0, 0), (hp_x, hp_y, hp_bar_width, hp_bar_height)
+        )
+        hp_fill_width = int(hp_bar_width * (current_unit.health / current_unit.max_health))
+        pygame.draw.rect(
+            self.screen, (0, 255, 0), (hp_x, hp_y, hp_fill_width, hp_bar_height)
+        )
+        hp_text = f"{current_unit.health}/{current_unit.max_health}"
+        hp_text_surface = font_small.render(hp_text, True, (0, 0, 0))
+        self.screen.blit(
+            hp_text_surface,
+            (hp_x + (hp_bar_width - hp_text_surface.get_width()) // 2, hp_y),
+        )
+
+        # Mana Bar
+        mana_bar_width = 200
+        mana_bar_height = 10
+        mana_x = stats_x
+        mana_y = hp_y + hp_bar_height + padding
+        pygame.draw.rect(
+            self.screen, (0, 0, 255), (mana_x, mana_y, mana_bar_width, mana_bar_height)
+        )
+        mana_fill_width = int(mana_bar_width * (current_unit.mana / current_unit.max_mana))
+        pygame.draw.rect(
+            self.screen, (0, 191, 255), (mana_x, mana_y, mana_fill_width, mana_bar_height)
+        )
+
+        # Draw abilities
+        if hasattr(current_unit, "abilities"):
+            num_abilities = len(current_unit.abilities)
+            if num_abilities > 0:
+                ability_x_start = stats_x + hp_bar_width + 2 * padding
+                ability_width = (SCREEN_WIDTH - ability_x_start - padding) // num_abilities
+
+                for i, ability in enumerate(current_unit.abilities):
+                    # Highlight the selected ability
+                    if current_unit.selected_ability == ability:
+                        ability_bg_color = (0, 128, 255)  # Blue background for selected ability
+                    else:
+                        ability_bg_color = (50, 50, 50)  # Default gray background
+
+                    ability_x = ability_x_start + i * ability_width
+                    ability_rect = pygame.Rect(
+                        ability_x, bar_y + padding, ability_width - padding, bar_height - 2 * padding
+                    )
+                    pygame.draw.rect(self.screen, ability_bg_color, ability_rect)
+                    pygame.draw.rect(self.screen, (255, 255, 255), ability_rect, 2)
+
+                    # Ability name and mana cost
+                    ability_text = f"{i + 1}: {ability.name} (Mana: {ability.mana_cost})"
+                    text_surface = font_small.render(ability_text, True, (255, 255, 255))
+                    text_x = ability_x + (ability_width - text_surface.get_width()) // 2
+                    self.screen.blit(text_surface, (text_x, bar_y + padding + 10))
+
+                    # Cooldown display
+                    cooldown_text = f"CD: {ability.remaining_cooldown}s"
+                    cooldown_surface = font_small.render(cooldown_text, True, (255, 0, 0))
+                    cooldown_x = ability_x + (ability_width - cooldown_surface.get_width()) // 2
+                    self.screen.blit(
+                        cooldown_surface, (cooldown_x, bar_y + padding + 30)
+                    )
+
+                    # Cooldown bar
+                    cooldown_bar_width = ability_width - 2 * padding
+                    cooldown_bar_x = ability_x + padding
+                    cooldown_bar_y = bar_y + bar_height - 15
+                    pygame.draw.rect(
+                        self.screen, (50, 50, 50), (cooldown_bar_x, cooldown_bar_y, cooldown_bar_width, 5)
+                    )
+                    if ability.cooldown > 0:
+                        cooldown_fill_width = int(
+                            cooldown_bar_width
+                            * (1 - ability.remaining_cooldown / ability.cooldown)
+                        )
+                        pygame.draw.rect(
+                            self.screen,
+                            (0, 255, 0),
+                            (cooldown_bar_x, cooldown_bar_y, cooldown_fill_width, 5),
+                        )
+            else:
+                # No abilities available
+                no_abilities_text = "No abilities available"
+                no_abilities_surface = font_small.render(
+                    no_abilities_text, True, (255, 255, 255)
+                )
+                no_abilities_x = stats_x + hp_bar_width + padding
+                self.screen.blit(
+                    no_abilities_surface, (no_abilities_x, bar_y + padding)
+                )
 
 
 
@@ -202,9 +323,9 @@ class Game:
         """Create units and place them on the grid."""       
         return [            
             Unit(3,15, "Garen", 900, 99,0, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=200, description="A quick slash attack."),
-                BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns."),
-                Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target."),
+                Abilities("Slash", 30, 5, "damage", attack=200, description="A quick slash attack.",attack_radius=3),
+                BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
+                Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
             ]),  
             Unit(4,16, "Ashe", 500, 70,0, self.unit_images["ashe"], None,3,2,"player", mana=100, abilities=[
                 Abilities("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
@@ -377,6 +498,12 @@ class Game:
             if current_time - self.last_move_time > 100:  # Delay of 100ms between movements
                 new_target_x, new_target_y = current_unit.target_x, current_unit.target_y
 
+                # Determine current range restriction
+                if hasattr(current_unit, "selected_ability") and current_unit.selected_ability is not None:
+                    current_range = current_unit.selected_ability.attack_radius
+                else:
+                    current_range = current_unit.attack_range
+
                 # Move the attack cursor
                 if keys[pygame.K_UP]:
                     new_target_y = max(0, current_unit.target_y - 1)
@@ -387,36 +514,39 @@ class Game:
                 elif keys[pygame.K_RIGHT]:
                     new_target_x = min(GRID_SIZE - 1, current_unit.target_x + 1)
 
-                # Enforce attack range restriction
-                if (
-                    abs(current_unit.x - new_target_x) + abs(current_unit.y - new_target_y)
-                    <= current_unit.attack_range
-                ):
+                # Enforce range restriction
+                if abs(current_unit.x - new_target_x) + abs(current_unit.y - new_target_y) <= current_range:
                     current_unit.target_x, current_unit.target_y = new_target_x, new_target_y
                     self.last_move_time = current_time
 
-            # Using Abilities
+            # Ability Selection
+            if hasattr(current_unit, "abilities"):
+                if keys[pygame.K_1] and len(current_unit.abilities) > 0:
+                    current_unit.selected_ability = current_unit.abilities[0]
+                   
+                elif keys[pygame.K_2] and len(current_unit.abilities) > 1:
+                    current_unit.selected_ability = current_unit.abilities[1]
+
+                elif keys[pygame.K_3] and len(current_unit.abilities) > 2:
+                    current_unit.selected_ability = current_unit.abilities[2]
+                   
+                elif keys[pygame.K_c]:  # Cancel ability selection
+                    current_unit.selected_ability = None
+
+
+            # Execute Selected Ability or Basic Attack
             target = next(
                 (unit for unit in self.units if unit.alive and unit.x == current_unit.target_x and unit.y == current_unit.target_y),
                 None,
             )
-            if hasattr(current_unit, "abilities"):
-                if keys[pygame.K_1] and len(current_unit.abilities) > 0:
-                    if current_unit.abilities[0].use(current_unit, target):
-                        current_unit.state = "done"  # Mark turn as done after using an ability
-                elif keys[pygame.K_2] and len(current_unit.abilities) > 1:
-                    if current_unit.abilities[1].use(current_unit, target):
+            if current_unit.selected_ability is not None :
+                if key_just_pressed:  # Confirm ability usage
+                    if current_unit.selected_ability.use(current_unit, target):
                         current_unit.state = "done"
-                elif keys[pygame.K_3] and len(current_unit.abilities) > 2:
-                    if current_unit.abilities[2].use(current_unit, target):
-                        current_unit.state = "done"
-
-
-
-            # Standard attack logic if no ability is used
-            if key_just_pressed :
-                self.resolve_attack(current_unit)
-                current_unit.state = "done"  # Mark attack as finished
+                        current_unit.selected_ability = None  # Reset ability selection
+            elif  key_just_pressed:
+                self.resolve_attack(current_unit)  # Basic attack
+                current_unit.state = "done"
 
         # End Turn
         if  keys[pygame.K_r] and current_unit.state == "done" :
@@ -662,6 +792,7 @@ class Game:
             self.draw_info_panel()
 
             #draw HUD
+            self.draw_abilities_bar()
             
 
             pygame.display.flip()
