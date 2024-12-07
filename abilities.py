@@ -2,7 +2,7 @@ import pygame
 
 
 class Abilities:
-    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description=""):
+    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description="",attack_radius=3):
         self.name = name
         self.mana_cost = mana_cost
         self.cooldown = cooldown
@@ -11,6 +11,8 @@ class Abilities:
         self.attack = attack
         self.defense = defense
         self.description = description
+        self.attack_radius=attack_radius
+
 
     def use(self, user, target=None):
         if self.ability_type in ["damage", "heal"] and not target:
@@ -61,11 +63,10 @@ class Abilities:
         
                 
 class BuffAbility(Abilities):
-    def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=3):
+    def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=8,attack_radius=1):
         # Call the parent constructor with "buff" as the ability type
-        super().__init__(name, mana_cost, cooldown, "buff", attack=attack, defense=defense, description=description)
+        super().__init__(name, mana_cost, cooldown, "buff", attack=attack, defense=defense, description=description,attack_radius=attack_radius)
         self.duration = duration  # Number of turns the buff lasts
-        self.remaining_duration = 0
         self.remaining_cooldown = 0
 
     def use(self, user, target=None):
@@ -85,7 +86,7 @@ class BuffAbility(Abilities):
                 target.defense += self.defense
                 target.buffed_defense_increase = self.defense  # Track the increase
             target.is_buffed=True
-            target.buff_duration = 8 
+            target.buff_duration = self.duration 
         else :
             print(f"{target.name} is already buffed")
             return False
@@ -102,11 +103,11 @@ class BuffAbility(Abilities):
 
     
 class DebuffAbility(Abilities):
-    def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=3):
+    def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=8,attack_radius=1):
         # Call the parent constructor with "debuff" as the ability type
-        super().__init__(name, mana_cost, cooldown, "debuff", attack=attack, defense=defense, description=description)
+        super().__init__(name, mana_cost, cooldown, "debuff", attack=attack, defense=defense, description=description,attack_radius=attack_radius)
         self.duration = duration  # Number of turns the debuff lasts
-        self.remaining_duration = 0
+
 
     def use(self, user, target=None):
         if self.remaining_cooldown > 0:
@@ -129,7 +130,7 @@ class DebuffAbility(Abilities):
                 target.defense -= self.defense
                 target.debuffed_defense_reduction = self.defense  # Track the reduction
             target.is_debuffed=True
-            target.debuff_duration = 8  
+            target.debuff_duration = self.duration
         else:
             print(f"{target.name} is already debuffed")
             return False
