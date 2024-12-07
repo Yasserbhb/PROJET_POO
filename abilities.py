@@ -15,7 +15,9 @@ class Abilities:
     def use(self, user, target=None):
         if self.ability_type in ["damage", "heal"] and not target:
             print(f"No valid target for {self.name}.")
-            return False
+            user.mana -= self.mana_cost
+            self.remaining_cooldown = self.cooldown
+            return True
         if user.mana < self.mana_cost:
             print(f"Not enough mana to use {self.name}.")
             return False
@@ -56,6 +58,7 @@ class Abilities:
             self.remaining_cooldown -= 1  # Réduit de 1 à chaque tour
             if self.remaining_cooldown < 0:
                 self.remaining_cooldown = 0  # Assure que le cooldown ne soit pas négatif
+        
                 
 class BuffAbility(Abilities):
     def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=3):
@@ -63,6 +66,7 @@ class BuffAbility(Abilities):
         super().__init__(name, mana_cost, cooldown, "buff", attack=attack, defense=defense, description=description)
         self.duration = duration  # Number of turns the buff lasts
         self.remaining_duration = 0
+        self.remaining_cooldown = 0
 
     def use(self, user, target=None):
         if self.remaining_cooldown > 0:
@@ -73,20 +77,29 @@ class BuffAbility(Abilities):
         if target.color != user.color:  # Si la cible est un ennemi
             print(f"{self.name}: You cannot use this ability on an enemy!")
             return False
+        if not target.is_buffed :
+            if self.attack:
+                target.damage += self.attack
+                target.buffed_attack_increase = self.attack  # Track the increase
+            if self.defense:
+                target.defense += self.defense
+                target.buffed_defense_increase = self.defense  # Track the increase
+            target.is_buffed=True
+            target.buff_duration = 8 
+        else :
+            print(f"{target.name} is already buffed")
+            return False
         
-        if self.attack:
-            target.attack += self.attack
-        if self.defense:
-            target.defense += self.defense
 
-        target.is_buffed = True 
-        if target.buff_duration == 0: 
-            target.buff_duration = 3 
 
-        print(f"{self.name}: {target.name} is buffed for 3 turns!")
+
+        print(f"{self.name}: {target.name} is buffed for 5 turns!")
         user.mana -= self.mana_cost
         self.remaining_cooldown = self.cooldown
         return True
+    
+
+
     
 class DebuffAbility(Abilities):
     def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=3):
@@ -107,17 +120,26 @@ class DebuffAbility(Abilities):
         if target.color == user.color:
             print(f"{self.name}: You cannot use this on an ally!")
             return False
+        
+        if not target.is_debuffed:
+            if self.attack:
+                target.damage -= self.attack
+                target.debuffed_attack_reduction = self.attack  # Track the reduction
+            if self.defense:
+                target.defense -= self.defense
+                target.debuffed_defense_reduction = self.defense  # Track the reduction
+            target.is_debuffed=True
+            target.debuff_duration = 8  
+        else:
+            print(f"{target.name} is already debuffed")
+            return False
 
-        if self.attack:
-            target.attack -= self.attack
-        if self.defense:
-            target.defense -= self.defense
 
-        target.is_debuffed = True
-        if target.debuff_duration == 0:  
-            target.debuff_duration = 3  
-
-        print(f"{self.name}: {target.name} is debuffed for 3 turns!")
+        print(f"{self.name}: {target.name} is debuffed for 5 turns!")
         user.mana -= self.mana_cost
         self.remaining_cooldown = self.cooldown
         return True
+    
+
+#vision ability 
+#teleport ability

@@ -4,7 +4,7 @@ import pygame
 CELL_SIZE = 45
 class Unit:
     """A single unit in the game."""
-    def __init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type, mana=100, abilities=None):
+    def __init__(self, x, y, name, health, damage,defense,image_path, color, move_range, attack_range, unit_type, mana=100, abilities=None):
         self.x = x
         self.y = y
         self.initial_x = x  # Initial position for movement range
@@ -14,11 +14,19 @@ class Unit:
         self.color = color
         self.health = health
         self.max_health = health
+        self.defense=defense
+        self.damage=damage
+        # Buff and debuff trackers
+        self.buffed_damage_increase = 0
+        self.buffed_defense_increase = 0
+        self.debuffed_attack_reduction = 0
+        self.debuffed_defense_reduction = 0
+
         self.mana = mana
         self.max_mana = mana
         self.move_range = move_range
         self.attack_range = attack_range
-        self.damage=damage
+        
         self.unit_type=unit_type   #player or neutral or base_blue or base_red
         self.alive = True
         self.state = "move"  # "move" or "attack"
@@ -29,13 +37,10 @@ class Unit:
         self.abilities = abilities if abilities else []  # Default to an empty list if no abilities are provided
 
         # new attributes
-        #self.attack = damage 
-        self.defense = 0  
-        self.is_buffed = False
-        self.is_debuffed = False
         self.buff_duration = 0
         self.debuff_duration = 0
-
+        self.is_buffed = False
+        self.is_debuffed = False
         # Initialize for damage display
         self.last_damage_time = None 
         self.damage_taken = 0 
@@ -83,6 +88,39 @@ class Unit:
             target.alive = False
         target.react_to_attack(self)  # Trigger monster reaction
         return self.damage
+    
+    def update_buffs_and_debuffs(self):
+            # Handle buffs
+            if self.buff_duration > 0:
+                self.buff_duration -= 1
+                if self.buff_duration == 0:
+                    print(f"{self.name}'s buff has expired.")
+                    self.revert_buff()
+
+            # Handle debuffs
+            if self.debuff_duration > 0:
+                self.debuff_duration -= 1
+                if self.debuff_duration == 0:
+                    print(f"{self.name}'s debuff has expired.")
+                    self.revert_debuff()
+
+    def revert_buff(self):
+        # Revert buff effects
+        self.damage -= self.buffed_damage_increase
+        self.defense -= self.buffed_defense_increase
+        self.buffed_damage_increase = 0
+        self.buffed_defense_increase = 0
+        self.is_buffed = False
+        print(f"{self.name}'s stats after buff ended: Damage: {self.damage}, Defense: {self.defense}")
+
+    def revert_debuff(self):
+        # Revert debuff effects
+        self.damage += self.debuffed_attack_reduction
+        self.defense += self.debuffed_defense_reduction
+        self.debuffed_attack_reduction = 0
+        self.debuffed_defense_reduction = 0
+        self.is_debuffed = False
+        print(f"{self.name}'s stats after debuff ended: Damage: {self.damage}, Defense: {self.defense}")
 
 
 
@@ -181,9 +219,9 @@ class Unit:
                 self.damage_taken = 0
 
 # Draw upward arrow if buffed and duration > 0
-        if self.is_buffed and self.buff_duration > 0:
+        if self.buff_duration > 0:
             arrow_color = (0, 255, 0)  # Green arrow for buffs
-            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE - 10)
+            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE - 15)
             pygame.draw.polygon(screen, arrow_color, [
                 (arrow_center[0], arrow_center[1] - 10),  # Top point
                 (arrow_center[0] - 5, arrow_center[1]),  # Bottom left
@@ -191,9 +229,9 @@ class Unit:
             ])
 
         # Draw downward arrow if debuffed and duration > 0
-        if self.is_debuffed and self.debuff_duration > 0:
+        if self.debuff_duration > 0:
             arrow_color = (255, 0, 0)  # Red arrow for debuffs
-            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE + 10)
+            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE + 5)
             pygame.draw.polygon(screen, arrow_color, [
                 (arrow_center[0], arrow_center[1] + 10),  # Bottom point
                 (arrow_center[0] - 5, arrow_center[1]),  # Top left
@@ -203,8 +241,8 @@ class Unit:
 
                 
 class MonsterUnit(Unit):
-    def __init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type):  
-        Unit.__init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type)
+    def __init__(self, x, y, name, health, damage,defense,image_path, color, move_range, attack_range, unit_type):  
+        Unit.__init__(self, x, y, name, health, damage,defense,image_path, color, move_range, attack_range, unit_type)
 
     def react_to_attack(self, attacker):
         if self.alive:
