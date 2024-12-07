@@ -3,7 +3,7 @@ import random
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 35
+CELL_SIZE = 30
 
 
 
@@ -174,15 +174,27 @@ class Highlight:
                                 queue.append((nx, ny, next_cost))
                         
         elif unit.state == "attack":
-            # Highlight attack range
-            for dx in range(-unit.attack_range, unit.attack_range + 1):
-                for dy in range(-unit.attack_range, unit.attack_range + 1):
+            # Vérifie si une capacité est sélectionnée
+            
+
+            # Vérifie que la capacité a un radius d'attaque
+            if not hasattr(unit.current_ability, "attack_radius"):
+                print(f"{unit.current_ability.name} has no attack_radius.")
+                return
+
+            attack_radius = unit.current_ability.attack_radius
+            for dx in range(-attack_radius, attack_radius + 1):
+                for dy in range(-attack_radius, attack_radius + 1):
                     x, y = unit.x + dx, unit.y + dy
-                    if (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and
-                            abs(dx) + abs(dy) <= unit.attack_range):
-                        overlay.fill((250, 0, 0, 50))  # Red with transparency (alpha = 100)
+                    if (
+                        0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and
+                        abs(dx) + abs(dy) <= attack_radius
+                    ):
+                        self.grid.tiles[x][y].highlighted = True
+                        overlay.fill((250, 0, 0, 50))  # Rouge pour indiquer la portée
                         rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                         self.screen.blit(overlay, rect)
+
 
             # Highlight the target cursor
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
