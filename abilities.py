@@ -35,16 +35,12 @@ class Abilities:
         # Apply effects based on ability type
         if self.ability_type == "damage" and target:
             print(f"{user.name} uses {self.name} on {target.name}, dealing {self.attack} damage!")
-            target.health -= self.attack
-            if target.health <= 0:
-                target.health = 0
-                target.alive = False  # Mark the target as dead
+            user.attack(target,self.attack)
+
         elif self.ability_type == "heal" and target:
             print(f"{user.name} uses {self.name}, healing {self.attack} health!")
-            target.health = min(target.max_health, target.health + self.attack)
-        elif self.ability_type == "buff":
-            print(f"{user.name} uses {self.name}, gaining {self.defense} defense!")
-            user.damage += self.defense
+            user.attack(target,-min(target.max_health-target.health, self.attack))
+
 
         # Deduct mana and apply cooldown
         user.mana -= self.mana_cost

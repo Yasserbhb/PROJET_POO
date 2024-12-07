@@ -77,11 +77,11 @@ class Unit:
     def react_to_attack(self, attacker):
         return
 
-    def attack(self, target):
+    def attack(self, target,damage):
 
         print(f"{self.name} attacks {target.name}!")
-        target.health -= self.damage  
-        target.damage_taken = self.damage 
+        target.health -= damage  
+        target.damage_taken = damage 
         target.last_damage_time = pygame.time.get_ticks() 
         if target.health <= 0:
             target.health = 0
@@ -184,7 +184,7 @@ class Unit:
         screen.blit(gloss_surface, (health_bar_x+1, health_bar_y+1))
 
         # Draw damage text with a black boundary
-        if hasattr(self, "last_damage_time") and hasattr(self, "damage_taken") and self.damage_taken > 0:
+        if hasattr(self, "last_damage_time") and hasattr(self, "damage_taken") and self.damage_taken != 0:
             time_passed = pygame.time.get_ticks() - self.last_damage_time
 
             if time_passed < 1000:  # Show for 1 second
@@ -192,18 +192,27 @@ class Unit:
                 alpha = max(255 - (time_passed // 4), 0)  # Fade out over time
                 offset_y = -time_passed // 40 + 15 # Move upward over time
                 # Red flash effect on damage
+
+                #A is to determine if the flash is red or green
+                if self.damage_taken>0:A=255
+                else:A=0
                 if time_passed < 200 :
                     flash_overlay = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
-                    flash_overlay.fill((255, 0, 0, 100))  # Semi-transparent red overlay
+                    flash_overlay.fill((A, 255-A, 0, 100))  # Semi-transparent red overlay
                     screen.blit(flash_overlay, rect)
 
                 # Create the text surface with fading effect
                 font = pygame.font.Font("assets/RussoOne.ttf", 18)
-                text_surface = font.render(f"-{self.damage_taken}", True, (255, 0, 0))
+                if self.damage_taken>0:
+                    text_surface = font.render(f"-{abs(self.damage_taken)}", True, (A, 255-A, 0))
+                    outline_surface = font.render(f"-{abs(self.damage_taken)}", True, (0, 0, 0))
+                else:
+                    text_surface = font.render(f"+{abs(self.damage_taken)}", True, (A, 255-A, 0))
+                    outline_surface = font.render(f"+{abs(self.damage_taken)}", True, (0, 0, 0))
                 text_surface.set_alpha(alpha)
 
                 # Add a black outline
-                outline_surface = font.render(f"-{self.damage_taken}", True, (0, 0, 0))
+                #outline_surface = font.render(f"-{abs(self.damage_taken)}", True, (0, 0, 0))
                 outline_surface.set_alpha(alpha)
 
                 # Draw the outline slightly offset in each direction
@@ -221,7 +230,7 @@ class Unit:
 # Draw upward arrow if buffed and duration > 0
         if self.buff_duration > 0:
             arrow_color = (0, 255, 0)  # Green arrow for buffs
-            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE - 15)
+            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 5, self.y * CELL_SIZE + CELL_SIZE -2)
             pygame.draw.polygon(screen, arrow_color, [
                 (arrow_center[0], arrow_center[1] - 10),  # Top point
                 (arrow_center[0] - 5, arrow_center[1]),  # Bottom left
@@ -231,7 +240,7 @@ class Unit:
         # Draw downward arrow if debuffed and duration > 0
         if self.debuff_duration > 0:
             arrow_color = (255, 0, 0)  # Red arrow for debuffs
-            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE + 5)
+            arrow_center = (self.x * CELL_SIZE + CELL_SIZE -7, self.y * CELL_SIZE + CELL_SIZE - 12)
             pygame.draw.polygon(screen, arrow_color, [
                 (arrow_center[0], arrow_center[1] + 10),  # Bottom point
                 (arrow_center[0] - 5, arrow_center[1]),  # Top left
@@ -248,5 +257,5 @@ class MonsterUnit(Unit):
         if self.alive:
             # Attack the attacker (if in range)    
             if self.in_range(attacker):
-                self.attack(attacker)
+                self.attack(attacker,self.damage)
                 
