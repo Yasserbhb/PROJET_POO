@@ -2,7 +2,7 @@ import pygame
 import random
 from unit import Unit , MonsterUnit
 from interface import Grid,Highlight,Pickup
-
+from abilities import Abilities,DebuffAbility,BuffAbility
 
 
 # Constants
@@ -51,6 +51,8 @@ def load_indicators():
 
 
 
+
+
 # Game class
 class Game:
     def __init__(self):
@@ -64,11 +66,15 @@ class Game:
         self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
         self.pickups=[]
+
+        self.create_pickups()
+
         self.current_unit_index = 0
         self.last_move_time = 0  # Timestamp of the last movement
         self.visible_tiles = set()
-        self.create_pickups()
         self.event_log = [] # Initialize event log
+        self.mana = 1000 #not sure of it's use
+        self.max_mana = 1000
         # Pre-calculate fog for the starting team (blue)
         
         #initilizing main menu
@@ -77,9 +83,8 @@ class Game:
         self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background
         self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load main menu background
         
-
+        self.key_last_state = {} # prevent repeated actions
         
- 
 
     def log_event(self, message):
         """Add an event to the event log."""
@@ -130,27 +135,107 @@ class Game:
 
 
 
+#space for the abilities abr
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
-            Unit(3,15, "Garen", 900, 99, self.unit_images["garen"], None,3,2,"player"),  # Blue team player
-            Unit(4,16, "Ashe", 500, 70, self.unit_images["ashe"], None,3,2,"player"),  # Blue team player
-            Unit(15,3, "Darius",700, 90,self.unit_images["darius"], None,3,2,"player"),  # Red team player
-            Unit(16,4, "Soraka",490, 50 ,self.unit_images["soraka"], None,3,2,"player"),  # Red team player
-            Unit(0,0, "Rengar",700, 180 ,self.unit_images["rengar"], None,3,2,"player"),  # Red team player
+            Unit(3,15, "Garen", 900, 99, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
+                Abilities("Slash", 30, 5, "damage", attack=200, description="A quick slash attack."),
+                BuffAbility("Fortify", 20, 10, defense=50, description="Increases defense temporarily for 3 turns."),
+                Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target."),
+            ]),  
+            Unit(4,16, "Ashe", 500, 70, self.unit_images["ashe"], None,3,2,"player", mana=100, abilities=[
+                Abilities("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
+                DebuffAbility("Frost Arrow", 30, 10, attack=20, defense=10, description="Slows and weakens the target."),
+                BuffAbility("Healing Wind", 50, 15, defense=20, description="Restores health to an ally and grants temporary defense."),
+            ]),  
+            Unit(15,3, "Darius",700, 90,self.unit_images["darius"], None,3,2,"player", mana=120, abilities=[
+                Abilities("Decimate", 50, 7, "damage", attack=250, description="Spins his axe, dealing damage to nearby enemies."),
+                DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
+                Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
+            ]), 
+            Unit(16,4, "Soraka",490, 50 ,self.unit_images["soraka"], None,3,2,"player", mana=150, abilities=[
+                Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
+                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
+                BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
+            ]),  
+            Unit(0,0, "Rengar",700, 180 ,self.unit_images["rengar"], None,3,2,"player", mana=120, abilities=[
+                Abilities("Savagery", 30, 5, "damage", attack=300, description="Empowered strike dealing extra damage."),
+                BuffAbility("Battle Roar", 40, 8, defense=40, description="Boosts defense and regenerates health."),
+                DebuffAbility("Thrill of the Hunt", 80, 20, attack=20, description="Tracks the enemy, reducing their attack temporarily."),
+            ]),  
 
 
             MonsterUnit(10, 10, "BigBuff",1000, 50 ,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(1, 13, "BlueBuff",390, 250 ,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(15, 13, "RedBuff",390, 250 ,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
-
             Unit(1, 19, "NexusBlue",390, 50 ,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
             Unit(19, 1, "NexusRed",390, 50 ,self.unit_images["basered"], "red",0,0,"base"), #Red team base
        ]
     
-
-
     def draw_units(self):
         """Draw all units on the grid with visibility logic."""
         current_team_color = self.units[self.current_unit_index].color
@@ -310,13 +395,33 @@ class Game:
                     current_unit.target_x, current_unit.target_y = new_target_x, new_target_y
                     self.last_move_time = current_time
 
-            # Confirm attack
+            # Using Abilities
+            target = next(
+                (unit for unit in self.units if unit.alive and unit.x == current_unit.target_x and unit.y == current_unit.target_y),
+                None,
+            )
+            if hasattr(current_unit, "abilities"):
+                if keys[pygame.K_1] and len(current_unit.abilities) > 0:
+                    if current_unit.abilities[0].use(current_unit, target):
+                        current_unit.state = "done"  # Mark turn as done after using an ability
+                elif keys[pygame.K_2] and len(current_unit.abilities) > 1:
+                    if current_unit.abilities[1].use(current_unit, target):
+                        current_unit.state = "done"
+                elif keys[pygame.K_3] and len(current_unit.abilities) > 2:
+                    if current_unit.abilities[2].use(current_unit, target):
+                        current_unit.state = "done"
+
+
+
+            # Standard attack logic if no ability is used
             if key_just_pressed :
                 self.resolve_attack(current_unit)
                 current_unit.state = "done"  # Mark attack as finished
 
         # End Turn
         if  keys[pygame.K_r] and current_unit.state == "done" :
+            for ability in current_unit.abilities:
+                    ability.reduce_cooldown()
             current_unit.state = "move"  # Reset state for the next turn
             current_unit.initial_x, current_unit.initial_y = current_unit.x, current_unit.y  # Reset initial position
             self.advance_to_next_unit()

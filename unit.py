@@ -4,7 +4,7 @@ import pygame
 CELL_SIZE = 45
 class Unit:
     """A single unit in the game."""
-    def __init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type):
+    def __init__(self, x, y, name, health, damage,image_path, color, move_range, attack_range, unit_type, mana=100, abilities=None):
         self.x = x
         self.y = y
         self.initial_x = x  # Initial position for movement range
@@ -14,6 +14,8 @@ class Unit:
         self.color = color
         self.health = health
         self.max_health = health
+        self.mana = mana
+        self.max_mana = mana
         self.move_range = move_range
         self.attack_range = attack_range
         self.damage=damage
@@ -24,6 +26,15 @@ class Unit:
         # Attack targeting cursor
         self.target_x = x
         self.target_y = y
+        self.abilities = abilities if abilities else []  # Default to an empty list if no abilities are provided
+
+        # new attributes
+        #self.attack = damage 
+        self.defense = 0  
+        self.is_buffed = False
+        self.is_debuffed = False
+        self.buff_duration = 0
+        self.debuff_duration = 0
 
         # Initialize for damage display
         self.last_damage_time = None 
@@ -168,6 +179,26 @@ class Unit:
             else:
                 # Clear the damage_taken attribute after animation ends
                 self.damage_taken = 0
+
+# Draw upward arrow if buffed and duration > 0
+        if self.is_buffed and self.buff_duration > 0:
+            arrow_color = (0, 255, 0)  # Green arrow for buffs
+            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE - 10)
+            pygame.draw.polygon(screen, arrow_color, [
+                (arrow_center[0], arrow_center[1] - 10),  # Top point
+                (arrow_center[0] - 5, arrow_center[1]),  # Bottom left
+                (arrow_center[0] + 5, arrow_center[1])   # Bottom right
+            ])
+
+        # Draw downward arrow if debuffed and duration > 0
+        if self.is_debuffed and self.debuff_duration > 0:
+            arrow_color = (255, 0, 0)  # Red arrow for debuffs
+            arrow_center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE + 10)
+            pygame.draw.polygon(screen, arrow_color, [
+                (arrow_center[0], arrow_center[1] + 10),  # Bottom point
+                (arrow_center[0] - 5, arrow_center[1]),  # Top left
+                (arrow_center[0] + 5, arrow_center[1])   # Top right
+            ])
 
 
                 
