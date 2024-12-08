@@ -73,13 +73,14 @@ class Game:
         self.unit_images = load_unit_images()
         self.indicators = load_indicators()
         self.textures_file=load_textures()
+        self.pickup=Pickup()
         self.pickup_textures=load_pickups()
         self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
         self.pickups=[]
 
-        self.create_pickups()
-
+        #self.create_pickups()
+        self.pickup.initialize(self.pickup_textures) 
         self.current_unit_index = 0
         self.last_move_time = 0  # Timestamp of the last movement
         self.visible_tiles = set()
@@ -95,7 +96,7 @@ class Game:
         self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load champion selection background
         
         self.key_last_state = {} # prevent repeated actions
-        
+        self.current_turn=1
 
     def log_event(self, message):
         """Add an event to the event log."""
@@ -291,21 +292,21 @@ class Game:
                     
 
 
-    def create_pickups(self):
-        types_of_pickups = {
-            "red_potion": [(15,1),(1,14)],
-            "blue_potion":[(16,1),(2,13)],
-            "green_potion": [(15,0),(0,14)],
-            "golden_potion":[(10,1),(1,12)],
-        }
-        for name_of_pickup,position in types_of_pickups.items():
-            for x,y in position :
-                p=Pickup(x, y, self.pickup_textures,name_of_pickup) 
-                self.pickups.append(p)
+    # def create_pickups(self):
+    #     types_of_pickups = {
+    #         "red_potion": [(15,1),(1,14)],
+    #         "blue_potion":[(16,1),(2,13)],
+    #         "green_potion": [(15,0),(0,14)],
+    #         "golden_potion":[(10,1),(1,12)],
+    #     }
+    #     for name_of_pickup,position in types_of_pickups.items():
+    #         for x,y in position :
+    #             p=Pickup(x, y, self.pickup_textures,name_of_pickup) 
+    #             self.pickups.append(p)
 
-    def draw_pickups(self):
-        for  pickup in self.pickups:
-            pickup.draw_pickup(self.screen, self.visible_tiles)  
+    # def draw_pickups(self):
+    #     for  pickup in self.pickups:
+    #         pickup.draw_pickup(self.screen, self.visible_tiles)  
         
 
 
@@ -401,9 +402,12 @@ class Game:
                         and unit.alive for unit in self.units 
                     ):  
                         self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
-                        for pickup in self.pickups:
-                            if (pickup.x, pickup.y) == (current_unit.x, current_unit.y):
-                                pickup.picked_used(current_unit,self.pickups)  # Apply the effect if the pickup is still active
+
+                        for p in self.pickup.all_pickups:
+                            if p.x == current_unit.x and p.y == current_unit.y:
+                                self.pickup.picked_used(current_unit,p)
+
+
                         current_unit.state = "attack"
                         
                         current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
@@ -479,12 +483,12 @@ class Game:
 
         # End Turn
         if  keys[pygame.K_r] and current_unit.state == "done" :
+            self.current_turn+=1
 
             #each turn we reduce the cooldowns and reduce the duration remaaning on the buffs
             for unit in self.units:
                 for ability in unit.abilities:
                         ability.reduce_cooldown()
-                        print(f"{ability.name} has a remaning cooldown of {ability.remaining_cooldown}")
             for unit in self.units:
                 unit.update_buffs_and_debuffs()
 
@@ -495,6 +499,8 @@ class Game:
 
             next_team_color = self.units[self.current_unit_index].color
             Highlight.update_fog_visibility(self,next_team_color)
+            self.pickup.update(self.current_turn,self.grid)
+
 
 
 
@@ -683,6 +689,8 @@ class Game:
         Highlight.update_fog_visibility(self, starting_team_color)
         
 
+        
+
         running = True
         while running:
             self.screen.fill((0, 0, 0))  # Clear the screen
@@ -697,12 +705,13 @@ class Game:
             # Highlight range for the active unit
             current_unit = self.units[self.current_unit_index]
             Highlight.highlight_range(self,current_unit)
-
+ 
             # Render fog of war
             Highlight.draw_fog(self,self.screen)
             
             #Display pcikups
-            self.draw_pickups()
+            self.pickup.draw_pickups(self.screen, self.visible_tiles)
+
             
             #Display units
             self.draw_units()

@@ -42,64 +42,108 @@ class Tile:
 
 
 class Pickup:
-    def __init__(self, x, y, pickup_textures ,overlay):
- 
-        self.x = x
-        self.y = y
-        self.overlay = overlay  # Optional overlay: "bush", "barrier"
-        self.pickup_textures = pickup_textures
+    def __init__(self, x=None, y=None, overlay=None, spawn_turn=None):
+        if x is None and y is None and overlay is None and spawn_turn is None:
+            # This is the manager instance
+            self.all_pickups = []
+            self.textures_file = None
+            self.turn_count = 0
+            self.allowed_tile_types = ["grass", "water"]
 
-        self.picked= False
-        
-        
-    def draw_pickup(self, screen,visible_tiles):
-        """Draw the tile with its texture and overlay."""
-        rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            self.pickup_types = {
+                "red_potion":   {"rarity": 0.8},
+                "blue_potion":  {"rarity": 0.8},
+                "green_potion": {"rarity": 0.3},
+                "golden_potion":{"rarity": 0.2},
+            }
 
-        # Draw overlay on top, if present
-        if (self.x,self.y) in visible_tiles and not self.picked :
-            overlay_texture = self.pickup_textures[self.overlay]
-            screen.blit(pygame.transform.scale(overlay_texture, (CELL_SIZE, CELL_SIZE)), rect)
+            self.next_spawn_turns = {}
+        else:
+            # This is a pickup item instance
+            self.x = x
+            self.y = y
+            self.overlay = overlay
+            self.spawn_turn = spawn_turn
+            self.picked = False
 
+    def initialize(self, textures_file):
+        """Initialize the pickup system and set initial next spawn attempts."""
+        self.textures_file = textures_file
+        for p_type in self.pickup_types:
+            self.next_spawn_turns[p_type] = random.randint(5, 8)
 
-    def picked_used(self, unit,pickups):
-            
-            if not self.picked:
-                if self.overlay == "red_potion":
-                    # +20% of max HP
-                    heal_amount = int(unit.max_health * 0.2)
-                    unit.attack(unit, -heal_amount)
-                    print("20 max hp healed")
+    def update(self, turn_count, grid):
+        """Update all pickups and attempt spawns each turn (manager only)."""
+        self.turn_count = turn_count
 
-                elif self.overlay == "blue_potion":
-                    # Restore full mana
-                    unit.mana = unit.max_mana
-                    print("fully restored mana")
-                elif self.overlay == "green_potion":
-                    # Increase max HP and heal fully
-                    increase = 200  
-                    unit.max_health += increase
-                    heal_amount = unit.max_health - unit.health
-                    unit.attack(unit, -heal_amount)  
-                    print("max hp increased")
+        # Remove pickups that have stayed 15 turns without being picked
+        for p in self.all_pickups[:]:
+            if not p.picked and (self.turn_count - p.spawn_turn >= 15):
+                self.remove_pickup(p)
 
-                elif self.overlay == "golden_potion":
-                    # Reduce all cooldowns by half
-                    for ability in unit.abilities:
-                        ability.remaining_cooldown = ability.remaining_cooldown // 2
-                    print("cooldowns reduced")
+        # Attempt to spawn each pickup type if it's time
+        for p_type, config in self.pickup_types.items():
+            if self.turn_count >= self.next_spawn_turns[p_type]:
+                if len(self.all_pickups) < 5:
+                    # Check rarity
+                    if random.random() < config["rarity"]:
+                        x, y = self.get_random_spawn_location(grid)
+                        self.spawn_single_pickup(x, y, p_type, self.turn_count)
+                    else:
+                        # Not spawned this turn, try again soon
+                        self.next_spawn_turns[p_type] = self.turn_count + random.randint(1, 3)
 
+    def spawn_single_pickup(self, x, y, overlay, spawn_turn):
+        """Create and store a single pickup item instance."""
+        new_pickup = Pickup(x, y, overlay, spawn_turn)
+        self.all_pickups.append(new_pickup)
 
-                
-            self.picked=True
-            self.remove_pickup(pickups)
-                #print(f"{self.x},{self.y}:{self.picked}")
+    def draw_pickups(self, screen, visible_tiles):
+        """Draw all item pickups (manager only)."""
+        if not self.textures_file:
+            return
+        for p in self.all_pickups:
+            if not p.picked and (p.x, p.y) in visible_tiles:
+                texture = self.textures_file[p.overlay]
+                rect = pygame.Rect(p.x * CELL_SIZE, p.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                screen.blit(pygame.transform.scale(texture, (CELL_SIZE, CELL_SIZE)), rect)
 
-    def remove_pickup(self,pickups):
-        pickups.remove(self)
-        print(f"Pickup at ({self.x}, {self.y}) removed.")
+    def picked_used(self, unit, pickup):
+        """Apply the effect of this pickup to the unit and remove it (manager only)."""
+        if not pickup.picked:
+            if pickup.overlay == "red_potion":    #heals 20% max health
+                heal_amount = int(unit.max_health * 0.2)
+                unit.attack(unit, -min(unit.max_health-unit.health,heal_amount))
+            elif pickup.overlay == "blue_potion": #full mana regeneration
+                unit.mana = unit.max_mana
+            elif pickup.overlay == "green_potion": #100 increase of max health and heal for 33% missing health 
+                increase = 100
+                unit.max_health += increase
+                heal_amount = (unit.max_health - unit.health)//3  
+                unit.attack(unit, -heal_amount)
+            elif pickup.overlay == "golden_potion": #reduces remaining cooldowns by 50%
+                for ability in unit.abilities:
+                    ability.remaining_cooldown //= 2
 
-        
+        pickup.picked = True
+        self.remove_pickup(pickup)
+
+    def remove_pickup(self, pickup):
+        """Remove a pickup and schedule next spawn attempt (manager only)."""
+        if pickup in self.all_pickups:
+            self.all_pickups.remove(pickup)
+        delay = random.randint(10, 15)
+        self.next_spawn_turns[pickup.overlay] = self.turn_count + delay
+
+    def get_random_spawn_location(self, grid):
+        """Get a random allowed cell for spawning."""
+        while True:
+            x = random.randint(0, GRID_SIZE - 1)
+            y = random.randint(0, GRID_SIZE - 1)
+            tile_type = grid.tiles[x][y].terrain
+            if tile_type in self.allowed_tile_types :
+                return x, y
+            # If not allowed, loop again until we find a suitable tile
 
 
 # black gives you a short teleport ability u can use whenever , only 1 spawns per game
