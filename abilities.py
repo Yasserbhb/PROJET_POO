@@ -139,3 +139,4 @@ class DebuffAbility(Abilities):
     
 #using inheretence : vision ability teleport ability
 #for buffs : crit and attack range(lasts long)
+#make some of the abilities AOE

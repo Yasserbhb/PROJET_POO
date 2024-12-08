@@ -312,7 +312,7 @@ class Game:
 
 
 
-    def resolve_attack(self, unit):
+    def basic_attack(self, unit):
         """Resolve the attack at the current target location."""
         target_hit = False
 
@@ -325,8 +325,6 @@ class Game:
                 and other_unit.color != unit.color
             ):
                 damage=unit.attack(other_unit,unit.damage)  # Use the Unit's attack method
-                if other_unit.unit_type =="monster" and other_unit.alive==False :
-                    Highlight.show_buff_animation(self,self.screen,other_unit.image)
                 if damage > 0:
                     self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
                     # Vérifier si l'unité est morte
@@ -478,8 +476,10 @@ class Game:
                         current_unit.state = "done"
                         current_unit.selected_ability = None  # Reset ability selection
             elif  key_just_pressed:
-                self.resolve_attack(current_unit)  # Basic attack
+                self.basic_attack(current_unit)  # Basic attack
                 current_unit.state = "done"
+            if target !=None and target.unit_type =="monster" and target.alive==False :
+                    Highlight.show_buff_animation(self,self.screen,target.image)
 
         # End Turn
         if  keys[pygame.K_r] and current_unit.state == "done" :

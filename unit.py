@@ -49,8 +49,8 @@ class Unit:
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
-            Unit(3,15, "Garen", 900, 99,0, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=200, description="A quick slash attack.",attack_radius=3),
+            Unit(3,15, "Garen", 900, 999,0, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
+                Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
             ]),  
@@ -119,6 +119,7 @@ class Unit:
     def attack(self, target,damage):
 
         print(f"{self.name} attacks {target.name}!")
+        
         target.health -= damage  
         target.damage_taken = damage 
         target.last_damage_time = pygame.time.get_ticks() 

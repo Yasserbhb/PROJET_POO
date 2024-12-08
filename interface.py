@@ -146,7 +146,7 @@ class Pickup:
             # If not allowed, loop again until we find a suitable tile
 
 
-# black gives you a short teleport ability u can use whenever , only 1 spawns per game
+
 # permanently increases the critical chance by 10%        
 
 
