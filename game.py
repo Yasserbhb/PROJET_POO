@@ -530,7 +530,7 @@ class Game:
 
             #respawn logic
             # Calculate respawn cap  
-            respawn = min(self.current_turn // 3, 10)
+            respawn = min(self.current_turn // 4, 10)
 
             # Update death timers and respawn dead units
             for unit in self.units:
@@ -553,11 +553,18 @@ class Game:
     
     def get_respawn_location(self, unit):
     # Example: respawn at a fixed position or base location
-        if unit.color == "red":
-            return (2, 2)  # Red team's respawn point
-        elif unit.team == "BlueTeam":
-            return (10, 10)  # Blue team's respawn point
-        return (0, 0)  # Default fallback
+        unit_index = self.units.index(unit)
+        # Determine the respawn location based on the index
+        if unit_index == 0:
+            return (3, 15)  # Respawn point for the first unit
+        elif unit_index == 1:
+            return (4, 16)  # Respawn point for the second unit
+        elif unit_index == 2:
+            return (15, 2)  # Respawn point for the third unit
+        elif unit_index == 3:
+            return (17, 4)
+        # Add more conditions as needed for additional indices
+
 
 
     
