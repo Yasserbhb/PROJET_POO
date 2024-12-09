@@ -47,6 +47,8 @@ class Unit:
         self.red_keys = 0  # Number of red keys this unit holds
         self.blue_keys = 0  # Number of blue keys this unit holds
 
+        self.death_timer = 0  # Tracks turns since death
+        
         # Initialize for damage display
         self.last_damage_time = None 
         self.damage_taken = 0 

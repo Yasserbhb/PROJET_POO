@@ -527,7 +527,37 @@ class Game:
                 if unit.unit_type=="player":
                     unit.health+=min(unit.max_health-unit.health,int(0.005*unit.max_health))
                     unit.mana +=min(unit.max_mana-unit.mana,int(0.01*unit.max_mana))
+
+            #respawn logic
+            # Calculate respawn cap  
+            respawn = min(self.current_turn // 3, 10)
+
+            # Update death timers and respawn dead units
+            for unit in self.units:
+                if not unit.alive and unit.unit_type=="player":
+                    unit.death_timer += 1  # Increment death timer for dead units
+                    print(f"{unit.death_timer}seconds of death for {unit.name}")
+                    # Respawn logic
+                    if unit.death_timer >= respawn :
+                        self.log_event(f"{unit.name} has respawned at base!")
+                        unit.alive = True
+                        unit.health = unit.max_health  # Restore health
+                        unit.state = "move"
+                        unit.initial_x, unit.initial_y = self.get_respawn_location(unit)  # Define respawn location logic
+                        unit.x,unit.y = unit.initial_x, unit.initial_y
+                        unit.death_timer = 0  # Reset death timer
+
+            
+
+            
     
+    def get_respawn_location(self, unit):
+    # Example: respawn at a fixed position or base location
+        if unit.color == "red":
+            return (2, 2)  # Red team's respawn point
+        elif unit.team == "BlueTeam":
+            return (10, 10)  # Blue team's respawn point
+        return (0, 0)  # Default fallback
 
 
     
@@ -855,7 +885,7 @@ class Game:
 
             # Handle current unit's turn
             self.handle_turn()
-
+            
             #Show Info panel
             self.draw_info_panel()
 
@@ -896,10 +926,8 @@ if __name__ == "__main__":
 
 
 #add sound design and abilities animations&
-
-
 # add keys in bushes 
-#make buffs have a good buff so it's worth fighting for early 
+
 #add the respawn mechanic for units that goes up by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
 #make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
 ## fix the textures and all that later
