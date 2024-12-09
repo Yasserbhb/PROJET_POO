@@ -23,12 +23,6 @@ def load_textures():
         #overlays
         "bush": pygame.image.load("assets/bush.png"),
         "barrier": pygame.image.load("assets/inhibetor.png"),
-        #pick ups
-        "red_potion": pygame.image.load("assets/red_potion.png"),
-        "blue_potion": pygame.image.load("assets/blue_potion.png"),
-        "green_potion": pygame.image.load("assets/green_potion.png"),
-        "golden_potion": pygame.image.load("assets/golden_potion.png"),
-        
         
     }
 def load_unit_images():
@@ -79,24 +73,31 @@ class Game:
         self.units = [] 
         self.pickups=[]
 
-        #self.create_pickups()
-        self.pickup.initialize(self.pickup_textures) 
+        self.pickup.initialize(self.pickup_textures)  
         self.current_unit_index = 0
         self.last_move_time = 0  # Timestamp of the last movement
         self.visible_tiles = set()
         self.event_log = [] # Initialize event log
-        self.mana = 1000 #not sure of it's use
-        self.max_mana = 1000
-        # Pre-calculate fog for the starting team (blue)
+
+
         
         #initilizing main menu
         self.font_title = pygame.font.Font("assets/League.otf", 65)
         self.font_small = pygame.font.Font("assets/RussoOne.ttf", 36)
         self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background
         self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load champion selection background
+
+        #intializing key menu
+        self.red_key_img = pygame.image.load("assets/red_key.png")
+        self.blue_key_img = pygame.image.load("assets/blue_key.png")
+        self.font = pygame.font.Font(None, 24)  # Use a small font size for clarity
+        
         
         self.key_last_state = {} # prevent repeated actions
         self.current_turn=1
+
+        
+
 
     def log_event(self, message):
         """Add an event to the event log."""
@@ -169,8 +170,9 @@ class Game:
 
         # Champion icon
         if current_unit.image:
+            icon = pygame.transform.scale(current_unit.image, (icon_size, icon_size))
             self.screen.blit(
-                current_unit.image, (padding, bar_y + (bar_height - icon_size) // 2)
+                icon, (padding, bar_y + (bar_height - icon_size) // 2)
             )
 
         # Unit Stats Display (Name, HP, Mana)
@@ -218,7 +220,7 @@ class Game:
             num_abilities = len(current_unit.abilities)
             if num_abilities > 0:
                 ability_x_start = stats_x + hp_bar_width + 2 * padding
-                ability_width = (SCREEN_WIDTH - ability_x_start - padding) // num_abilities
+                ability_width = (SCREEN_WIDTH-300 - ability_x_start - padding) // num_abilities
 
                 for i, ability in enumerate(current_unit.abilities):
                     # Highlight the selected ability
@@ -279,7 +281,6 @@ class Game:
 
 
 
-    
     def draw_units(self):
         """Draw all units on the grid with visibility logic."""
         current_team_color = self.units[self.current_unit_index].color
@@ -290,25 +291,6 @@ class Game:
                 if unit.color == current_team_color or (unit.x, unit.y) in self.visible_tiles and self.grid.tiles[unit.x][unit.y].overlay != "bush":
                     unit.draw(self.screen, is_current_turn=is_current_turn)
                     
-
-
-    # def create_pickups(self):
-    #     types_of_pickups = {
-    #         "red_potion": [(15,1),(1,14)],
-    #         "blue_potion":[(16,1),(2,13)],
-    #         "green_potion": [(15,0),(0,14)],
-    #         "golden_potion":[(10,1),(1,12)],
-    #     }
-    #     for name_of_pickup,position in types_of_pickups.items():
-    #         for x,y in position :
-    #             p=Pickup(x, y, self.pickup_textures,name_of_pickup) 
-    #             self.pickups.append(p)
-
-    # def draw_pickups(self):
-    #     for  pickup in self.pickups:
-    #         pickup.draw_pickup(self.screen, self.visible_tiles)  
-        
-
 
 
 
@@ -478,6 +460,10 @@ class Game:
             elif  key_just_pressed:
                 self.basic_attack(current_unit)  # Basic attack
                 current_unit.state = "done"
+                # managing the keys
+            if target !=None and target.alive==False:
+                self.manage_keys(dead_player=target, killer=current_unit)
+
             if target !=None and target.unit_type =="monster" and target.alive==False :
                     Highlight.show_buff_animation(self,self.screen,target.image)
 
@@ -500,7 +486,112 @@ class Game:
             next_team_color = self.units[self.current_unit_index].color
             Highlight.update_fog_visibility(self,next_team_color)
             self.pickup.update(self.current_turn,self.grid)
+            self.manage_keys(current_turn=self.current_turn)
 
+
+    
+    def manage_keys(self, dead_player=None, killer=None, current_turn=None):
+        """
+        Handles all key-related logic:
+        - Initializes keys at the start of the game.
+        - Transfers keys when a player dies.
+        - Spawns additional keys based on turn events.
+        - Tracks team progress on key collection.
+
+        :param dead_player: The unit that died (optional).
+        :param killer: The unit that killed the dead player (optional).
+        :param current_turn: The current turn number (optional).
+        """
+        # Initialize keys at the start of the game
+        if not hasattr(self, "keys_initialized") or not self.keys_initialized:
+            self.units[0].blue_keys = 1  # Blue Player 1 starts with one Blue key
+            self.units[1].blue_keys = 1  # Blue Player 2 starts with one Blue key
+            self.units[2].red_keys = 1  # Red Player 1 starts with one Red key
+            self.units[3].red_keys = 1  # Red Player 2 starts with one Red key
+            self.keys_initialized = True
+            print(f"Initial keys have been assigned to players.")
+
+        # Handle key transfer on player death
+        if dead_player and killer:
+            if killer.unit_type == "player":
+                # Transfer keys to the killer
+                killer.red_keys += dead_player.red_keys
+                killer.blue_keys += dead_player.blue_keys
+                print(f"{killer.name} collected {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) from {dead_player.name}.")
+                dead_player.red_keys = 0
+                dead_player.blue_keys = 0
+            else:
+                # Keys are lost if the killer is not a player
+                print(f"{dead_player.name}'s {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) are not lost.")
+
+            # Reset keys on the dead player
+            
+
+        # Spawn additional keys based on turn events
+        if current_turn:
+            if current_turn == random.randint(20, 25):
+                # Assign keys to a monster
+                for unit in self.units :
+                    if unit.unit_type == "monster" and unit.alive == True:
+                        if unit.name=="BlueBuff":
+                            unit.blue_keys += 1
+                            print("BlueBuff now holds 1 Blue key")
+                        if unit.name=="RedBuff":
+                                unit.red_keys += 1
+                                print("RedBuff now holds 1 Red key.")
+                    
+                    
+
+
+
+
+    def draw_key_counts(self):
+        """
+        Draws the number of red and blue keys each player and team has,
+        including the player's image next to their key counts.
+        """
+        # Constants for layout
+        key_icon_size = 20  # Size of the key images
+        unit_icon_size = int(CELL_SIZE / 2)  # Size of the unit image (1/3 of cell height and width)
+        x_offset = SCREEN_WIDTH-220  # Horizontal margin
+        y_offset = SCREEN_HEIGHT /2  # Vertical margin
+        spacing = 30  # Space between rows
+
+        # Draw individual player key counts
+        for i, unit in enumerate(self.units):
+            if unit.unit_type == "player":
+                # Calculate vertical position
+                player_y = y_offset + i * spacing
+
+                # Draw unit image
+                self.screen.blit(
+                    pygame.transform.scale(unit.image, (unit_icon_size, unit_icon_size)),
+                    (x_offset, player_y)
+                )
+
+                # Draw key images and counts
+                self.screen.blit(
+                    pygame.transform.scale(self.red_key_img, (key_icon_size, key_icon_size)),
+                    (x_offset + unit_icon_size + 10, player_y)
+                )
+                self.screen.blit(
+                    pygame.transform.scale(self.blue_key_img, (key_icon_size, key_icon_size)),
+                    (x_offset + unit_icon_size + 70, player_y)
+                )  # Space between keys
+
+                # Draw key count texts
+                red_key_count_text = self.font.render(str(unit.red_keys), True, (255, 0, 0))
+                blue_key_count_text = self.font.render(str(unit.blue_keys), True, (0, 0, 255))
+                self.screen.blit(
+                    red_key_count_text,
+                    (x_offset + unit_icon_size + 10 + key_icon_size + 5, player_y)
+                )
+                self.screen.blit(
+                    blue_key_count_text,
+                    (x_offset + unit_icon_size + 70 + key_icon_size + 5, player_y)
+                )
+
+        
 
 
 
@@ -684,6 +775,7 @@ class Game:
         """Main game loop."""
         self.main_menu()  # Display main menu
         self.units = self.show_menu()
+        self.manage_keys()  # Initializes keys
          
         starting_team_color = self.units[self.current_unit_index].color
         Highlight.update_fog_visibility(self, starting_team_color)
@@ -724,6 +816,9 @@ class Game:
 
             #draw HUD
             self.draw_abilities_bar()
+
+            #draw keys
+            self.draw_key_counts()
             
 
             pygame.display.flip()
@@ -751,7 +846,18 @@ if __name__ == "__main__":
 
 
 #to do:
-#add types of potions (all details under the pickup class)
+#add types of potions : crit
 #add crit chance to unit
 #take defense into consideration before taking dmg
-#new abilities deatiled under the abilities files
+#each round add a mana and health regen ratio of 1% health and 2%mana 
+
+
+
+#make the buffs respawn when the turn arrives so they get their keys and add them in bushes 
+#make buffs have a good buff so it's worth fighting for early 
+#add the respawn mechanic for units that goes by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
+#make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
+## fix the textures and all that later
+## new abilities deatiled under the abilities files
+
+
