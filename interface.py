@@ -85,7 +85,7 @@ class Pickup:
         # Attempt to spawn each pickup type if it's time
         for p_type, config in self.pickup_types.items():
             if self.turn_count >= self.next_spawn_turns[p_type]:
-                if len(self.all_pickups) < 5:
+                if len(self.all_pickups) < 10:
                     # Check rarity
                     if random.random() < config["rarity"]:
                         x, y = self.get_random_spawn_location(grid)
@@ -112,9 +112,9 @@ class Pickup:
     def picked_used(self, unit, pickup):
         """Apply the effect of this pickup to the unit and remove it (manager only)."""
         if not pickup.picked:
-            if pickup.overlay == "red_potion":    #heals 20% max health
-                heal_amount = int(unit.max_health * 0.2)
-                unit.attack(unit, -min(unit.max_health-unit.health,heal_amount))
+            if pickup.overlay == "red_potion":    #heals 30% missing health
+                heal_amount = int((unit.max_health-unit.health )* 0.3)
+                unit.attack(unit, -heal_amount)
             elif pickup.overlay == "blue_potion": #full mana regeneration
                 unit.mana = unit.max_mana
             elif pickup.overlay == "green_potion": #100 increase of max health and heal for 33% missing health 
@@ -287,7 +287,7 @@ class Highlight:
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             beat_scale = 100  # Indicator scale percentage
             beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
-            indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale the indicator image
+            indicator_size = int(CELL_SIZE * beat_scale / 100)*1.2  # Scale the indicator image
             indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
             indicator_image.set_alpha(beat_alpha)
 

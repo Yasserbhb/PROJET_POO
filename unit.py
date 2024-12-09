@@ -71,7 +71,7 @@ class Unit:
                 DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
                 Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
             ]), 
-            Unit(16,4, "Soraka",490, 50 ,0,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
+            Unit(16,4, "Soraka",490, 50 ,50,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
                 Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
                 Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
@@ -84,7 +84,7 @@ class Unit:
 
 
             MonsterUnit(10, 10, "BigBuff",1000, 50 ,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(1, 13, "BlueBuff",390, 250 ,0,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(5 ,7, "BlueBuff",390, 250 ,0,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(15, 13, "RedBuff",390, 250 ,0,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
             Unit(1, 19, "NexusBlue",390, 50 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
@@ -125,10 +125,14 @@ class Unit:
 
     def attack(self, target,damage):
         multiplyer=1
-        if random.randint(1, 100) <= self.crit_chance:
+        #check if it's a damage ability a
+        if random.randint(1, 100) <= self.crit_chance and damage>0:
             multiplyer = 2  # Double the damage for critical hit
         print(f"{self.name} attacks {target.name}!")
-        damage_after_def=int(damage*multiplyer*(1-target.defense/(target.defense+100)))
+        if damage>0:
+            damage_after_def=int(damage*multiplyer*(1-target.defense/(target.defense+100))) #reduce damage with defesnse
+        else:
+            damage_after_def=damage
         target.health -= damage_after_def  
         target.damage_taken = damage_after_def 
         target.last_damage_time = pygame.time.get_ticks() 
@@ -307,4 +311,7 @@ class MonsterUnit(Unit):
             # Attack the attacker (if in range)    
             if self.in_range(attacker):
                 self.attack(attacker,self.damage)
+        
+
+            
                 

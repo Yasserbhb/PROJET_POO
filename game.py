@@ -398,10 +398,27 @@ class Game:
                         next_team_color = self.units[self.current_unit_index].color
                         Highlight.update_fog_visibility(self,next_team_color)
 
-                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush":   #in the presence of an enemy on this position but it's a bush u just get assassinated
-                        self.log_event(f"{current_unit.name} got assassinated")
-                        current_unit.state="done"
-                        current_unit.alive=False
+
+
+                            #check if there is enemy in bush
+                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush" and any(
+                            unit.x == current_unit.x and unit.y == current_unit.y 
+                            and unit.alive and unit.color != current_unit.color for unit in self.units
+                        ) :   #in the presence of an enemy on this position but it's a bush u just get assassinated
+                        enemy_unit = next(
+                            (unit for unit in self.units if unit.x == current_unit.x and unit.y == current_unit.y 
+                            and unit.alive and unit.color != current_unit.color), 
+                            None
+                        )
+                        if enemy_unit:
+                            self.log_event(f"{current_unit.name} got assassinated")
+                            
+                            enemy_unit.attack(current_unit,9999)
+                            current_unit.state="done"
+                            self.manage_keys(dead_player=current_unit, killer=enemy_unit)
+
+
+
                     else :      #if it's another unit u just can't finalise movement
                         self.log_event("can't finalise movement , another unit is filling this position")
                     
@@ -463,12 +480,26 @@ class Game:
             elif  key_just_pressed:
                 self.basic_attack(current_unit)  # Basic attack
                 current_unit.state = "done"
+            #manage the mssg to show when buff is killed 
+            if target !=None and target.unit_type =="monster" and target.alive==False :
+                #if the buff dies the team gets a permanent buff
+                for unit in self.units:
+                    if unit.color == current_unit.color:
+                        unit.max_health = int(unit.max_health * 1.05)
+                        unit.damage = int(unit.damage * 1.1)
+                
+                if target.red_keys==1:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You won a red key + buff")
+                elif target.blue_keys==1:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You won a blue key + buff")
+                else:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You got the Buff ")
+
                 # managing the keys
             if target !=None and target.alive==False:
                 self.manage_keys(dead_player=target, killer=current_unit)
 
-            if target !=None and target.unit_type =="monster" and target.alive==False :
-                    Highlight.show_buff_animation(self,self.screen,target.image)
+            
 
         # End Turn
         if  keys[pygame.K_r] and current_unit.state == "done" :
@@ -539,16 +570,20 @@ class Game:
 
         # Spawn additional keys based on turn events
         if current_turn:
-            if current_turn == random.randint(20, 25):
+            if current_turn == random.randint(25,30):
                 # Assign keys to a monster
                 for unit in self.units :
-                    if unit.unit_type == "monster" and unit.alive == True:
+                    if unit.unit_type == "monster" :
+                        if unit.alive==False:
+                            unit.health=unit.max_health
+                            unit.alive=True
                         if unit.name=="BlueBuff":
                             unit.blue_keys += 1
                             print("BlueBuff now holds 1 Blue key")
                         if unit.name=="RedBuff":
                                 unit.red_keys += 1
                                 print("RedBuff now holds 1 Red key.")
+                    
                     
                     
 
@@ -863,9 +898,9 @@ if __name__ == "__main__":
 #add sound design and abilities animations&
 
 
-#make the buffs respawn when the turn arrives so they get their keys and add them in bushes 
+# add keys in bushes 
 #make buffs have a good buff so it's worth fighting for early 
-#add the respawn mechanic for units that goes by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
+#add the respawn mechanic for units that goes up by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
 #make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
 ## fix the textures and all that later
 ## new abilities deatiled under the abilities files
