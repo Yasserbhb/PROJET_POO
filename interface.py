@@ -55,6 +55,7 @@ class Pickup:
                 "blue_potion":  {"rarity": 0.8},
                 "green_potion": {"rarity": 0.3},
                 "golden_potion":{"rarity": 0.2},
+                "black_potion": {"rarity": 0.2},
             }
 
             self.next_spawn_turns = {}
@@ -105,8 +106,8 @@ class Pickup:
         for p in self.all_pickups:
             if not p.picked and (p.x, p.y) in visible_tiles:
                 texture = self.textures_file[p.overlay]
-                rect = pygame.Rect(p.x * CELL_SIZE, p.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                screen.blit(pygame.transform.scale(texture, (CELL_SIZE, CELL_SIZE)), rect)
+                rect = pygame.Rect(p.x * CELL_SIZE+CELL_SIZE/4, p.y * CELL_SIZE+CELL_SIZE/4, CELL_SIZE/2, CELL_SIZE/2)
+                screen.blit(pygame.transform.scale(texture, (CELL_SIZE/2, CELL_SIZE/2)), rect)
 
     def picked_used(self, unit, pickup):
         """Apply the effect of this pickup to the unit and remove it (manager only)."""
@@ -124,6 +125,9 @@ class Pickup:
             elif pickup.overlay == "golden_potion": #reduces remaining cooldowns by 50%
                 for ability in unit.abilities:
                     ability.remaining_cooldown //= 2
+            elif pickup.overlay == "black_potion": #reduces remaining cooldowns by 50%
+                for ability in unit.abilities:
+                    unit.crit_chance += 5
 
         pickup.picked = True
         self.remove_pickup(pickup)
@@ -132,7 +136,7 @@ class Pickup:
         """Remove a pickup and schedule next spawn attempt (manager only)."""
         if pickup in self.all_pickups:
             self.all_pickups.remove(pickup)
-        delay = random.randint(10, 15)
+        delay = random.randint(15, 20)
         self.next_spawn_turns[pickup.overlay] = self.turn_count + delay
 
     def get_random_spawn_location(self, grid):

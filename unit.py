@@ -1,10 +1,11 @@
 import pygame
+import random
 from abilities import Abilities,BuffAbility,DebuffAbility
 
 CELL_SIZE = 40
 class Unit:
     """A single unit in the game."""
-    def __init__(self, x, y, name, health, damage,defense,image_path, color, move_range, attack_range, unit_type, mana=100, abilities=None):
+    def __init__(self, x, y, name, health, damage,defense,crit_chance,image_path, color, move_range, attack_range, unit_type, mana=100, abilities=None):
         self.x = x
         self.y = y
         self.initial_x = x  # Initial position for movement range
@@ -16,6 +17,7 @@ class Unit:
         self.max_health = health
         self.defense=defense
         self.damage=damage
+        self.crit_chance=crit_chance
         self.mana = mana
         self.max_mana = mana
         self.move_range = move_range
@@ -54,39 +56,39 @@ class Unit:
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
-            Unit(3,15, "Garen", 900, 999,0, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
+            Unit(3,15, "Garen", 900, 99,0,50, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
                 Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
             ]),  
-            Unit(4,16, "Ashe", 500, 70,0, self.unit_images["ashe"], None,3,2,"player", mana=100, abilities=[
+            Unit(4,16, "Ashe", 500, 70,100,50 ,self.unit_images["ashe"], None,3,2,"player", mana=100, abilities=[
                 Abilities("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
                 DebuffAbility("Frost Arrow", 30, 10, attack=20, defense=10, description="Slows and weakens the target."),
                 BuffAbility("Healing Wind", 50, 15, defense=20, description="Restores health to an ally and grants temporary defense."),
             ]),  
-            Unit(15,3, "Darius",700, 90,0,self.unit_images["darius"], None,3,2,"player", mana=120, abilities=[
+            Unit(15,3, "Darius",700, 90,0,50,self.unit_images["darius"], None,3,2,"player", mana=120, abilities=[
                 Abilities("Decimate", 50, 7, "damage", attack=250, description="Spins his axe, dealing damage to nearby enemies."),
                 DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
                 Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
             ]), 
-            Unit(16,4, "Soraka",490, 50 ,0,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
+            Unit(16,4, "Soraka",490, 50 ,0,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
                 Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
                 Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
             ]),  
-            Unit(0,0, "Rengar",700, 180 ,0,self.unit_images["rengar"], None,3,2,"player", mana=120, abilities=[
+            Unit(0,0, "Rengar",700, 180 ,0,50,self.unit_images["rengar"], None,3,2,"player", mana=120, abilities=[
                 Abilities("Savagery", 30, 5, "damage", attack=300, description="Empowered strike dealing extra damage."),
                 BuffAbility("Battle Roar", 40, 8, defense=40, description="Boosts defense and regenerates health."),
                 DebuffAbility("Thrill of the Hunt", 80, 20, attack=20, description="Tracks the enemy, reducing their attack temporarily."),
             ]),  
 
 
-            MonsterUnit(10, 10, "BigBuff",1000, 50 ,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(1, 13, "BlueBuff",390, 250 ,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(15, 13, "RedBuff",390, 250 ,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
+            MonsterUnit(10, 10, "BigBuff",1000, 50 ,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(1, 13, "BlueBuff",390, 250 ,0,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(15, 13, "RedBuff",390, 250 ,0,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
-            Unit(1, 19, "NexusBlue",390, 50 ,0,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
-            Unit(19, 1, "NexusRed",390, 50 ,0,self.unit_images["basered"], "red",0,0,"base"), #Red team base
+            Unit(1, 19, "NexusBlue",390, 50 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
+            Unit(19, 1, "NexusRed",390, 50 ,0,0,self.unit_images["basered"], "red",0,0,"base"), #Red team base
        ]
 
 
@@ -122,17 +124,19 @@ class Unit:
         return
 
     def attack(self, target,damage):
-
+        multiplyer=1
+        if random.randint(1, 100) <= self.crit_chance:
+            multiplyer = 2  # Double the damage for critical hit
         print(f"{self.name} attacks {target.name}!")
-        
-        target.health -= damage  
-        target.damage_taken = damage 
+        damage_after_def=int(damage*multiplyer*(1-target.defense/(target.defense+100)))
+        target.health -= damage_after_def  
+        target.damage_taken = damage_after_def 
         target.last_damage_time = pygame.time.get_ticks() 
         if target.health <= 0:
             target.health = 0
             target.alive = False
         target.react_to_attack(self)  # Trigger monster reaction
-        return self.damage
+        return damage_after_def
     
     def update_buffs_and_debuffs(self):
             # Handle buffs
@@ -295,8 +299,8 @@ class Unit:
 
                 
 class MonsterUnit(Unit):
-    def __init__(self, x, y, name, health, damage,defense,image_path, color, move_range, attack_range, unit_type):  
-        Unit.__init__(self, x, y, name, health, damage,defense,image_path, color, move_range, attack_range, unit_type)
+    def __init__(self, x, y, name, health, damage,defense,crit_chance,image_path, color, move_range, attack_range, unit_type):  
+        Unit.__init__(self, x, y, name, health, damage,defense,crit_chance,image_path, color, move_range, attack_range, unit_type)
 
     def react_to_attack(self, attacker):
         if self.alive:

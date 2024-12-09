@@ -17,14 +17,14 @@ def load_textures():
     """Load textures for different terrain and overlays."""
     return {
         #grid 
-        "grass": pygame.image.load("assets/grass4.jpg"),
+        "grass": pygame.image.load("assets/grass_new.png"),
         "water": pygame.image.load("assets/water.jpg"),
-        "rock": pygame.image.load("assets/rock.jpg"),
+        "rock": pygame.image.load("assets/new_rock.png"),
         #overlays
         "bush": pygame.image.load("assets/bush.png"),
         "barrier": pygame.image.load("assets/inhibetor.png"),
-        
     }
+
 def load_unit_images():
     return {
         "ashe": "assets/ashe.png",
@@ -38,6 +38,7 @@ def load_unit_images():
         "baseblue": "assets/Nexus_Blue.png",
         "basered": "assets/Nexus_Red.png"
     }
+
 def load_indicators():
     return {
         "indicator": pygame.image.load("assets/indicator.png"),
@@ -53,6 +54,8 @@ def load_pickups():
         "blue_potion": pygame.image.load("assets/blue_potion.png"),
         "green_potion": pygame.image.load("assets/green_potion.png"),
         "golden_potion": pygame.image.load("assets/golden_potion.png"),
+        "black_potion": pygame.image.load("assets/black_potion.png"),
+
     }
 
 
@@ -488,6 +491,13 @@ class Game:
             self.pickup.update(self.current_turn,self.grid)
             self.manage_keys(current_turn=self.current_turn)
 
+            #health and mana regeneration each turn
+            for unit in self.units:
+                if unit.unit_type=="player":
+                    unit.health+=min(unit.max_health-unit.health,int(0.005*unit.max_health))
+                    unit.mana +=min(unit.max_mana-unit.mana,int(0.01*unit.max_mana))
+    
+
 
     
     def manage_keys(self, dead_player=None, killer=None, current_turn=None):
@@ -846,11 +856,11 @@ if __name__ == "__main__":
 
 
 #to do:
-#add types of potions : crit
-#add crit chance to unit
-#take defense into consideration before taking dmg
-#each round add a mana and health regen ratio of 1% health and 2%mana 
 
+
+
+
+#add sound design and abilities animations&
 
 
 #make the buffs respawn when the turn arrives so they get their keys and add them in bushes 
@@ -859,5 +869,6 @@ if __name__ == "__main__":
 #make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
 ## fix the textures and all that later
 ## new abilities deatiled under the abilities files
+
 
 
