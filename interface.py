@@ -1,57 +1,172 @@
 import pygame
-import random
+import random 
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 30 
+CELL_SIZE = 40
+
+##addign the types of potions 
+
 
 # Tile Class
 class Tile:
     """Represents a single tile in the grid."""
-    def __init__(self, x, y, terrain, textures, overlay=None):
+    def __init__(self, x, y, terrain, textures_file, overlay=None):
         self.x = x
         self.y = y
         self.terrain = terrain  # "grass", "water", or "rock"
         self.overlay = overlay  # Optional overlay: "bush", "barrier"
-        self.textures = textures
+        self.textures_file = textures_file
         self.traversable = terrain in ["grass", "water"]  # Grass and water are traversable
         self.highlighted = False  
                 
         # Assign move cost based on terrain type
         self.move_cost = {"grass": 1, "water": 2, "rock": float("inf")}[terrain]
         
-        # Assign the texture based on terrain
-        self.texture = self.textures[self.terrain]
+        
 
-
-
-
-    def draw(self, screen):
+    def draw_tile(self, screen):
         """Draw the tile with its texture and overlay."""
         rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         # Draw the base terrain
+        self.texture = self.textures_file[self.terrain]
         screen.blit(pygame.transform.scale(self.texture, (CELL_SIZE, CELL_SIZE)), rect)
 
         # Draw overlay on top, if present
-        if self.overlay:
-            overlay_texture = self.textures[self.overlay]
+        if self.overlay :
+            overlay_texture = self.textures_file[self.overlay]
             screen.blit(pygame.transform.scale(overlay_texture, (CELL_SIZE, CELL_SIZE)), rect)
 
         # Optional: Draw tile border
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
 
 
+class Pickup:
+    def __init__(self, x=None, y=None, overlay=None, spawn_turn=None):
+        if x is None and y is None and overlay is None and spawn_turn is None:
+            # This is the manager instance
+            self.all_pickups = []
+            self.textures_file = None
+            self.turn_count = 0
+            self.allowed_tile_types = ["grass", "water"]
+
+            self.pickup_types = {
+                "red_potion":   {"rarity": 0.8},
+                "blue_potion":  {"rarity": 0.8},
+                "green_potion": {"rarity": 0.3},
+                "golden_potion":{"rarity": 0.2},
+                "black_potion": {"rarity": 0.2},
+            }
+
+            self.next_spawn_turns = {}
+        else:
+            # This is a pickup item instance
+            self.x = x
+            self.y = y
+            self.overlay = overlay
+            self.spawn_turn = spawn_turn
+            self.picked = False
+
+    def initialize(self, textures_file):
+        """Initialize the pickup system and set initial next spawn attempts."""
+        self.textures_file = textures_file
+        for p_type in self.pickup_types:
+            self.next_spawn_turns[p_type] = random.randint(5, 8)
+
+    def update(self, turn_count, grid):
+        """Update all pickups and attempt spawns each turn (manager only)."""
+        self.turn_count = turn_count
+
+        # Remove pickups that have stayed 15 turns without being picked
+        for p in self.all_pickups[:]:
+            if not p.picked and (self.turn_count - p.spawn_turn >= 15):
+                self.remove_pickup(p)
+
+        # Attempt to spawn each pickup type if it's time
+        for p_type, config in self.pickup_types.items():
+            if self.turn_count >= self.next_spawn_turns[p_type]:
+                if len(self.all_pickups) < 10:
+                    # Check rarity
+                    if random.random() < config["rarity"]:
+                        x, y = self.get_random_spawn_location(grid)
+                        self.spawn_single_pickup(x, y, p_type, self.turn_count)
+                    else:
+                        # Not spawned this turn, try again soon
+                        self.next_spawn_turns[p_type] = self.turn_count + random.randint(1, 3)
+
+    def spawn_single_pickup(self, x, y, overlay, spawn_turn):
+        """Create and store a single pickup item instance."""
+        new_pickup = Pickup(x, y, overlay, spawn_turn)
+        self.all_pickups.append(new_pickup)
+
+    def draw_pickups(self, screen, visible_tiles):
+        """Draw all item pickups (manager only)."""
+        if not self.textures_file:
+            return
+        for p in self.all_pickups:
+            if not p.picked and (p.x, p.y) in visible_tiles:
+                texture = self.textures_file[p.overlay]
+                rect = pygame.Rect(p.x * CELL_SIZE+CELL_SIZE/4, p.y * CELL_SIZE+CELL_SIZE/4, CELL_SIZE/2, CELL_SIZE/2)
+                screen.blit(pygame.transform.scale(texture, (CELL_SIZE/2, CELL_SIZE/2)), rect)
+
+    def picked_used(self, unit, pickup):
+        """Apply the effect of this pickup to the unit and remove it (manager only)."""
+        if not pickup.picked:
+            if pickup.overlay == "red_potion":    #heals 30% missing health
+                heal_amount = int((unit.max_health-unit.health )* 0.3)
+                unit.attack(unit, -heal_amount)
+            elif pickup.overlay == "blue_potion": #full mana regeneration
+                unit.mana = unit.max_mana
+            elif pickup.overlay == "green_potion": #100 increase of max health and heal for 33% missing health 
+                increase = 100
+                unit.max_health += increase
+                heal_amount = (unit.max_health - unit.health)//3  
+                unit.attack(unit, -heal_amount)
+            elif pickup.overlay == "golden_potion": #reduces remaining cooldowns by 50%
+                for ability in unit.abilities:
+                    ability.remaining_cooldown //= 2
+            elif pickup.overlay == "black_potion": #reduces remaining cooldowns by 50%
+                for ability in unit.abilities:
+                    unit.crit_chance += 5
+
+        pickup.picked = True
+        self.remove_pickup(pickup)
+
+    def remove_pickup(self, pickup):
+        """Remove a pickup and schedule next spawn attempt (manager only)."""
+        if pickup in self.all_pickups:
+            self.all_pickups.remove(pickup)
+        delay = random.randint(15, 20)
+        self.next_spawn_turns[pickup.overlay] = self.turn_count + delay
+
+    def get_random_spawn_location(self, grid):
+        """Get a random allowed cell for spawning."""
+        while True:
+            x = random.randint(0, GRID_SIZE - 1)
+            y = random.randint(0, GRID_SIZE - 1)
+            tile_type = grid.tiles[x][y].terrain
+            if tile_type in self.allowed_tile_types :
+                return x, y
+            # If not allowed, loop again until we find a suitable tile
+
+
+
+# permanently increases the critical chance by 10%        
+
+
 # Grid Class
 class Grid:
     """Manages the entire grid."""
-    def __init__(self, size, textures):
+    def __init__(self, size, textures_file):
         self.size = size
-        self.textures = textures
+        self.textures_file = textures_file
         self.tiles = self.create_grid()
+        self.highlight=Highlight(self.textures_file)
+        
 
     def create_grid(self):
         """Create the grid with predefined terrain and overlays."""
-        grid = [[Tile(x, y, "grass", self.textures) for y in range(self.size)] for x in range(self.size)]
+        grid = [[Tile(x, y, "grass", self.textures_file) for y in range(self.size)] for x in range(self.size)]
 
         # Add water (lakes)
         lakes = [
@@ -62,7 +177,7 @@ class Grid:
         ]
         for lake in lakes:
             for x, y in lake:
-                grid[x][y] = Tile(x, y, "water", self.textures)
+                grid[x][y] = Tile(x, y, "water", self.textures_file)
 
         # Add rocks (hills)
         hills = [
@@ -79,12 +194,13 @@ class Grid:
             ]
         for hill in hills:
             for x, y in hill:
-                grid[x][y] = Tile(x, y, "rock", self.textures)
+                grid[x][y] = Tile(x, y, "rock", self.textures_file)
 
         # Add overlays (bushes, barriers)
         overlays = {
             "bush": [(0, 0), (1, 0), (0, 1), (20, 20), (19, 20), (20, 19), (3, 7), (3, 8), (8, 3), (17, 12), (17, 13), (12, 17)],
             "barrier": [(0, 17), (1, 17), (2, 17), (3, 17), (3, 18), (3, 19), (3, 20), (17, 0), (17, 1), (17, 2), (17, 3), (18, 3), (19, 3), (20, 3)],
+
             
         }
         for overlay_type, positions in overlays.items():
@@ -93,40 +209,14 @@ class Grid:
 
         return grid
 
-    #def draw(self, screen):
-     #       """Draw all tiles in the grid."""
-     #       for row in self.tiles:
-      #          for tile in row:
-      #              tile.draw(screen)
-
-
     def draw(self, screen):
-        """Draw a visually enhanced grid with textures, gradients, and rounded grid lines."""
-        # Gradient background
-        for y in range(CELL_SIZE*GRID_SIZE):
-            color = (0, int(255 * (y / (CELL_SIZE*GRID_SIZE))), int(255 * (y / (CELL_SIZE*GRID_SIZE))))  # Gradient from dark to light
-            pygame.draw.line(screen, color, (0, y), (CELL_SIZE*GRID_SIZE, y))
-
-        # Draw the grid
+        """Draw all tiles in the grid."""
         for row in self.tiles:
             for tile in row:
-                # Draw the texture for each tile
-                tile_texture = pygame.transform.scale(self.textures[tile.terrain], (CELL_SIZE, CELL_SIZE))
-                screen.blit(tile_texture, (tile.x * CELL_SIZE, tile.y * CELL_SIZE))
+                tile.draw_tile(screen)
 
-                # If the tile has an overlay, draw it on top
-                if tile.overlay:
-                    overlay_texture = pygame.transform.scale(self.textures[tile.overlay], (CELL_SIZE, CELL_SIZE))
-                    screen.blit(overlay_texture, (tile.x * CELL_SIZE, tile.y * CELL_SIZE))
 
-                # Draw rounded grid lines for smoother visuals
-                pygame.draw.rect(
-                    screen,
-                    (255, 255, 255),  # Line color (white)
-                    pygame.Rect(tile.x * CELL_SIZE, tile.y * CELL_SIZE, CELL_SIZE, CELL_SIZE),
-                    width=1,  # Line thickness
-                    border_radius=5,  # Rounded corners
-                )
+
 
 
     
@@ -134,9 +224,12 @@ class Grid:
 # Highlight Class
 class Highlight:
     """Manages highlighting for movement and attack ranges."""
-    def __init__(self, grid):
-        self.grid = grid
+    def __init__(self,textures_file):
+        
         self.visible_tiles = set()
+        self.textures_file=textures_file
+        
+        
 
     def highlight_range(self, unit):
         """Highlight movement or attack range based on the unit's state."""
@@ -169,23 +262,32 @@ class Highlight:
                             next_cost = cost + self.grid.tiles[nx][ny].move_cost
                             if next_cost <= unit.move_range and (nx, ny) not in visited:
                                 queue.append((nx, ny, next_cost))
+
                         
         elif unit.state == "attack":
-            # Highlight attack range
-            for dx in range(-unit.attack_range, unit.attack_range + 1):
-                for dy in range(-unit.attack_range, unit.attack_range + 1):
+            # Determine the current attack range based on the selected ability
+            if hasattr(unit, "selected_ability") and unit.selected_ability is not None:
+                attack_range = unit.selected_ability.attack_radius
+            else:
+                attack_range = unit.attack_range
+
+            # Highlight the attack range
+            for dx in range(-attack_range, attack_range + 1):
+                for dy in range(-attack_range, attack_range + 1):
                     x, y = unit.x + dx, unit.y + dy
                     if (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and
-                            abs(dx) + abs(dy) <= unit.attack_range):
-                        overlay.fill((250, 0, 0, 50))  # Red with transparency (alpha = 100)
+                            abs(dx) + abs(dy) <= attack_range):  # Manhattan distance restriction
+                        overlay.fill((250, 0, 250, 50) if unit.selected_ability else (250, 0, 0, 50))  
+                        # Green for ability, red for normal attack
                         rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                         self.screen.blit(overlay, rect)
+
 
             # Highlight the target cursor
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             beat_scale = 100  # Indicator scale percentage
             beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
-            indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale the indicator image
+            indicator_size = int(CELL_SIZE * beat_scale / 100)*1.2  # Scale the indicator image
             indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
             indicator_image.set_alpha(beat_alpha)
 
@@ -245,13 +347,16 @@ class Highlight:
 
                 # Add this unit's visibility to the team's visibility
                 self.visible_tiles.update(unit_visible_tiles)
+                
+                
 
         # Final combined visible tiles
 
 
 
 
-    def draw_fog(self, screen):
+    def draw_fog(self,screen):
+ 
         """Draw the fog of war and dim lighting based on the visible tiles."""
         
         fog_overlay = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)
@@ -267,12 +372,15 @@ class Highlight:
                 rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                 if (x, y) not in self.visible_tiles:
                     # Fully fogged areas
-                    self.screen.blit(fog_overlay, rect)   
+                    screen.blit(fog_overlay, rect)   
                 elif (x, y) in self.visible_tiles and any(
                     (x + dx, y + dy) not in self.visible_tiles for dx, dy in directions
                 ):
                     # Dim lighting at the edges of visibility
-                    self.screen.blit(dim_overlay, rect)   
+                    screen.blit(dim_overlay, rect)
+
+
+                    
 
 
 

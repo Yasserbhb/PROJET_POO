@@ -1,15 +1,14 @@
 import pygame
 import random
-from unit import Unit , MonsterUnit
-from interface import Grid,Highlight 
-from abilities import Abilities
-from abilities import BuffAbility
-from abilities import DebuffAbility
+from unit import Unit 
+from interface import Grid,Highlight,Pickup
+
+
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 30
-SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE 
+CELL_SIZE = 40
+SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
 FPS = 60
 
 # Load assets
@@ -17,14 +16,15 @@ FPS = 60
 def load_textures():
     """Load textures for different terrain and overlays."""
     return {
-        "grass": pygame.image.load("assets/grass4.jpg"),
+        #grid 
+        "grass": pygame.image.load("assets/grass_new.png"),
         "water": pygame.image.load("assets/water.jpg"),
-        "rock": pygame.image.load("assets/rock.jpg"),
+        "rock": pygame.image.load("assets/new_rock.png"),
+        #overlays
         "bush": pygame.image.load("assets/bush.png"),
         "barrier": pygame.image.load("assets/inhibetor.png"),
-        
-        
     }
+
 def load_unit_images():
     return {
         "ashe": "assets/ashe.png",
@@ -38,6 +38,7 @@ def load_unit_images():
         "baseblue": "assets/Nexus_Blue.png",
         "basered": "assets/Nexus_Red.png"
     }
+
 def load_indicators():
     return {
         "indicator": pygame.image.load("assets/indicator.png"),
@@ -45,13 +46,19 @@ def load_indicators():
         "redsquare": pygame.image.load("assets/redsquare.png"),
     }
 
-# Abilities
-abilities = [
-    Abilities("Fireball", 50, 10, "damage", attack=10000, description="Deals fire damage to a single target."),
-    Abilities("Heal", 40, 15, "heal", attack=50, description="Restores health to an ally."),
-    Abilities("Shield", 30, 20, "buff", defense=30, description="Increases defense temporarily."),
-    Abilities("Frostbite", 60, 12, "debuff", attack=20, description="Reduces enemy attack power."),
-]
+def load_pickups():
+    """Load the different potion types"""
+    return{
+        #pick ups
+        "red_potion": pygame.image.load("assets/red_potion.png"),
+        "blue_potion": pygame.image.load("assets/blue_potion.png"),
+        "green_potion": pygame.image.load("assets/green_potion.png"),
+        "golden_potion": pygame.image.load("assets/golden_potion.png"),
+        "black_potion": pygame.image.load("assets/black_potion.png"),
+
+    }
+
+
 
 # Game class
 class Game:
@@ -62,27 +69,38 @@ class Game:
         self.clock = pygame.time.Clock()
         self.unit_images = load_unit_images()
         self.indicators = load_indicators()
-        self.textures=load_textures()
-        self.grid = Grid(GRID_SIZE, self.textures)
+        self.textures_file=load_textures()
+        self.pickup=Pickup()
+        self.pickup_textures=load_pickups()
+        self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
+        self.pickups=[]
+
+        self.pickup.initialize(self.pickup_textures)  
         self.current_unit_index = 0
         self.last_move_time = 0  # Timestamp of the last movement
         self.visible_tiles = set()
         self.event_log = [] # Initialize event log
-        self.mana = 1000
-        self.max_mana = 1000
-        # Pre-calculate fog for the starting team (blue)
+
+
         
         #initilizing main menu
         self.font_title = pygame.font.Font("assets/League.otf", 65)
         self.font_small = pygame.font.Font("assets/RussoOne.ttf", 36)
         self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background
-        self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load main menu background
+        self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load champion selection background
 
+        #intializing key menu
+        self.red_key_img = pygame.image.load("assets/red_key.png")
+        self.blue_key_img = pygame.image.load("assets/blue_key.png")
+        self.font = pygame.font.Font(None, 24)  # Use a small font size for clarity
+        
+        
         self.key_last_state = {} # prevent repeated actions
+        self.current_turn=1
 
         
- 
+
 
     def log_event(self, message):
         """Add an event to the event log."""
@@ -98,7 +116,7 @@ class Game:
         padding = 10  # Padding inside the panel
 
         # Draw panel background
-        pygame.draw.rect(self.screen, (20, 20, 20), (panel_x, 0, panel_width, panel_height))
+        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
 
         # Render event log with word wrapping
         font = pygame.font.Font(None, 24)
@@ -131,108 +149,140 @@ class Game:
             if y_offset > panel_height - padding:
                 break
 
-        # Current unit's abilities
-        #current_unit = self.units[self.current_unit_index]
-        #if hasattr(current_unit, "abilities"):
-            # for i, ability in enumerate(current_unit.abilities):
-                #ability_text = f"Key {i + 1}: {ability.name} (Mana: {ability.mana_cost}, CD: {ability.remaining_cooldown}s)"
-                #text_surface = font.render(ability_text, True, (255, 255, 255))
-                #self.screen.blit(text_surface, (panel_x + padding, y_offset))
-                #y_offset += text_surface.get_height() + 5
 
+
+#space for the abilities abr
 
     def draw_abilities_bar(self):
-        """Draw the abilities of the current unit at the top of the screen with dynamic sizing."""
-        panel_x = 0  # La barre commence en haut à gauche
-        panel_width = SCREEN_WIDTH - 300  # La largeur de la barre (réduite pour laisser de l'espace pour les autres éléments)
-        panel_height = 40  # Hauteur de la barre
-        padding = 10  # Espacement interne pour les textes
+        """Draw the abilities bar and HUD for the current unit at the bottom of the screen."""
+        # Bar dimensions
+        bar_height = 100
+        bar_y = SCREEN_HEIGHT - bar_height
+        padding = 10  # Padding for internal elements
+        icon_size = 80  # Size for the champion's icon
 
-        # Dessiner le fond de la barre
-        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
-        
-        # Définir la police
-        font = pygame.font.Font(None, 16)
-        
-        # Récupérer l'unité actuelle
-        current_unit = self.units[self.current_unit_index]  
-        if hasattr(current_unit, "abilities"):  # Vérifier que l'unité a des abilities
+        # Background panel for the HUD
+        pygame.draw.rect(self.screen, (30, 30, 30), (0, bar_y, SCREEN_WIDTH, bar_height))
+
+        # Get the current unit
+        current_unit = self.units[self.current_unit_index]
+
+        # Define fonts
+        font_large = pygame.font.Font(None, 24)
+        font_small = pygame.font.Font(None, 16)
+
+        # Champion icon
+        if current_unit.image:
+            icon = pygame.transform.scale(current_unit.image, (icon_size, icon_size))
+            self.screen.blit(
+                icon, (padding, bar_y + (bar_height - icon_size) // 2)
+            )
+
+        # Unit Stats Display (Name, HP, Mana)
+        stats_x = padding + icon_size + padding
+        stats_y = bar_y + padding
+
+        # Unit name
+        name_surface = font_large.render(current_unit.name, True, (255, 255, 255))
+        self.screen.blit(name_surface, (stats_x, stats_y))
+
+        # HP Bar
+        hp_bar_width = 200
+        hp_bar_height = 15
+        hp_x = stats_x
+        hp_y = stats_y + name_surface.get_height() + padding
+        pygame.draw.rect(
+            self.screen, (255, 0, 0), (hp_x, hp_y, hp_bar_width, hp_bar_height)
+        )
+        hp_fill_width = int(hp_bar_width * (current_unit.health / current_unit.max_health))
+        pygame.draw.rect(
+            self.screen, (0, 255, 0), (hp_x, hp_y, hp_fill_width, hp_bar_height)
+        )
+        hp_text = f"{current_unit.health}/{current_unit.max_health}"
+        hp_text_surface = font_small.render(hp_text, True, (0, 0, 0))
+        self.screen.blit(
+            hp_text_surface,
+            (hp_x + (hp_bar_width - hp_text_surface.get_width()) // 2, hp_y),
+        )
+
+        # Mana Bar
+        mana_bar_width = 200
+        mana_bar_height = 10
+        mana_x = stats_x
+        mana_y = hp_y + hp_bar_height + padding
+        pygame.draw.rect(
+            self.screen, (0, 0, 255), (mana_x, mana_y, mana_bar_width, mana_bar_height)
+        )
+        mana_fill_width = int(mana_bar_width * (current_unit.mana / current_unit.max_mana))
+        pygame.draw.rect(
+            self.screen, (0, 191, 255), (mana_x, mana_y, mana_fill_width, mana_bar_height)
+        )
+
+        # Draw abilities
+        if hasattr(current_unit, "abilities"):
             num_abilities = len(current_unit.abilities)
             if num_abilities > 0:
-                max_width_per_ability = (panel_width - 2 * padding) // num_abilities  # Largeur de chaque capacité
+                ability_x_start = stats_x + hp_bar_width + 2 * padding
+                ability_width = (SCREEN_WIDTH-300 - ability_x_start - padding) // num_abilities
 
-                # Dessiner chaque capacité
                 for i, ability in enumerate(current_unit.abilities):
-                    # Format du texte avec le nom, coût en mana et cooldown
-                    ability_text = f"{i + 1}: {ability.name} (Mana: {ability.mana_cost})"
-                    
-                    # Calculer la position pour cette capacité
-                    ability_x = panel_x + padding + i * max_width_per_ability  # Décalage horizontal
-                    text_surface = font.render(ability_text, True, (255, 255, 255))
-                    
-                    # Centrer le texte dans son espace alloué
-                    centered_x = ability_x + (max_width_per_ability - text_surface.get_width()) // 2
-                    self.screen.blit(text_surface, (centered_x, panel_height // 4))
-                    
-                    # Afficher le cooldown restant
-                    cooldown_text = f"CD: {ability.remaining_cooldown}s"
-                    cooldown_surface = font.render(cooldown_text, True, (255, 0, 0))  # Utiliser une couleur rouge pour le cooldown
-                    cooldown_x = ability_x + (max_width_per_ability - cooldown_surface.get_width()) // 2
-                    self.screen.blit(cooldown_surface, (cooldown_x, panel_height // 2))
-
-                    # Dessiner une barre de progression pour le cooldown
-                    if ability.remaining_cooldown > 0:
-                        cooldown_bar_width = int(max_width_per_ability * (1 - ability.remaining_cooldown / ability.cooldown))  # Fraction du cooldown
-                        pygame.draw.rect(self.screen, (255, 0, 0), (ability_x, panel_height - 5, cooldown_bar_width, 5))  # La barre de cooldown
+                    # Highlight the selected ability
+                    if current_unit.selected_ability == ability:
+                        ability_bg_color = (0, 128, 255)  # Blue background for selected ability
                     else:
-                        # Dessiner une barre pleine si le cooldown est terminé
-                        pygame.draw.rect(self.screen, (0, 255, 0), (ability_x, panel_height - 5, max_width_per_ability, 5))  # Barre pleine (cooldown terminé)
+                        ability_bg_color = (50, 50, 50)  # Default gray background
 
+                    ability_x = ability_x_start + i * ability_width
+                    ability_rect = pygame.Rect(
+                        ability_x, bar_y + padding, ability_width - padding, bar_height - 2 * padding
+                    )
+                    pygame.draw.rect(self.screen, ability_bg_color, ability_rect)
+                    pygame.draw.rect(self.screen, (255, 255, 255), ability_rect, 2)
+
+                    # Ability name and mana cost
+                    ability_text = f"{i + 1}: {ability.name} (Mana: {ability.mana_cost})"
+                    text_surface = font_small.render(ability_text, True, (255, 255, 255))
+                    text_x = ability_x + (ability_width - text_surface.get_width()) // 2
+                    self.screen.blit(text_surface, (text_x, bar_y + padding + 10))
+
+                    # Cooldown display
+                    cooldown_text = f"CD: {ability.remaining_cooldown}s"
+                    cooldown_surface = font_small.render(cooldown_text, True, (255, 0, 0))
+                    cooldown_x = ability_x + (ability_width - cooldown_surface.get_width()) // 2
+                    self.screen.blit(
+                        cooldown_surface, (cooldown_x, bar_y + padding + 30)
+                    )
+
+                    # Cooldown bar
+                    cooldown_bar_width = ability_width - 2 * padding
+                    cooldown_bar_x = ability_x + padding
+                    cooldown_bar_y = bar_y + bar_height - 15
+                    pygame.draw.rect(
+                        self.screen, (50, 50, 50), (cooldown_bar_x, cooldown_bar_y, cooldown_bar_width, 5)
+                    )
+                    if ability.cooldown > 0:
+                        cooldown_fill_width = int(
+                            cooldown_bar_width
+                            * (1 - ability.remaining_cooldown / ability.cooldown)
+                        )
+                        pygame.draw.rect(
+                            self.screen,
+                            (0, 255, 0),
+                            (cooldown_bar_x, cooldown_bar_y, cooldown_fill_width, 5),
+                        )
             else:
-                # Si aucune capacité n'est disponible pour l'unité
+                # No abilities available
                 no_abilities_text = "No abilities available"
-                text_surface = font.render(no_abilities_text, True, (255, 255, 255))
-                centered_x = (panel_width - text_surface.get_width()) // 2
-                self.screen.blit(text_surface, (centered_x, panel_height // 4))
-    
-    
-    def create_units(self):
-        """Create units and assign abilities."""
-        return [
-            Unit(3, 15, "Garen", 400, 99, self.unit_images["garen"], None, 3, 2, "player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=200, description="A quick slash attack."),
-                BuffAbility("Fortify", 20, 10, defense=50, description="Increases defense temporarily for 3 turns."),
-                Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target."),
-            ]),
-            Unit(4, 16, "Ashe", 500, 70, self.unit_images["ashe"], None, 3, 2, "player", mana=100, abilities=[
-                Abilities("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
-                DebuffAbility("Frost Arrow", 30, 10, attack=20, defense=10, description="Slows and weakens the target."),
-                BuffAbility("Healing Wind", 50, 15, defense=20, description="Restores health to an ally and grants temporary defense."),
-            ]),
-            Unit(15, 3, "Darius", 700, 90, self.unit_images["darius"], None, 3, 2, "player", mana=120, abilities=[
-                Abilities("Decimate", 50, 7, "damage", attack=250, description="Spins his axe, dealing damage to nearby enemies."),
-                DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
-                Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
-            ]),
-            Unit(16, 4, "Soraka", 490, 50, self.unit_images["soraka"], None, 3, 2, "player", mana=150, abilities=[
-                Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
-                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
-                BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
-            ]),
-            Unit(0, 0, "Rengar", 700, 180, self.unit_images["rengar"], None, 3, 2, "player", mana=120, abilities=[
-                Abilities("Savagery", 30, 5, "damage", attack=300, description="Empowered strike dealing extra damage."),
-                BuffAbility("Battle Roar", 40, 8, defense=40, description="Boosts defense and regenerates health."),
-                DebuffAbility("Thrill of the Hunt", 80, 20, attack=20, description="Tracks the enemy, reducing their attack temporarily."),
-            ]),
+                no_abilities_surface = font_small.render(
+                    no_abilities_text, True, (255, 255, 255)
+                )
+                no_abilities_x = stats_x + hp_bar_width + padding
+                self.screen.blit(
+                    no_abilities_surface, (no_abilities_x, bar_y + padding)
+                )
 
 
-            MonsterUnit(10, 10, "BigBuff", 1000, 50, self.unit_images["bigbuff"], "neutral", 3, 2, "monster"),
-            MonsterUnit(5, 7, "BlueBuff", 390, 250, self.unit_images["bluebuff"], "neutral", 3, 2, "monster"),
-            MonsterUnit(15, 13, "RedBuff", 390, 250, self.unit_images["redbuff"], "neutral", 3, 2, "monster"),
 
-            Unit(1, 19, "NexusBlue", 390, 50, self.unit_images["baseblue"], "blue", 0, 0, "base"),
-            Unit(19, 1, "NexusRed", 390, 50, self.unit_images["basered"], "red", 0, 0, "base"),
-        ]
 
     def draw_units(self):
         """Draw all units on the grid with visibility logic."""
@@ -243,12 +293,15 @@ class Game:
                 # Draw units only if they belong to the current team or are in visible tiles
                 if unit.color == current_team_color or (unit.x, unit.y) in self.visible_tiles and self.grid.tiles[unit.x][unit.y].overlay != "bush":
                     unit.draw(self.screen, is_current_turn=is_current_turn)
+                    
 
-    def resolve_attack(self, unit):
-        """Resolve the attack or ability use at the current target location."""
+
+
+    def basic_attack(self, unit):
+        """Resolve the attack at the current target location."""
         target_hit = False
 
-    # Find a valid target at the attack cursor location
+        # Find a valid target at the attack cursor location
         for other_unit in self.units:
             if (
                 other_unit.alive
@@ -256,10 +309,7 @@ class Game:
                 and other_unit.y == unit.target_y
                 and other_unit.color != unit.color
             ):
-
-                damage=unit.attack(other_unit)  # Use the Unit's attack method
-                if other_unit.unit_type =="monster" and other_unit.alive==False :
-                    Highlight.show_buff_animation(self,self.screen,other_unit.image)
+                damage=unit.attack(other_unit,unit.damage)  # Use the Unit's attack method
                 if damage > 0:
                     self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
                     # Vérifier si l'unité est morte
@@ -275,51 +325,44 @@ class Game:
         unit.state = "done"  # Mark the unit as done after the attack
         
 
+
     def advance_to_next_unit(self):
         """Advance to the next unit, skipping dead ones."""
-        start_index = self.current_unit_index  # Enregistrer l'indice de départ pour éviter une boucle infinie
+        # Start from the current unit
+        start_index = self.current_unit_index
 
+        #we keep incrementing the index untill we fullfil the conditions
         while True:
-            # Avancer à l'unité suivante
+            # Move to the next unit
             self.current_unit_index = (self.current_unit_index + 1) % len(self.units)
-            current_unit = self.units[self.current_unit_index]
 
-            # Vérifier si l'unité est vivante et de type 'player'
-            if current_unit.alive and current_unit.unit_type == "player":
-                self.log_event(f"Advancing to next unit: {current_unit.name} (Player)")
+            # Check if the unit is alive and that is part of either team red or team blue
+            if (self.units[self.current_unit_index].alive 
+                and self.units[self.current_unit_index].unit_type=="player"):
+                break
 
-                # Réduire le cooldown de toutes les capacités de l'unité
-                for ability in current_unit.abilities:
-                    ability.reduce_cooldown()  # Appeler la méthode pour réduire le cooldown de chaque ability
-
-                break  # Sortir de la boucle une fois l'unité sélectionnée
-
-            # Si on revient à l'unité de départ ou s'il n'y a plus de joueur vivant
+            # If we've cycled through all units and come back to the start, stop (prevents infinite loops)
             if self.current_unit_index == start_index:
-                self.log_event("No alive 'player' units remaining! Ending turn.")
-                break  # Sortir de la boucle et terminer le tour
-
-        # Vérification si on a trouvé une unité valide ou non
-        if not any(unit.alive and unit.unit_type == "player" for unit in self.units):
-            self.log_event("No alive 'player' units remaining! Ending turn.")
+                self.log_event("No alive units remaining!")
+                return
 
 
-        
+#add a mana and health regen for each round (2% mana ,1%hp)   
+
     def handle_turn(self):
         """Handle movement and attacks for the current unit."""
         current_time = pygame.time.get_ticks()
         current_unit = self.units[self.current_unit_index]
         keys = pygame.key.get_pressed()
 
-        # Debounce mechanism to track key states
-        if not hasattr(self, "key_last_state"):
-            self.key_last_state = {}  # Initialize key state tracker
+        action_key = pygame.K_SPACE
 
-        def is_key_just_pressed(key):
-            """Check if a key was just pressed."""
-            pressed = keys[key] and not self.key_last_state.get(key, False)
-            self.key_last_state[key] = keys[key]
-            return pressed
+        # debounce mechanism to avoid repeated triggers.
+        if not hasattr(self, "key_last_state"):
+            self.key_last_state = {}
+
+        key_just_pressed = keys[action_key] and not self.key_last_state.get(action_key, False)
+        self.key_last_state[action_key] = keys[action_key]
 
         # Movement Phase
         if current_unit.state == "move":
@@ -336,15 +379,59 @@ class Game:
                 elif keys[pygame.K_RIGHT]:
                     current_unit.move(1, 0, self.grid)
                     self.last_move_time = current_time
-                elif is_key_just_pressed(pygame.K_SPACE):  # Finalize movement
-                    self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
-                    current_unit.state = "attack"
-                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
+                elif key_just_pressed:
+                    if not any(
+                        unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
+                        and unit.alive for unit in self.units 
+                    ):  
+                        self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
 
+                        for p in self.pickup.all_pickups:
+                            if p.x == current_unit.x and p.y == current_unit.y:
+                                self.pickup.picked_used(current_unit,p)
+
+
+                        current_unit.state = "attack"
+                        
+                        current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y  # Initialize cursor
+
+                        next_team_color = self.units[self.current_unit_index].color
+                        Highlight.update_fog_visibility(self,next_team_color)
+
+
+
+                            #check if there is enemy in bush
+                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush" and any(
+                            unit.x == current_unit.x and unit.y == current_unit.y 
+                            and unit.alive and unit.color != current_unit.color for unit in self.units
+                        ) :   #in the presence of an enemy on this position but it's a bush u just get assassinated
+                        enemy_unit = next(
+                            (unit for unit in self.units if unit.x == current_unit.x and unit.y == current_unit.y 
+                            and unit.alive and unit.color != current_unit.color), 
+                            None
+                        )
+                        if enemy_unit:
+                            self.log_event(f"{current_unit.name} got assassinated")
+                            
+                            enemy_unit.attack(current_unit,9999)
+                            current_unit.state="done"
+                            self.manage_keys(dead_player=current_unit, killer=enemy_unit)
+
+
+
+                    else :      #if it's another unit u just can't finalise movement
+                        self.log_event("can't finalise movement , another unit is filling this position")
+                    
         # Attack Phase
         elif current_unit.state == "attack":
-            if current_time - self.last_move_time > 100:  # Delay of 100ms between cursor movements
+            if current_time - self.last_move_time > 100:  # Delay of 100ms between movements
                 new_target_x, new_target_y = current_unit.target_x, current_unit.target_y
+
+                # Determine current range restriction
+                if hasattr(current_unit, "selected_ability") and current_unit.selected_ability is not None:
+                    current_range = current_unit.selected_ability.attack_radius
+                else:
+                    current_range = current_unit.attack_range
 
                 # Move the attack cursor
                 if keys[pygame.K_UP]:
@@ -356,43 +443,234 @@ class Game:
                 elif keys[pygame.K_RIGHT]:
                     new_target_x = min(GRID_SIZE - 1, current_unit.target_x + 1)
 
-                # Enforce attack range restriction
-                if (
-                    abs(current_unit.x - new_target_x) + abs(current_unit.y - new_target_y)
-                    <= current_unit.attack_range
-                ):
+                # Enforce range restriction
+                if abs(current_unit.x - new_target_x) + abs(current_unit.y - new_target_y) <= current_range:
                     current_unit.target_x, current_unit.target_y = new_target_x, new_target_y
                     self.last_move_time = current_time
 
-            # Using Abilities
+            # Ability Selection
+            if hasattr(current_unit, "abilities"):
+                if keys[pygame.K_1] and len(current_unit.abilities) > 0:
+                    current_unit.selected_ability = current_unit.abilities[0]
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
+                   
+                elif keys[pygame.K_2] and len(current_unit.abilities) > 1:
+                    current_unit.selected_ability = current_unit.abilities[1]
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
+
+                elif keys[pygame.K_3] and len(current_unit.abilities) > 2:
+                    current_unit.selected_ability = current_unit.abilities[2]
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
+                   
+                elif keys[pygame.K_c]:  # Cancel ability selection
+                    current_unit.selected_ability = None
+                    current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
+
+
+            # Execute Selected Ability or Basic Attack
             target = next(
                 (unit for unit in self.units if unit.alive and unit.x == current_unit.target_x and unit.y == current_unit.target_y),
                 None,
             )
-            if hasattr(current_unit, "abilities"):
-                if is_key_just_pressed(pygame.K_1) and len(current_unit.abilities) > 0:
-                    if current_unit.abilities[0].use(current_unit, target):
-                        current_unit.state = "done"  # Mark turn as done after using an ability
-                elif is_key_just_pressed(pygame.K_2) and len(current_unit.abilities) > 1:
-                    if current_unit.abilities[1].use(current_unit, target):
+            if current_unit.selected_ability is not None :
+                if key_just_pressed:  # Confirm ability usage
+                    if current_unit.selected_ability.use(current_unit, target):
                         current_unit.state = "done"
-                elif is_key_just_pressed(pygame.K_3) and len(current_unit.abilities) > 2:
-                    if current_unit.abilities[2].use(current_unit, target):
-                        current_unit.state = "done"
-
-            # Standard attack logic if no ability is used
-            if is_key_just_pressed(pygame.K_SPACE):
-                self.resolve_attack(current_unit)
+                        current_unit.selected_ability = None  # Reset ability selection
+            elif  key_just_pressed:
+                self.basic_attack(current_unit)  # Basic attack
                 current_unit.state = "done"
+            #manage the mssg to show when buff is killed 
+            if target !=None and target.unit_type =="monster" and target.alive==False :
+                #if the buff dies the team gets a permanent buff
+                for unit in self.units:
+                    if unit.color == current_unit.color:
+                        unit.max_health = int(unit.max_health * 1.05)
+                        unit.damage = int(unit.damage * 1.1)
+                
+                if target.red_keys==1:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You won a red key + buff")
+                elif target.blue_keys==1:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You won a blue key + buff")
+                else:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You got the Buff ")
+
+                # managing the keys
+            if target !=None and target.alive==False:
+                self.manage_keys(dead_player=target, killer=current_unit)
+
+            
 
         # End Turn
-        if is_key_just_pressed(pygame.K_r) and current_unit.state == "done":
+        if  keys[pygame.K_r] and current_unit.state == "done" :
+            self.current_turn+=1
+
+            #each turn we reduce the cooldowns and reduce the duration remaaning on the buffs
+            for unit in self.units:
+                for ability in unit.abilities:
+                        ability.reduce_cooldown()
+            for unit in self.units:
+                unit.update_buffs_and_debuffs()
+
+
             current_unit.state = "move"  # Reset state for the next turn
             current_unit.initial_x, current_unit.initial_y = current_unit.x, current_unit.y  # Reset initial position
             self.advance_to_next_unit()
 
             next_team_color = self.units[self.current_unit_index].color
             Highlight.update_fog_visibility(self,next_team_color)
+            self.pickup.update(self.current_turn,self.grid)
+            self.manage_keys(current_turn=self.current_turn)
+
+            #health and mana regeneration each turn
+            for unit in self.units:
+                if unit.unit_type=="player":
+                    unit.health+=min(unit.max_health-unit.health,int(0.005*unit.max_health))
+                    unit.mana +=min(unit.max_mana-unit.mana,int(0.01*unit.max_mana))
+
+            #respawn logic
+            # Calculate respawn cap  
+            respawn = min(self.current_turn // 3, 10)
+
+            # Update death timers and respawn dead units
+            for unit in self.units:
+                if not unit.alive and unit.unit_type=="player":
+                    unit.death_timer += 1  # Increment death timer for dead units
+                    print(f"{unit.death_timer}seconds of death for {unit.name}")
+                    # Respawn logic
+                    if unit.death_timer >= respawn :
+                        self.log_event(f"{unit.name} has respawned at base!")
+                        unit.alive = True
+                        unit.health = unit.max_health  # Restore health
+                        unit.state = "move"
+                        unit.initial_x, unit.initial_y = self.get_respawn_location(unit)  # Define respawn location logic
+                        unit.x,unit.y = unit.initial_x, unit.initial_y
+                        unit.death_timer = 0  # Reset death timer
+
+            
+
+            
+    
+    def get_respawn_location(self, unit):
+    # Example: respawn at a fixed position or base location
+        if unit.color == "red":
+            return (2, 2)  # Red team's respawn point
+        elif unit.team == "BlueTeam":
+            return (10, 10)  # Blue team's respawn point
+        return (0, 0)  # Default fallback
+
+
+    
+    def manage_keys(self, dead_player=None, killer=None, current_turn=None):
+        """
+        Handles all key-related logic:
+        - Initializes keys at the start of the game.
+        - Transfers keys when a player dies.
+        - Spawns additional keys based on turn events.
+        - Tracks team progress on key collection.
+
+        :param dead_player: The unit that died (optional).
+        :param killer: The unit that killed the dead player (optional).
+        :param current_turn: The current turn number (optional).
+        """
+        # Initialize keys at the start of the game
+        if not hasattr(self, "keys_initialized") or not self.keys_initialized:
+            self.units[0].blue_keys = 1  # Blue Player 1 starts with one Blue key
+            self.units[1].blue_keys = 1  # Blue Player 2 starts with one Blue key
+            self.units[2].red_keys = 1  # Red Player 1 starts with one Red key
+            self.units[3].red_keys = 1  # Red Player 2 starts with one Red key
+            self.keys_initialized = True
+            print(f"Initial keys have been assigned to players.")
+
+        # Handle key transfer on player death
+        if dead_player and killer:
+            if killer.unit_type == "player":
+                # Transfer keys to the killer
+                killer.red_keys += dead_player.red_keys
+                killer.blue_keys += dead_player.blue_keys
+                print(f"{killer.name} collected {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) from {dead_player.name}.")
+                dead_player.red_keys = 0
+                dead_player.blue_keys = 0
+            else:
+                # Keys are lost if the killer is not a player
+                print(f"{dead_player.name}'s {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) are not lost.")
+
+            # Reset keys on the dead player
+            
+
+        # Spawn additional keys based on turn events
+        if current_turn:
+            if current_turn == random.randint(25,30):
+                # Assign keys to a monster
+                for unit in self.units :
+                    if unit.unit_type == "monster" :
+                        if unit.alive==False:
+                            unit.health=unit.max_health
+                            unit.alive=True
+                        if unit.name=="BlueBuff":
+                            unit.blue_keys += 1
+                            print("BlueBuff now holds 1 Blue key")
+                        if unit.name=="RedBuff":
+                                unit.red_keys += 1
+                                print("RedBuff now holds 1 Red key.")
+                    
+                    
+                    
+
+
+
+
+    def draw_key_counts(self):
+        """
+        Draws the number of red and blue keys each player and team has,
+        including the player's image next to their key counts.
+        """
+        # Constants for layout
+        key_icon_size = 20  # Size of the key images
+        unit_icon_size = int(CELL_SIZE / 2)  # Size of the unit image (1/3 of cell height and width)
+        x_offset = SCREEN_WIDTH-220  # Horizontal margin
+        y_offset = SCREEN_HEIGHT /2  # Vertical margin
+        spacing = 30  # Space between rows
+
+        # Draw individual player key counts
+        for i, unit in enumerate(self.units):
+            if unit.unit_type == "player":
+                # Calculate vertical position
+                player_y = y_offset + i * spacing
+
+                # Draw unit image
+                self.screen.blit(
+                    pygame.transform.scale(unit.image, (unit_icon_size, unit_icon_size)),
+                    (x_offset, player_y)
+                )
+
+                # Draw key images and counts
+                self.screen.blit(
+                    pygame.transform.scale(self.red_key_img, (key_icon_size, key_icon_size)),
+                    (x_offset + unit_icon_size + 10, player_y)
+                )
+                self.screen.blit(
+                    pygame.transform.scale(self.blue_key_img, (key_icon_size, key_icon_size)),
+                    (x_offset + unit_icon_size + 70, player_y)
+                )  # Space between keys
+
+                # Draw key count texts
+                red_key_count_text = self.font.render(str(unit.red_keys), True, (255, 0, 0))
+                blue_key_count_text = self.font.render(str(unit.blue_keys), True, (0, 0, 255))
+                self.screen.blit(
+                    red_key_count_text,
+                    (x_offset + unit_icon_size + 10 + key_icon_size + 5, player_y)
+                )
+                self.screen.blit(
+                    blue_key_count_text,
+                    (x_offset + unit_icon_size + 70 + key_icon_size + 5, player_y)
+                )
+
+        
+
+
+
+
 
     def main_menu(self):
         """Display the main menu with options to start or quit."""
@@ -439,7 +717,7 @@ class Game:
 
 
 
-    
+
     def show_menu(self):
         """Enhanced team selection menu."""
         menu_running = True
@@ -449,7 +727,7 @@ class Game:
         small_font = self.font_small
 
         # Get all units from create_units
-        all_units = self.create_units()
+        all_units = Unit.create_units(self)
 
         # Filter player units for selection (those with team=None)
         available_units = [unit for unit in all_units if unit.color is None]
@@ -487,7 +765,7 @@ class Game:
                     attr_text = small_font.render(line, True, (255, 255, 255))
                     self.screen.blit(attr_text, (SCREEN_WIDTH // 2 + 200, y_offset))
                     y_offset += 40
-                    # Show the selected champion's image larger
+                     # Show the selected champion's image larger
                 selected_image = pygame.transform.scale(selected_unit_info.image, (150, 150))
                 self.screen.blit(selected_image, (SCREEN_WIDTH - 420, y_offset+30))
 
@@ -566,44 +844,18 @@ class Game:
         return self.units
     
 
-    def select_abilities(self):
-        menu_running = True
-        selected_ability = None
-        while menu_running:
-            self.screen.fill((30, 30, 30))
-            y_offset = 100
-            for i, ability in enumerate(abilities):
-                text = self.font_small.render(f"{i + 1}: {ability.name} - {ability.description}", True, (255, 255, 255))
-                self.screen.blit(text, (50, y_offset))
-                y_offset += 40
-            pygame.display.flip()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
-                elif event.type == pygame.KEYDOWN:
-                    if pygame.K_1 <= event.key <= pygame.K_9:
-                        index = event.key - pygame.K_1
-                        if 0 <= index < len(abilities):
-                            selected_ability = abilities[index]
-                            menu_running = False
-        return selected_ability
 
-    def update_buffs_and_debuffs(self):
-        """Update active buffs and debuffs on all units."""
-        for unit in self.units:
-            if hasattr(unit, "abilities"):
-                for ability in unit.abilities:
-                    if isinstance(ability, (BuffAbility, DebuffAbility)) and ability.remaining_duration > 0:
-                        ability.update_duration(unit)
-                        
+
     def run(self):
         """Main game loop."""
         self.main_menu()  # Display main menu
         self.units = self.show_menu()
-        
+        self.manage_keys()  # Initializes keys
+         
         starting_team_color = self.units[self.current_unit_index].color
         Highlight.update_fog_visibility(self, starting_team_color)
+        
+
         
 
         running = True
@@ -613,30 +865,35 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
             
-            # Update buffs and debuffs
-            self.update_buffs_and_debuffs()
             
             # Draw grid and units
             self.grid.draw(self.screen)
-            
-            # Render fog of war
-            Highlight.draw_fog(self,self.screen)
 
             # Highlight range for the active unit
             current_unit = self.units[self.current_unit_index]
             Highlight.highlight_range(self,current_unit)
+ 
+            # Render fog of war
+            Highlight.draw_fog(self,self.screen)
+            
+            #Display pcikups
+            self.pickup.draw_pickups(self.screen, self.visible_tiles)
+
             
             #Display units
             self.draw_units()
-            self.draw_abilities_bar()
+
             # Handle current unit's turn
             self.handle_turn()
-
+            
             #Show Info panel
             self.draw_info_panel()
-            
 
             #draw HUD
+            self.draw_abilities_bar()
+
+            #draw keys
+            self.draw_key_counts()
             
 
             pygame.display.flip()
@@ -648,31 +905,32 @@ if __name__ == "__main__":
     Game().run()
 
 
-#make grid have 3 different maps , everything related to grid stays in grid and make ice make you slower next round (less range) , and add a hiding place that we can use as a dmg boost if you hit from it
-#make an ability class that has a name, description, and a function that gets called when the ability is used and a lot of attributes
+#everything related to grid stays in grid , and add a hiding place that we can use as a dmg boost if you hit from it
 #take the turn handler to a diffrent class ?
-# create a HUD as a class
-# add pick ups class
 # take in rnage verification to game instead of unit , so resolve attack checks all the enviromeent and confirms if we attack , and attack method only works after we confim that so it just modifies the hp and effects...
-# i want the highlight for range to also be like the attack so the move phase only the cursor for target position moves than when we confirm , the unit snaps to that posotion
-# verify all conditions after creating TP and healings and effects 
+ 
 
 # add objective class it has a nexus also red and blue monster  (red and blue monster spawn once each 6 rounds)
 # each team has 2 keys 1 on each player and the third is hidden in a monster ( 2 keys 2 buffs , 1 for each team and there are 3 monsters total ) and one that spawns randomly
-# once u have 3 keys of the enemy (1 from monster 1 random and 1 from killing them) the barriere disappears and their nexus is visible and u can hit it )
+# once u have 3 keys of the enemy  the barriere disappears and their nexus is visible and u can hit it 
 # game ends with nexus exploding 
-# USE INHERETENCE FOR TILES UNITS AND ABILITIES to let the main class focus on basic tasks and add more complexity
 
 
-
-#work to do tomorrow
-#take the info panel to interface if possible
-#1st thing to do tmrrw morning : and add some pick ups && reacting to attacks (maybe make monsters and base to inheretance) and also fix all the attacking methods to remove what's redandent
-#2nd thing is creating an ability class and surely use inheretence 
 #create split screen
-#5th check if i want to make a cursor for moving phase , if yes i need to fix the move method so it is generalised bcs the unit will snap right in (so both fct tell me im not in a good spot , but if i need to call move without handler i'll be fine)
-#6th make subclasses 
 #add reviving system and lvl system but the pickups will tend to be closer to the losing team 
-# after killing  buff add an animation that covers eveyrhting and shows what the buff gave you
 
-#if u jump into a bush and there is a unit there u die bcs u get assassinated
+
+#to do:
+
+
+
+
+#add sound design and abilities animations&
+# add keys in bushes 
+
+#add the respawn mechanic for units that goes up by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
+#make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
+## fix the textures and all that later
+## new abilities deatiled under the abilities files
+
+
