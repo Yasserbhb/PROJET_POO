@@ -780,7 +780,10 @@ class Game:
                                     pygame.display.flip()
                                     pygame.time.delay(1000)# Delay for 1 second
                                  # Play game music
-                                self.sound.set_volume("game_music", 0.01)  
+                                for volume in reversed([x / 100 for x in range(1, 101)]):  # De 1.0 à 0.01
+                                    self.sound.set_volume("game_music", volume)  
+                                    pygame.time.delay(10) 
+                                self.sound.set_volume("game_music", 0.03)  
                                 self.sound.sounds["game_music"].play(loops=-1)  
                                 menu_running = False
 
