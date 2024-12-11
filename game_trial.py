@@ -465,9 +465,16 @@ class Game:
                         current_unit.state = "done"
                         current_unit.selected_ability = None  # Reset ability selection
             elif  key_just_pressed:
-                self.basic_attack(current_unit)  # Basic attack
+                # Basic attack
+                self.basic_attack(current_unit)
                 current_unit.state = "done"
-                # managing the keys
+
+                # Jouer le son d'attaque de base
+                basic_attack_sound = f"{current_unit.name} Basic Attack"
+                if basic_attack_sound in self.sound.sounds:
+                    self.sound.play(basic_attack_sound)
+                
+                                # managing the keys
             if target !=None and target.alive==False:
                 self.manage_keys(dead_player=target, killer=current_unit)
 
