@@ -1,6 +1,8 @@
 import pygame
 import random
 from abilities import Abilities,BuffAbility,DebuffAbility
+from sounds import *
+
 
 CELL_SIZE = 35
 class Unit:

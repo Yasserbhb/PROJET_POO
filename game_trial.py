@@ -2,6 +2,7 @@ import pygame
 import random
 from unit import Unit 
 from interface import Grid,Highlight,Pickup
+from sounds import Sounds
 
 
 
@@ -75,6 +76,8 @@ class Game:
         self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
         self.pickups=[]
+
+        self.sound=Sounds()
 
         self.pickup.initialize(self.pickup_textures)  
         self.current_unit_index = 0
@@ -611,20 +614,22 @@ class Game:
         """Display the main menu with options to start or quit."""
         menu_running = True
 
+        # Start menu sound
+        self.sound.play("menu_music")
+
         while menu_running:
             rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
             self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
 
             # Render game title
             title_text = self.font_title.render("League on Budget", True, (200, 156, 56))
-            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 4  ))
-            title_text1 = self.font_title.render("League on Budget", True, (0,0,0))
-            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 +2, SCREEN_HEIGHT // 4+ 2))
+            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
+            title_text1 = self.font_title.render("League on Budget", True, (0, 0, 0))
+            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 + 2, SCREEN_HEIGHT // 4 + 2))
 
             self.screen.blit(title_text1, title_rect1)
             self.screen.blit(title_text, title_rect)
-            
-            
+
             # Render instructions
             start_text = self.font_small.render("Press ENTER to Play", True, (200, 200, 200))
             quit_text = self.font_small.render("Press ESC to Quit", True, (200, 200, 200))
@@ -644,6 +649,7 @@ class Game:
                     exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:  # Start the game
+                          # Stop menu sound
                         menu_running = False
                     elif event.key == pygame.K_ESCAPE:  # Quit the game
                         pygame.quit()
@@ -656,7 +662,7 @@ class Game:
     def show_menu(self):
         """Enhanced team selection menu."""
         menu_running = True
-        
+        self.sound.play("menu_music")
         # Initialize assets
         font = self.font_title
         small_font = self.font_small
@@ -737,7 +743,8 @@ class Game:
                     if pygame.K_1 <= event.key <= pygame.K_9:
                         index = event.key - pygame.K_1
                         if 0 <= index < len(available_units):
-                            selected_unit_info = available_units[index]  # Show attributes for this unit
+                            selected_unit_info = available_units[index]  
+                            self.sound.play("selection")  # Jouer le son de sélection# Show attributes for this unit
                     elif event.key == pygame.K_RETURN and selected_unit_info:
                         if selected_unit_info not in selected_units:
                             # Assign the current team and position to the selected unit

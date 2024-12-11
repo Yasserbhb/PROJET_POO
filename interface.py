@@ -1,5 +1,7 @@
 import pygame
 import random 
+from sounds import *
+
 
 # Constants
 GRID_SIZE = 21

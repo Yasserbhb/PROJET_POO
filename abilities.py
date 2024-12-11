@@ -1,4 +1,6 @@
 import pygame
+from sounds import *
+
 
 
 class Abilities:
