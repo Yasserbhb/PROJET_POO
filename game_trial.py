@@ -615,7 +615,8 @@ class Game:
         menu_running = True
 
         # Start menu sound
-        self.sound.play("menu_music")
+        self.sound.play("game_music")
+
 
         while menu_running:
             rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -649,8 +650,9 @@ class Game:
                     exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:  # Start the game
-                          # Stop menu sound
+                        
                         menu_running = False
+                        #self.sound.stop("menu_music") # Stop menu sound
                     elif event.key == pygame.K_ESCAPE:  # Quit the game
                         pygame.quit()
                         exit()
@@ -662,7 +664,6 @@ class Game:
     def show_menu(self):
         """Enhanced team selection menu."""
         menu_running = True
-        self.sound.play("menu_music")
         # Initialize assets
         font = self.font_title
         small_font = self.font_small
@@ -744,7 +745,8 @@ class Game:
                         index = event.key - pygame.K_1
                         if 0 <= index < len(available_units):
                             selected_unit_info = available_units[index]  
-                            self.sound.play("selection")  # Jouer le son de sélection# Show attributes for this unit
+                            self.sound.play("selection") 
+                            self.sound.set_volume("selection", 0.5) # Jouer le son de sélection# Show attributes for this unit
                     elif event.key == pygame.K_RETURN and selected_unit_info:
                         if selected_unit_info not in selected_units:
                             # Assign the current team and position to the selected unit
@@ -775,7 +777,10 @@ class Game:
                                     countdown_rect = countdown_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
                                     self.screen.blit(countdown_text, countdown_rect)
                                     pygame.display.flip()
-                                    pygame.time.delay(1000)  # Delay for 1 second
+                                    pygame.time.delay(1000)# Delay for 1 second
+                                self.sound.stop("game_music")
+                                self.sound.play("game_music")  # Play game music
+                                self.sound.set_volume("game_music", 0.05)   
                                 menu_running = False
 
         # Build self.units in the required order: blue team → red team → monsters
@@ -792,6 +797,7 @@ class Game:
         """Main game loop."""
         self.main_menu()  # Display main menu
         self.units = self.show_menu()
+
         self.manage_keys()  # Initializes keys
          
         starting_team_color = self.units[self.current_unit_index].color
@@ -802,6 +808,7 @@ class Game:
 
         running = True
         while running:
+
             self.screen.fill((0, 0, 0))  # Clear the screen
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

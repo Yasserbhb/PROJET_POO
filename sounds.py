@@ -31,7 +31,10 @@ class Sounds:
             "soraka_starcall":pygame.mixer.Sound("sounds/soraka_starcall.ogg"),
             "soraka_wish":pygame.mixer.Sound("sounds/soraka_wish.ogg"),
             "sword":pygame.mixer.Sound("sounds/sword.wav"),
-            "selection":pygame.mixer.Sound("sounds/selection.mp3")
+            "selection":pygame.mixer.Sound("sounds/selection.mp3"),
+            "moving":pygame.mixer.Sound("sounds/moving.mp3"),
+            "game_music": pygame.mixer.Sound("sounds/game_music.mp3"),
+
 
         }
 
@@ -39,3 +42,12 @@ class Sounds:
     def play(self, name):
         if name in self.sounds:
             self.sounds[name].play()
+
+    def set_volume(self, sound_name, volume):
+        if sound_name in self.sounds:
+            self.sounds[sound_name].set_volume(volume)
+    
+    def stop(self, sound_name):
+        if sound_name in self.sounds:
+            self.sounds[sound_name].stop()
+    

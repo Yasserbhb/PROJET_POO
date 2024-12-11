@@ -52,6 +52,7 @@ class Unit:
         # Initialize for damage display
         self.last_damage_time = None 
         self.damage_taken = 0 
+        #self.sound=Sounds()
 
 
 
@@ -117,7 +118,9 @@ class Unit:
             if not target_tile.highlighted:
                 print(f"Cannot move to ({new_x}, {new_y}) because it's not highlighted.")
                 return  # Can't move if the tile is not highlighted
-            else : self.x, self.y = new_x, new_y
+            else : 
+                self.x, self.y = new_x, new_y
+                
 
 
 
