@@ -33,6 +33,10 @@ class Unit:
         self.target_x = x
         self.target_y = y
         self.abilities = abilities if abilities else []  # Default to an empty list if no abilities are provided
+        self.grass_sound = pygame.mixer.Sound("sounds/moving.mp3")  # Son pour l'herbe
+        self.grass_sound.set_volume(0.2)
+        self.water_sound = pygame.mixer.Sound("sounds/water.mp3")   # Son pour l'eau
+        self.water_sound.set_volume(0.2)
 
 
         # Buff and debuff trackers
@@ -118,8 +122,16 @@ class Unit:
             if not target_tile.highlighted:
                 print(f"Cannot move to ({new_x}, {new_y}) because it's not highlighted.")
                 return  # Can't move if the tile is not highlighted
-            else : 
-                self.x, self.y = new_x, new_y
+            # Jouer le son correspondant au type de terrain
+            if target_tile.terrain== "grass":
+                self.grass_sound.play()
+                
+            elif target_tile.terrain == "water":
+                self.water_sound.play()
+                
+
+            # Mettre à jour la position
+            self.x, self.y = new_x, new_y
                 
 
 
