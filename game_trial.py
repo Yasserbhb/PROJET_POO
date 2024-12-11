@@ -461,6 +461,7 @@ class Game:
             if current_unit.selected_ability is not None :
                 if key_just_pressed:  # Confirm ability usage
                     if current_unit.selected_ability.use(current_unit, target):
+                        self.sound.play(current_unit.selected_ability.name)
                         current_unit.state = "done"
                         current_unit.selected_ability = None  # Reset ability selection
             elif  key_just_pressed:
@@ -778,9 +779,9 @@ class Game:
                                     self.screen.blit(countdown_text, countdown_rect)
                                     pygame.display.flip()
                                     pygame.time.delay(1000)# Delay for 1 second
-                                self.sound.stop("game_music")
-                                self.sound.play("game_music")  # Play game music
-                                self.sound.set_volume("game_music", 0.05)   
+                                 # Play game music
+                                self.sound.set_volume("game_music", 0.05)  
+                                self.sound.sounds["game_music"].play(loops=-1)  
                                 menu_running = False
 
         # Build self.units in the required order: blue team → red team → monsters
