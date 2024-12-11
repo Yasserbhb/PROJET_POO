@@ -2,7 +2,7 @@ import pygame
 
 
 class Abilities:
-    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description="",attack_radius=3,aoe_radius=0):
+    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description="",attack_radius=3):
         self.name = name
         self.mana_cost = mana_cost
         self.cooldown = cooldown
@@ -12,8 +12,6 @@ class Abilities:
         self.defense = defense
         self.description = description
         self.attack_radius=attack_radius
-        self.aoe_radius = aoe_radius
-        
 
 
     def use(self, user, target=None):
@@ -28,10 +26,6 @@ class Abilities:
         if self.remaining_cooldown > 0:
             print(f"{self.name} is on cooldown.")
             return False
-        if self.aoe_radius > 0:  # AoE ability
-            if not target:
-                print(f"No valid targets for {self.name}.")
-                return False
 
         # Prevent friendly fire for damage abilities
         if self.ability_type == "damage" and target and user.color == target.color:

@@ -1,9 +1,11 @@
 import pygame
 import random 
+from Sounds import Sounds
+
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 40
+CELL_SIZE = 35
 
 ##addign the types of potions 
 
@@ -41,6 +43,9 @@ class Tile:
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
 
 
+import random
+import pygame
+
 class Pickup:
     def __init__(self, x=None, y=None, overlay=None, spawn_turn=None):
         if x is None and y is None and overlay is None and spawn_turn is None:
@@ -59,6 +64,7 @@ class Pickup:
             }
 
             self.next_spawn_turns = {}
+            self.sounds = Sounds()  # Initialiser le gestionnaire de sons ici
         else:
             # This is a pickup item instance
             self.x = x
@@ -85,7 +91,7 @@ class Pickup:
         # Attempt to spawn each pickup type if it's time
         for p_type, config in self.pickup_types.items():
             if self.turn_count >= self.next_spawn_turns[p_type]:
-                if len(self.all_pickups) < 10:
+                if len(self.all_pickups) < 5:
                     # Check rarity
                     if random.random() < config["rarity"]:
                         x, y = self.get_random_spawn_location(grid)
@@ -106,31 +112,39 @@ class Pickup:
         for p in self.all_pickups:
             if not p.picked and (p.x, p.y) in visible_tiles:
                 texture = self.textures_file[p.overlay]
-                rect = pygame.Rect(p.x * CELL_SIZE+CELL_SIZE/4, p.y * CELL_SIZE+CELL_SIZE/4, CELL_SIZE/2, CELL_SIZE/2)
-                screen.blit(pygame.transform.scale(texture, (CELL_SIZE/2, CELL_SIZE/2)), rect)
+                rect = pygame.Rect(
+                    p.x * CELL_SIZE + CELL_SIZE / 4,
+                    p.y * CELL_SIZE + CELL_SIZE / 4,
+                    CELL_SIZE / 2,
+                    CELL_SIZE / 2,
+                )
+                screen.blit(pygame.transform.scale(texture, (CELL_SIZE / 2, CELL_SIZE / 2)), rect)
 
     def picked_used(self, unit, pickup):
         """Apply the effect of this pickup to the unit and remove it (manager only)."""
         if not pickup.picked:
-            if pickup.overlay == "red_potion":    #heals 30% missing health
-                heal_amount = int((unit.max_health-unit.health )* 0.3)
-                unit.attack(unit, -heal_amount)
-            elif pickup.overlay == "blue_potion": #full mana regeneration
+            if pickup.overlay == "red_potion":  # heals 20% max health
+                heal_amount = int(unit.max_health * 0.2)
+                unit.attack(unit, -min(unit.max_health - unit.health, heal_amount))
+            elif pickup.overlay == "blue_potion":  # full mana regeneration
                 unit.mana = unit.max_mana
-            elif pickup.overlay == "green_potion": #100 increase of max health and heal for 33% missing health 
+            elif pickup.overlay == "green_potion":  # increase max health by 100 and heal 33% missing health
                 increase = 100
                 unit.max_health += increase
-                heal_amount = (unit.max_health - unit.health)//3  
+                heal_amount = (unit.max_health - unit.health) // 3
                 unit.attack(unit, -heal_amount)
-            elif pickup.overlay == "golden_potion": #reduces remaining cooldowns by 50%
+            elif pickup.overlay == "golden_potion":  # reduces remaining cooldowns by 50%
                 for ability in unit.abilities:
                     ability.remaining_cooldown //= 2
-            elif pickup.overlay == "black_potion": #reduces remaining cooldowns by 50%
-                for ability in unit.abilities:
-                    unit.crit_chance += 5
+            elif pickup.overlay == "black_potion":  # increases crit chance by 5%
+                unit.crit_chance += 5
 
-        pickup.picked = True
-        self.remove_pickup(pickup)
+            # Play the potion sound
+            self.sound.play("potion")
+
+            # Mark as picked and remove
+            pickup.picked = True
+            self.remove_pickup(pickup)
 
     def remove_pickup(self, pickup):
         """Remove a pickup and schedule next spawn attempt (manager only)."""
@@ -145,9 +159,9 @@ class Pickup:
             x = random.randint(0, GRID_SIZE - 1)
             y = random.randint(0, GRID_SIZE - 1)
             tile_type = grid.tiles[x][y].terrain
-            if tile_type in self.allowed_tile_types :
+            if tile_type in self.allowed_tile_types:
                 return x, y
-            # If not allowed, loop again until we find a suitable tile
+
 
 
 
@@ -287,7 +301,7 @@ class Highlight:
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             beat_scale = 100  # Indicator scale percentage
             beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
-            indicator_size = int(CELL_SIZE * beat_scale / 100)*1.2  # Scale the indicator image
+            indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale the indicator image
             indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
             indicator_image.set_alpha(beat_alpha)
 

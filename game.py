@@ -2,12 +2,13 @@ import pygame
 import random
 from unit import Unit 
 from interface import Grid,Highlight,Pickup
+from Sounds import Sounds
 
 
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 40
+CELL_SIZE = 35
 SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
 FPS = 60
 
@@ -75,6 +76,8 @@ class Game:
         self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
         self.pickups=[]
+
+        self.sound=Sounds()
 
         self.pickup.initialize(self.pickup_textures)  
         self.current_unit_index = 0
@@ -398,27 +401,10 @@ class Game:
                         next_team_color = self.units[self.current_unit_index].color
                         Highlight.update_fog_visibility(self,next_team_color)
 
-
-
-                            #check if there is enemy in bush
-                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush" and any(
-                            unit.x == current_unit.x and unit.y == current_unit.y 
-                            and unit.alive and unit.color != current_unit.color for unit in self.units
-                        ) :   #in the presence of an enemy on this position but it's a bush u just get assassinated
-                        enemy_unit = next(
-                            (unit for unit in self.units if unit.x == current_unit.x and unit.y == current_unit.y 
-                            and unit.alive and unit.color != current_unit.color), 
-                            None
-                        )
-                        if enemy_unit:
-                            self.log_event(f"{current_unit.name} got assassinated")
-                            
-                            enemy_unit.attack(current_unit,9999)
-                            current_unit.state="done"
-                            self.manage_keys(dead_player=current_unit, killer=enemy_unit)
-
-
-
+                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush":   #in the presence of an enemy on this position but it's a bush u just get assassinated
+                        self.log_event(f"{current_unit.name} got assassinated")
+                        current_unit.state="done"
+                        current_unit.alive=False
                     else :      #if it's another unit u just can't finalise movement
                         self.log_event("can't finalise movement , another unit is filling this position")
                     
@@ -475,31 +461,25 @@ class Game:
             if current_unit.selected_ability is not None :
                 if key_just_pressed:  # Confirm ability usage
                     if current_unit.selected_ability.use(current_unit, target):
+                        self.sound.play(current_unit.selected_ability.name)
                         current_unit.state = "done"
                         current_unit.selected_ability = None  # Reset ability selection
             elif  key_just_pressed:
-                self.basic_attack(current_unit)  # Basic attack
+                # Basic attack
+                self.basic_attack(current_unit)
                 current_unit.state = "done"
-            #manage the mssg to show when buff is killed 
-            if target !=None and target.unit_type =="monster" and target.alive==False :
-                #if the buff dies the team gets a permanent buff
-                for unit in self.units:
-                    if unit.color == current_unit.color:
-                        unit.max_health = int(unit.max_health * 1.05)
-                        unit.damage = int(unit.damage * 1.1)
-                
-                if target.red_keys==1:
-                    Highlight.show_buff_animation(self,self.screen,target.image,"You won a red key + buff")
-                elif target.blue_keys==1:
-                    Highlight.show_buff_animation(self,self.screen,target.image,"You won a blue key + buff")
-                else:
-                    Highlight.show_buff_animation(self,self.screen,target.image,"You got the Buff ")
 
-                # managing the keys
+                # Jouer le son d'attaque de base
+                basic_attack_sound = f"{current_unit.name} Basic Attack"
+                if basic_attack_sound in self.sound.sounds:
+                    self.sound.play(basic_attack_sound)
+                
+                                # managing the keys
             if target !=None and target.alive==False:
                 self.manage_keys(dead_player=target, killer=current_unit)
 
-            
+            if target !=None and target.unit_type =="monster" and target.alive==False :
+                    Highlight.show_buff_animation(self,self.screen,target.image)
 
         # End Turn
         if  keys[pygame.K_r] and current_unit.state == "done" :
@@ -527,37 +507,7 @@ class Game:
                 if unit.unit_type=="player":
                     unit.health+=min(unit.max_health-unit.health,int(0.005*unit.max_health))
                     unit.mana +=min(unit.max_mana-unit.mana,int(0.01*unit.max_mana))
-
-            #respawn logic
-            # Calculate respawn cap  
-            respawn = min(self.current_turn // 3, 10)
-
-            # Update death timers and respawn dead units
-            for unit in self.units:
-                if not unit.alive and unit.unit_type=="player":
-                    unit.death_timer += 1  # Increment death timer for dead units
-                    print(f"{unit.death_timer}seconds of death for {unit.name}")
-                    # Respawn logic
-                    if unit.death_timer >= respawn :
-                        self.log_event(f"{unit.name} has respawned at base!")
-                        unit.alive = True
-                        unit.health = unit.max_health  # Restore health
-                        unit.state = "move"
-                        unit.initial_x, unit.initial_y = self.get_respawn_location(unit)  # Define respawn location logic
-                        unit.x,unit.y = unit.initial_x, unit.initial_y
-                        unit.death_timer = 0  # Reset death timer
-
-            
-
-            
     
-    def get_respawn_location(self, unit):
-    # Example: respawn at a fixed position or base location
-        if unit.color == "red":
-            return (2, 2)  # Red team's respawn point
-        elif unit.team == "BlueTeam":
-            return (10, 10)  # Blue team's respawn point
-        return (0, 0)  # Default fallback
 
 
     
@@ -600,20 +550,16 @@ class Game:
 
         # Spawn additional keys based on turn events
         if current_turn:
-            if current_turn == random.randint(25,30):
+            if current_turn == random.randint(20, 25):
                 # Assign keys to a monster
                 for unit in self.units :
-                    if unit.unit_type == "monster" :
-                        if unit.alive==False:
-                            unit.health=unit.max_health
-                            unit.alive=True
+                    if unit.unit_type == "monster" and unit.alive == True:
                         if unit.name=="BlueBuff":
                             unit.blue_keys += 1
                             print("BlueBuff now holds 1 Blue key")
                         if unit.name=="RedBuff":
                                 unit.red_keys += 1
                                 print("RedBuff now holds 1 Red key.")
-                    
                     
                     
 
@@ -676,20 +622,23 @@ class Game:
         """Display the main menu with options to start or quit."""
         menu_running = True
 
+        # Start menu sound
+        self.sound.play("game_music")
+
+
         while menu_running:
             rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
             self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
 
             # Render game title
             title_text = self.font_title.render("League on Budget", True, (200, 156, 56))
-            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 4  ))
-            title_text1 = self.font_title.render("League on Budget", True, (0,0,0))
-            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 +2, SCREEN_HEIGHT // 4+ 2))
+            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
+            title_text1 = self.font_title.render("League on Budget", True, (0, 0, 0))
+            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 + 2, SCREEN_HEIGHT // 4 + 2))
 
             self.screen.blit(title_text1, title_rect1)
             self.screen.blit(title_text, title_rect)
-            
-            
+
             # Render instructions
             start_text = self.font_small.render("Press ENTER to Play", True, (200, 200, 200))
             quit_text = self.font_small.render("Press ESC to Quit", True, (200, 200, 200))
@@ -709,7 +658,9 @@ class Game:
                     exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:  # Start the game
+                        
                         menu_running = False
+                        #self.sound.stop("menu_music") # Stop menu sound
                     elif event.key == pygame.K_ESCAPE:  # Quit the game
                         pygame.quit()
                         exit()
@@ -721,7 +672,6 @@ class Game:
     def show_menu(self):
         """Enhanced team selection menu."""
         menu_running = True
-        
         # Initialize assets
         font = self.font_title
         small_font = self.font_small
@@ -802,7 +752,9 @@ class Game:
                     if pygame.K_1 <= event.key <= pygame.K_9:
                         index = event.key - pygame.K_1
                         if 0 <= index < len(available_units):
-                            selected_unit_info = available_units[index]  # Show attributes for this unit
+                            selected_unit_info = available_units[index]  
+                            self.sound.play("selection") 
+                            self.sound.set_volume("selection", 0.5) # Jouer le son de sélection# Show attributes for this unit
                     elif event.key == pygame.K_RETURN and selected_unit_info:
                         if selected_unit_info not in selected_units:
                             # Assign the current team and position to the selected unit
@@ -833,7 +785,13 @@ class Game:
                                     countdown_rect = countdown_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
                                     self.screen.blit(countdown_text, countdown_rect)
                                     pygame.display.flip()
-                                    pygame.time.delay(1000)  # Delay for 1 second
+                                    pygame.time.delay(1000)# Delay for 1 second
+                                 # Play game music
+                                for volume in reversed([x / 100 for x in range(1, 101)]):  # De 1.0 à 0.01
+                                    self.sound.set_volume("game_music", volume)  
+                                    pygame.time.delay(10) 
+                                self.sound.set_volume("game_music", 0.03)  
+                                self.sound.sounds["game_music"].play(loops=-1)  
                                 menu_running = False
 
         # Build self.units in the required order: blue team → red team → monsters
@@ -850,6 +808,7 @@ class Game:
         """Main game loop."""
         self.main_menu()  # Display main menu
         self.units = self.show_menu()
+
         self.manage_keys()  # Initializes keys
          
         starting_team_color = self.units[self.current_unit_index].color
@@ -860,6 +819,7 @@ class Game:
 
         running = True
         while running:
+
             self.screen.fill((0, 0, 0))  # Clear the screen
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -885,7 +845,7 @@ class Game:
 
             # Handle current unit's turn
             self.handle_turn()
-            
+
             #Show Info panel
             self.draw_info_panel()
 
@@ -926,11 +886,12 @@ if __name__ == "__main__":
 
 
 #add sound design and abilities animations&
-# add keys in bushes 
 
-#add the respawn mechanic for units that goes up by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
+
+#make the buffs respawn when the turn arrives so they get their keys and add them in bushes 
+#make buffs have a good buff so it's worth fighting for early 
+#add the respawn mechanic for units that goes by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
 #make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
 ## fix the textures and all that later
 ## new abilities deatiled under the abilities files
-
 
