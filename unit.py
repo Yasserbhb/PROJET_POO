@@ -1,10 +1,8 @@
 import pygame
 import random
 from abilities import Abilities,BuffAbility,DebuffAbility
-from Sounds import Sounds
 
-
-CELL_SIZE = 35
+CELL_SIZE = 32
 class Unit:
     """A single unit in the game."""
     def __init__(self, x, y, name, health, damage,defense,crit_chance,image_path, color, move_range, attack_range, unit_type, mana=100, abilities=None):
@@ -33,10 +31,6 @@ class Unit:
         self.target_x = x
         self.target_y = y
         self.abilities = abilities if abilities else []  # Default to an empty list if no abilities are provided
-        self.grass_sound = pygame.mixer.Sound("sounds/moving.mp3")  # Son pour l'herbe
-        self.grass_sound.set_volume(0.2)
-        self.water_sound = pygame.mixer.Sound("sounds/water.mp3")   # Son pour l'eau
-        self.water_sound.set_volume(0.2)
 
 
         # Buff and debuff trackers
@@ -53,10 +47,11 @@ class Unit:
         self.red_keys = 0  # Number of red keys this unit holds
         self.blue_keys = 0  # Number of blue keys this unit holds
 
+        self.death_timer = 0  # Tracks turns since death
+        
         # Initialize for damage display
         self.last_damage_time = None 
         self.damage_taken = 0 
-        #self.sound=Sounds()
 
 
 
@@ -64,7 +59,7 @@ class Unit:
         """Create units and place them on the grid."""       
         return [            
             Unit(3,15, "Garen", 900, 99,0,50, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3),
+                Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3,is_aoe=True),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
             ]),  
@@ -78,9 +73,9 @@ class Unit:
                 DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
                 Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
             ]), 
-            Unit(16,4, "Soraka",490, 50 ,0,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
+            Unit(16,4, "Soraka",490, 50 ,50,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
                 Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
-                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
+                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally.",is_aoe=True),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
             ]),  
             Unit(0,0, "Rengar",700, 180 ,0,50,self.unit_images["rengar"], None,3,2,"player", mana=120, abilities=[
@@ -91,7 +86,7 @@ class Unit:
 
 
             MonsterUnit(10, 10, "BigBuff",1000, 50 ,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(1, 13, "BlueBuff",390, 250 ,0,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(5 ,7, "BlueBuff",390, 250 ,0,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(15, 13, "RedBuff",390, 250 ,0,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
             Unit(1, 19, "NexusBlue",390, 50 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
@@ -122,17 +117,7 @@ class Unit:
             if not target_tile.highlighted:
                 print(f"Cannot move to ({new_x}, {new_y}) because it's not highlighted.")
                 return  # Can't move if the tile is not highlighted
-            # Jouer le son correspondant au type de terrain
-            if target_tile.terrain== "grass":
-                self.grass_sound.play()
-                
-            elif target_tile.terrain == "water":
-                self.water_sound.play()
-                
-
-            # Mettre à jour la position
-            self.x, self.y = new_x, new_y
-                
+            else : self.x, self.y = new_x, new_y
 
 
 
@@ -142,10 +127,14 @@ class Unit:
 
     def attack(self, target,damage):
         multiplyer=1
-        if random.randint(1, 100) <= self.crit_chance:
+        #check if it's a damage ability a
+        if random.randint(1, 100) <= self.crit_chance and damage>0:
             multiplyer = 2  # Double the damage for critical hit
         print(f"{self.name} attacks {target.name}!")
-        damage_after_def=int(damage*multiplyer*(1-target.defense/(target.defense+100)))
+        if damage>0:
+            damage_after_def=int(damage*multiplyer*(1-target.defense/(target.defense+100))) #reduce damage with defesnse
+        else:
+            damage_after_def=damage
         target.health -= damage_after_def  
         target.damage_taken = damage_after_def 
         target.last_damage_time = pygame.time.get_ticks() 
@@ -324,4 +313,7 @@ class MonsterUnit(Unit):
             # Attack the attacker (if in range)    
             if self.in_range(attacker):
                 self.attack(attacker,self.damage)
+        
+
+            
                 

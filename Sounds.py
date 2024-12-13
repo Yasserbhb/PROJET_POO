@@ -54,7 +54,8 @@ class Sounds:
     def play(self, name, loop=0):
         if name in self.sounds:
             self.sounds[name].play(loops=loop)  # Utilise l'option `loops` de pygame
-
+        else:
+            print(f"Sound not found for: {name}")
 
     def set_volume(self, sound_name, volume):
         if sound_name in self.sounds:

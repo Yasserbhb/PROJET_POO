@@ -1,3 +1,6 @@
+import pygame
+import random 
+
 from abilities import Abilities
 
 class AOEAbility(Abilities):
