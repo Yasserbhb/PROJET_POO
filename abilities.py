@@ -52,13 +52,14 @@ class Abilities:
         user.mana -= self.mana_cost
         self.remaining_cooldown = self.cooldown
         return True
+    
     def get_targets_in_aoe(self, user, grid):
         """Get all units within AoE radius."""
         aoe_targets = []
         for unit in grid.units:
             if unit.alive:
                 distance = abs(unit.x - user.x) + abs(unit.y - user.y)
-                if distance <= self.attack_radius:
+                if distance <= self.attack_radius and user.color != unit.color :
                     aoe_targets.append(unit)
         return aoe_targets
 
@@ -68,6 +69,10 @@ class Abilities:
             print("No valid target to apply effect.")
             return
         
+        if target.color == user.color:  # Si la cible est un allié, ignorez l'effet
+            print(f"{self.name} cannot target allies.")
+            return
+    
         if self.ability_type == "damage" and user.color != target.color:
             print(f"{target.name} takes {self.attack} damage!")
             user.attack(target, self.attack)

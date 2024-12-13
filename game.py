@@ -454,7 +454,7 @@ class Game:
                 if keys[pygame.K_1] and len(current_unit.abilities) > 0:
                     current_unit.selected_ability = current_unit.abilities[0]
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
-                   
+                
                 elif keys[pygame.K_2] and len(current_unit.abilities) > 1:
                     current_unit.selected_ability = current_unit.abilities[1]
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
@@ -462,7 +462,7 @@ class Game:
                 elif keys[pygame.K_3] and len(current_unit.abilities) > 2:
                     current_unit.selected_ability = current_unit.abilities[2]
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
-                   
+                
                 elif keys[pygame.K_c]:  # Cancel ability selection
                     current_unit.selected_ability = None
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
