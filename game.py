@@ -2,12 +2,13 @@ import pygame
 import random
 from unit import Unit 
 from interface import Grid,Highlight,Pickup
+from Sounds import Sounds
 
 
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 40
+CELL_SIZE = 32
 SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
 FPS = 60
 
@@ -99,7 +100,7 @@ class Game:
         self.key_last_state = {} # prevent repeated actions
         self.current_turn=1
 
-        
+        self.sound = Sounds() 
 
 
     def log_event(self, message):
