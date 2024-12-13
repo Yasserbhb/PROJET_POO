@@ -62,7 +62,19 @@ class Abilities:
                     aoe_targets.append(unit)
         return aoe_targets
 
-
+    def apply_effect(self, user, target):
+        """Apply the ability's effect to the target."""
+        if target is None:
+            print("No valid target to apply effect.")
+            return
+        
+        if self.ability_type == "damage" and user.color != target.color:
+            print(f"{target.name} takes {self.attack} damage!")
+            user.attack(target, self.attack)
+        elif self.ability_type == "heal" and user.color == target.color:
+            heal_amount = min(target.max_health - target.health, self.attack)
+            print(f"{target.name} is healed by {heal_amount} health!")
+            user.attack(target, -heal_amount)
 
     def reduce_cooldown(self):
         """
