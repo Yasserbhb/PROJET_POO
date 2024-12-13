@@ -262,8 +262,7 @@ class Highlight:
                             next_cost = cost + self.grid.tiles[nx][ny].move_cost
                             if next_cost <= unit.move_range and (nx, ny) not in visited:
                                 queue.append((nx, ny, next_cost))
-
-                        
+                                
         elif unit.state == "attack":
             # Highlight AoE range if an AoE ability is selected
             if unit.selected_ability and unit.selected_ability.is_aoe:
@@ -288,35 +287,7 @@ class Highlight:
                             rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                             self.screen.blit(overlay, rect)
                             self.grid.tiles[x][y].highlighted = True
-
-        
-        elif unit.state == "buff":
-            # Highlight buff range if a BuffAbility is selected
-            if unit.selected_ability and unit.selected_ability.ability_type == "buff":
-                buff_radius = unit.selected_ability.attack_radius
-                for dx in range(-buff_radius, buff_radius + 1):
-                    for dy in range(-buff_radius, buff_radius + 1):
-                        x, y = unit.x + dx, unit.y + dy
-                        if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and abs(dx) + abs(dy) <= buff_radius:
-                            overlay.fill((0, 255, 0, 100))  # Green for buffs
-                            rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                            self.screen.blit(overlay, rect)
-                            self.grid.tiles[x][y].highlighted = True
-
-        elif unit.state == "debuff":
-            # Highlight debuff range if a DebuffAbility is selected
-            if unit.selected_ability and unit.selected_ability.ability_type == "debuff":
-                debuff_radius = unit.selected_ability.attack_radius
-                for dx in range(-debuff_radius, debuff_radius + 1):
-                    for dy in range(-debuff_radius, debuff_radius + 1):
-                        x, y = unit.x + dx, unit.y + dy
-                        if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and abs(dx) + abs(dy) <= debuff_radius:
-                            overlay.fill((255, 165, 0, 100))  # Orange for debuffs
-                            rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                            self.screen.blit(overlay, rect)
-                            self.grid.tiles[x][y].highlighted = True
-        
-        
+                            
             # Highlight the target cursor
             target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             beat_scale = 100  # Indicator scale percentage
