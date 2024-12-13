@@ -128,7 +128,7 @@ class Unit:
     def attack(self, target,damage):
         multiplyer=1
         #check if it's a damage ability a
-        if random.randint(1, 100) <= self.crit_chance :
+        if random.randint(1, 100) <= self.crit_chance and damage > 0 :
             multiplyer = 2  # Double the damage for critical hit
         print(f"{self.name} attacks {target.name}!")
         if damage>0:
