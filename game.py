@@ -2,13 +2,12 @@ import pygame
 import random
 from unit import Unit 
 from interface import Grid,Highlight,Pickup
-from Sounds import Sounds
 
 
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 32
+CELL_SIZE = 40
 SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
 FPS = 60
 
@@ -100,7 +99,7 @@ class Game:
         self.key_last_state = {} # prevent repeated actions
         self.current_turn=1
 
-        self.sound = Sounds() 
+        
 
 
     def log_event(self, message):
@@ -454,7 +453,7 @@ class Game:
                 if keys[pygame.K_1] and len(current_unit.abilities) > 0:
                     current_unit.selected_ability = current_unit.abilities[0]
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
-                
+                   
                 elif keys[pygame.K_2] and len(current_unit.abilities) > 1:
                     current_unit.selected_ability = current_unit.abilities[1]
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
@@ -462,7 +461,7 @@ class Game:
                 elif keys[pygame.K_3] and len(current_unit.abilities) > 2:
                     current_unit.selected_ability = current_unit.abilities[2]
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
-            
+                   
                 elif keys[pygame.K_c]:  # Cancel ability selection
                     current_unit.selected_ability = None
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
