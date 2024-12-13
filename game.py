@@ -462,7 +462,7 @@ class Game:
                 elif keys[pygame.K_3] and len(current_unit.abilities) > 2:
                     current_unit.selected_ability = current_unit.abilities[2]
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
-                
+            
                 elif keys[pygame.K_c]:  # Cancel ability selection
                     current_unit.selected_ability = None
                     current_unit.target_x, current_unit.target_y = current_unit.x, current_unit.y
@@ -473,27 +473,18 @@ class Game:
                 (unit for unit in self.units if unit.alive and unit.x == current_unit.target_x and unit.y == current_unit.target_y),
                 None,
             )
+            # Aoe
             if current_unit.selected_ability is not None:
-                if key_just_pressed:  # Confirm ability usage
+                if key_just_pressed:
                     if current_unit.selected_ability.is_aoe:
-                        # Handle AoE abilities
-                        aoe_targets = current_unit.selected_ability.get_targets_in_aoe(current_unit, self.grid)
-                        if aoe_targets:  # Ensure targets exist
-                            if current_unit.selected_ability.use(current_unit, aoe_targets, self.grid):
+                        aoe_targets = current_unit.selected_ability.get_targets_in_aoe(current_unit, self.units)
+                        if aoe_targets:
+                            if current_unit.selected_ability.use(current_unit, aoe_targets, self.units):
                                 self.sound.play(current_unit.selected_ability.name)
                                 current_unit.state = "done"
-                                current_unit.selected_ability = None  # Reset ability selection
+                                current_unit.selected_ability = None
                         else:
-                            print("No valid targets in AoE range.")
-                    else:
-                        # Single target ability
-                        if target:  # Validate target is not None
-                            if current_unit.selected_ability.use(current_unit, [target], self.grid):
-                                self.sound.play(current_unit.selected_ability.name)
-                                current_unit.state = "done"
-                                current_unit.selected_ability = None  # Reset ability selection
-                        else:
-                            print("No valid target selected.")
+                            print(f"{current_unit.selected_ability.name} has no valid targets.")
             elif key_just_pressed:
                 # Basic attack
                 self.basic_attack(current_unit)
@@ -958,5 +949,4 @@ if __name__ == "__main__":
 #make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
 ## fix the textures and all that later
 ## new abilities deatiled under the abilities files
-
 

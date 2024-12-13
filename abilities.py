@@ -14,8 +14,19 @@ class Abilities:
         self.attack_radius=attack_radius
         self.is_aoe = is_aoe
 
-
-    def use(self, user, targets, grid):
+    def get_targets_in_aoe(self, user, units):
+        """
+        Retourne toutes les cibles valides dans la zone AoE (ennemis et monstres uniquement).
+        """
+        aoe_targets = []
+        for unit in units:  # Parcourt toutes les unités sur la grille
+            if unit.alive:
+                distance = abs(unit.x - user.x) + abs(unit.y - user.y)
+                if distance <= self.attack_radius and unit.color != user.color:  # Exclut les alliés
+                    aoe_targets.append(unit)
+        return aoe_targets
+    
+    def use(self, user, target, grid):
         """
         Execute the ability. Supports AoE if `is_aoe` is True.
         :param user: Unit using the ability.
@@ -41,27 +52,15 @@ class Abilities:
                 self.apply_effect(user, target)
 
         else:
-            # Single target logic
-            if not targets or len(targets) != 1:
-                print(f"No valid target for {self.name}.")
-                return False
-            target = targets[0]
-            self.apply_effect(user, target)
+            print(f"No valid target for {self.name}.")
+            return False
 
         # Deduct mana and apply cooldown
         user.mana -= self.mana_cost
         self.remaining_cooldown = self.cooldown
         return True
-    
-    def get_targets_in_aoe(self, user, grid):
-        """Get all units within AoE radius."""
-        aoe_targets = []
-        for unit in grid.units:
-            if unit.alive:
-                distance = abs(unit.x - user.x) + abs(unit.y - user.y)
-                if distance <= self.attack_radius and user.color != unit.color :
-                    aoe_targets.append(unit)
-        return aoe_targets
+
+
 
     def apply_effect(self, user, target):
         """Apply the ability's effect to the target."""
@@ -69,17 +68,16 @@ class Abilities:
             print("No valid target to apply effect.")
             return
         
-        if target.color == user.color:  # Si la cible est un allié, ignorez l'effet
-            print(f"{self.name} cannot target allies.")
-            return
-    
         if self.ability_type == "damage" and user.color != target.color:
             print(f"{target.name} takes {self.attack} damage!")
-            user.attack(target, self.attack)
+            target.health -= self.attack
+            if target.health <= 0:
+                target.alive = False
+                print(f"{target.name} est éliminé !")
         elif self.ability_type == "heal" and user.color == target.color:
             heal_amount = min(target.max_health - target.health, self.attack)
             print(f"{target.name} is healed by {heal_amount} health!")
-            user.attack(target, -heal_amount)
+            target.health += heal_amount
 
     def reduce_cooldown(self):
         """
