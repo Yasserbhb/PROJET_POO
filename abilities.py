@@ -60,8 +60,6 @@ class Abilities:
         self.remaining_cooldown = self.cooldown
         return True
 
-
-
     def apply_effect(self, user, target):
         """Apply the ability's effect to the target."""
         if target is None:
@@ -77,7 +75,7 @@ class Abilities:
         elif self.ability_type == "heal" and user.color == target.color:
             heal_amount = min(target.max_health - target.health, self.attack)
             print(f"{target.name} is healed by {heal_amount} health!")
-            target.health += heal_amount
+            target.health += heal_amount  
 
     def reduce_cooldown(self):
         """
