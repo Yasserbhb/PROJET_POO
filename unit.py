@@ -75,7 +75,7 @@ class Unit:
             ]), 
             Unit(16,4, "Soraka",490, 50 ,50,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
                 Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
-                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally.",is_aoe=True),
+                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally.",attack_radius=4, is_aoe=True),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
             ]),  
             Unit(0,0, "Rengar",700, 180 ,0,50,self.unit_images["rengar"], None,3,2,"player", mana=120, abilities=[
@@ -91,7 +91,7 @@ class Unit:
 
             Unit(1, 19, "NexusBlue",390, 50 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
             Unit(19, 1, "NexusRed",390, 50 ,0,0,self.unit_images["basered"], "red",0,0,"base"), #Red team base
-       ]
+        ]
 
 
 
@@ -128,7 +128,7 @@ class Unit:
     def attack(self, target,damage):
         multiplyer=1
         #check if it's a damage ability a
-        if random.randint(1, 100) <= self.crit_chance and damage>0:
+        if random.randint(1, 100) <= self.crit_chance :
             multiplyer = 2  # Double the damage for critical hit
         print(f"{self.name} attacks {target.name}!")
         if damage>0:
