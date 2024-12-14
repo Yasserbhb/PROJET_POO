@@ -63,7 +63,7 @@ class Unit:
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
-            Unit(3,15, "Garen", 900, 99,0,50, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
+            Unit(3,15, "Garen", 900, 9999,0,50, self.unit_images["garen"], None,12,2,"player", mana=120, abilities=[
                 Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3,is_aoe=2),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
@@ -94,8 +94,8 @@ class Unit:
             MonsterUnit(5 ,7, "BlueBuff",390, 250 ,0,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(15, 13, "RedBuff",390, 250 ,0,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
-            Unit(1, 19, "NexusBlue",390, 50 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
-            Unit(19, 1, "NexusRed",390, 50 ,0,0,self.unit_images["basered"], "red",0,0,"base"), #Red team base
+            BaseUnit(1, 19, "NexusBlue",2900, 50 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base","Up"),  #Blue team base
+            BaseUnit(19, 1, "NexusRed",2900, 50 ,0,0,self.unit_images["basered"], "red",0,0,"base","Up"), #Red team base
        ]
 
 
@@ -145,10 +145,14 @@ class Unit:
         if random.randint(1, 100) <= self.crit_chance and damage>0:
             multiplyer = 2  # Double the damage for critical hit
         print(f"{self.name} attacks {target.name}!")
+
+        
         if damage>0:
             damage_after_def=int(damage*multiplyer*(1-target.defense/(target.defense+100))) #reduce damage with defesnse
         else:
             damage_after_def=damage
+        if target.unit_type=="base" and target.barrier_status=="Up":
+            damage_after_def=0
         target.health -= damage_after_def  
         target.damage_taken = damage_after_def 
         target.last_damage_time = pygame.time.get_ticks() 
@@ -157,7 +161,8 @@ class Unit:
             target.alive = False
         target.react_to_attack(self)  # Trigger monster reaction
         return damage_after_def
-    
+        
+        
     def update_buffs_and_debuffs(self):
             # Handle buffs
             if self.buff_duration > 0:
@@ -330,4 +335,23 @@ class MonsterUnit(Unit):
         
 
             
-                
+class BaseUnit(Unit):
+    def __init__(self, x, y, name, health, damage, defense, crit_chance, image_path, color, move_range, attack_range, unit_type, barrier_status):
+        super().__init__(x, y, name, health, damage, defense, crit_chance, image_path, color, move_range, attack_range, unit_type)
+        self.barrier_status = barrier_status
+
+    def draw(self, screen, is_current_turn):
+        """
+        Draw the Nexus along with its barrier status.
+        """
+        # Call the parent draw method
+        super().draw(screen, is_current_turn)
+
+        # Draw barrier status text above the Nexus
+        font = pygame.font.Font(None, 24)
+        barrier_status_text = "Barrier: UP" if self.barrier_status=="Up" else "Barrier: DOWN"
+        color = (0, 255, 0) if self.barrier_status=="Up" else (255, 0, 0)
+        text_surface = font.render(barrier_status_text, True, color)
+        x = self.x * CELL_SIZE + CELL_SIZE // 2 - text_surface.get_width() // 2
+        y = self.y * CELL_SIZE - 20  # Position above the Nexus
+        screen.blit(text_surface, (x, y))
