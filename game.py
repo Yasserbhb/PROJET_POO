@@ -555,10 +555,11 @@ class Game:
                 self.basic_attack(current_unit)  # Basic attack
                 current_unit.state = "done"
 
-                # Jouer le son d'attaque de base
+                # Jouer le son d'attaque de base si il y'a un target
                 basic_attack_sound = f"{current_unit.name} Basic Attack"
-                if basic_attack_sound in self.sound.sounds:
-                    self.sound.play(basic_attack_sound)
+                if target is not None and target!=current_unit:
+                    if basic_attack_sound in self.sound.sounds:
+                        self.sound.play(basic_attack_sound)
             
                 
                 #manage after using basic attack 
