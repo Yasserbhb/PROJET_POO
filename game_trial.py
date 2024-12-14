@@ -482,9 +482,11 @@ class Game:
                 current_unit.state = "done"
 
                 # Jouer le son d'attaque de base
-                basic_attack_sound = f"{current_unit.name} Basic Attack"
-                if basic_attack_sound in self.sound.sounds:
-                    self.sound.play(basic_attack_sound)
+                if target is not None and target.alive and target.color != current_unit.color:
+
+                    basic_attack_sound = f"{current_unit.name} Basic Attack"
+                    if basic_attack_sound in self.sound.sounds:
+                        self.sound.play(basic_attack_sound)
             
                 
             #manage after using basic attack and none aoe abilities
