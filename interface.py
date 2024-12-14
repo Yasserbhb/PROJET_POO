@@ -1,5 +1,6 @@
 import pygame
 import random 
+from sounds import *
 
 # Constants
 GRID_SIZE = 21
@@ -59,6 +60,7 @@ class Pickup:
             }
 
             self.next_spawn_turns = {}
+            self.sound = Sounds() 
         else:
             # This is a pickup item instance
             self.x = x
@@ -129,6 +131,10 @@ class Pickup:
                 for ability in unit.abilities:
                     unit.crit_chance += 5
 
+        # Play the potion sound
+        self.sound.play("potion")
+
+        #mark as picked and remove
         pickup.picked = True
         self.remove_pickup(pickup)
 

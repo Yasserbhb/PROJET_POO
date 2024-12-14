@@ -1,7 +1,7 @@
 import pygame
 import random
 from abilities import Abilities,BuffAbility,DebuffAbility
-
+from sounds import *
 CELL_SIZE = 40
 class Unit:
     """A single unit in the game."""
@@ -53,6 +53,11 @@ class Unit:
         self.last_damage_time = None 
         self.damage_taken = 0 
 
+        #grass and water sounds for movement
+        self.grass_sound = pygame.mixer.Sound("sounds/moving.mp3")  # Son pour l'herbe
+        self.grass_sound.set_volume(0.2)
+        self.water_sound = pygame.mixer.Sound("sounds/water.mp3")   # Son pour l'eau
+        self.water_sound.set_volume(0.2)
 
 
     def create_units(self):
@@ -117,7 +122,16 @@ class Unit:
             if not target_tile.highlighted:
                 print(f"Cannot move to ({new_x}, {new_y}) because it's not highlighted.")
                 return  # Can't move if the tile is not highlighted
-            else : self.x, self.y = new_x, new_y
+            # Jouer le son correspondant au type de terrain
+
+            else :
+                self.x, self.y = new_x, new_y
+                if target_tile.terrain== "grass":
+                    self.grass_sound.play()
+                    
+                elif target_tile.terrain == "water":
+                    self.water_sound.play()
+
 
 
 

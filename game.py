@@ -2,7 +2,7 @@ import pygame
 import random
 from unit import Unit 
 from interface import Grid,Highlight,Pickup
-
+from sounds import Sounds
 
 
 # Constants
@@ -71,6 +71,7 @@ class Game:
         self.indicators = load_indicators()
         self.textures_file=load_textures()
         self.pickup=Pickup()
+        self.sound=Sounds()
         self.pickup_textures=load_pickups()
         self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
@@ -478,7 +479,7 @@ class Game:
                         aoe_targets = current_unit.selected_ability.get_targets_in_aoe(current_unit, self.units)
                         if aoe_targets is not None:  # Ensure targets exist
                             if current_unit.selected_ability.use(current_unit, aoe_targets):
-                                
+                                self.sound.play(current_unit.selected_ability.name)
                                 current_unit.state = "done"
                                 current_unit.selected_ability = None  # Reset ability selection
                         
@@ -505,10 +506,11 @@ class Game:
                                 # managing the keys
                             if targets !=None and targets.alive==False:
                                 self.manage_keys(dead_player=targets, killer=current_unit)
+
                     else : #logic when using none aoe abilities
                         if target is not None:  # Ensure targets exist
                             if current_unit.selected_ability.use(current_unit, target):
-                                
+                                self.sound.play(current_unit.selected_ability.name)
                                 current_unit.state = "done"
                                 current_unit.selected_ability = None  # Reset ability selection
                         
@@ -521,6 +523,10 @@ class Game:
                 self.basic_attack(current_unit)  # Basic attack
                 current_unit.state = "done"
 
+                # Jouer le son d'attaque de base
+                basic_attack_sound = f"{current_unit.name} Basic Attack"
+                if basic_attack_sound in self.sound.sounds:
+                    self.sound.play(basic_attack_sound)
             
                 
             #manage after using basic attack and none aoe abilities
@@ -727,6 +733,9 @@ class Game:
         """Display the main menu with options to start or quit."""
         menu_running = True
 
+        # Start menu sound
+        self.sound.play("game_music")
+
         while menu_running:
             rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
             self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
@@ -855,6 +864,8 @@ class Game:
                         if 0 <= index < len(available_units):
                             selected_unit_info = available_units[index]  # Show attributes for this unit
                     elif event.key == pygame.K_RETURN and selected_unit_info:
+                        self.sound.play("selection") 
+                        self.sound.set_volume("selection", 0.5)
                         if selected_unit_info not in selected_units:
                             # Assign the current team and position to the selected unit
                             if current_team == "blue":
@@ -885,6 +896,12 @@ class Game:
                                     self.screen.blit(countdown_text, countdown_rect)
                                     pygame.display.flip()
                                     pygame.time.delay(1000)  # Delay for 1 second
+                                    # Play game music
+                                for volume in reversed([x / 100 for x in range(1, 101)]):  # De 1.0 à 0.01
+                                    self.sound.set_volume("game_music", volume)  
+                                    pygame.time.delay(10) 
+                                self.sound.set_volume("game_music", 0.03)  
+                                self.sound.sounds["game_music"].play(loops=-1)
                                 menu_running = False
 
         # Build self.units in the required order: blue team → red team → monsters
@@ -956,33 +973,10 @@ if __name__ == "__main__":
     Game().run()
 
 
-#everything related to grid stays in grid , and add a hiding place that we can use as a dmg boost if you hit from it
-#take the turn handler to a diffrent class ?
-# take in rnage verification to game instead of unit , so resolve attack checks all the enviromeent and confirms if we attack , and attack method only works after we confim that so it just modifies the hp and effects...
- 
-
-# add objective class it has a nexus also red and blue monster  (red and blue monster spawn once each 6 rounds)
-# each team has 2 keys 1 on each player and the third is hidden in a monster ( 2 keys 2 buffs , 1 for each team and there are 3 monsters total ) and one that spawns randomly
-# once u have 3 keys of the enemy  the barriere disappears and their nexus is visible and u can hit it 
-# game ends with nexus exploding 
-
-
-#create split screen
-#add reviving system and lvl system but the pickups will tend to be closer to the losing team 
-
-
-#to do:
 
 
 
-
-#add sound design and abilities animations&
-# add keys in bushes 
-
-#add the respawn mechanic for units that goes up by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
-#make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
-## fix the textures and all that later
-## new abilities deatiled under the abilities files
+#fix the keys vfx ; make the showing of mssgs better
 
 
 
