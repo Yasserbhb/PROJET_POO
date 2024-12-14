@@ -492,9 +492,13 @@ class Game:
                             if targets !=None and targets.unit_type =="monster" and targets.alive==False :
                                 #if the buff dies the team gets a permanent buff
                                 for unit in self.units:
-                                    if unit.color == current_unit.color:
-                                        unit.max_health = int(unit.max_health * 1.05)
-                                        unit.damage = int(unit.damage * 1.1)
+                                        if unit.color == current_unit.color:
+                                            if unit.name=="BigBuff":
+                                                unit.max_health = int(unit.max_health * 1.10)
+                                                unit.damage = int(unit.damage * 1.15)
+                                            else :
+                                                unit.max_health = int(unit.max_health * 1.05)
+                                                unit.damage = int(unit.damage * 1.05)
                                 
                                 if targets.red_keys==1:
                                     Highlight.show_buff_animation(self,self.screen,targets.image,"You won a red key + buff")
@@ -535,8 +539,12 @@ class Game:
                 #if the buff dies the team gets a permanent buff
                 for unit in self.units:
                     if unit.color == current_unit.color:
-                        unit.max_health = int(unit.max_health * 1.05)
-                        unit.damage = int(unit.damage * 1.1)
+                        if unit.name=="BigBuff":
+                            unit.max_health = int(unit.max_health * 1.10)
+                            unit.damage = int(unit.damage * 1.15)
+                        else :
+                            unit.max_health = int(unit.max_health * 1.05)
+                            unit.damage = int(unit.damage * 1.05)
                 
                 if target.red_keys==1:
                     Highlight.show_buff_animation(self,self.screen,target.image,"You won a red key + buff")
@@ -580,7 +588,7 @@ class Game:
 
             #respawn logic
             # Calculate respawn cap  
-            respawn = min(self.current_turn // 4, 10)
+            respawn = min(self.current_turn // 8, 10)
 
             # Update death timers and respawn dead units
             for unit in self.units:
@@ -668,8 +676,8 @@ class Game:
                             unit.blue_keys += 1
                             print("BlueBuff now holds 1 Blue key")
                         if unit.name=="RedBuff":
-                                unit.red_keys += 1
-                                print("RedBuff now holds 1 Red key.")
+                            unit.red_keys += 1
+                            print("RedBuff now holds 1 Red key.")
                     
                     
                     
