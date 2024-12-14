@@ -64,7 +64,7 @@ class Abilities:
         
         if self.ability_type == "damage" and user.color != target.color:
             print(f"{target.name} takes {self.attack} damage!")
-            user.attack(target, self.attack)
+            user.attack(target, self.attack+user.damage)
         elif self.ability_type == "heal" and user.color == target.color:
             heal_amount = min(target.max_health - target.health, self.attack)
             print(f"{target.name} is healed by {heal_amount} health!")

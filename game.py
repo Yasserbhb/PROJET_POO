@@ -668,7 +668,7 @@ class Game:
         """
         # Initialize keys at the start of the game
         if not hasattr(self, "keys_initialized") or not self.keys_initialized:
-            self.units[0].red_keys = 10  # Blue Player 1 starts with one Blue key
+            self.units[0].blue_keys = 1  # Blue Player 1 starts with one Blue key
             self.units[1].blue_keys = 1  # Blue Player 2 starts with one Blue key
             self.units[2].red_keys = 1  # Red Player 1 starts with one Red key
             self.units[3].red_keys = 1  # Red Player 2 starts with one Red key
@@ -703,7 +703,7 @@ class Game:
 
         # Spawn additional keys based on turn events
         if current_turn:
-            if current_turn%30 == 0:
+            if current_turn%20 == 0:
                 # Assign keys to a monster
                 for unit in self.units :
                     if unit.unit_type == "monster" :
@@ -1020,7 +1020,7 @@ class Game:
         pygame.display.flip()
 
         # Pause to show the screen for a while (e.g., 5 seconds)
-        pygame.time.delay(5000)  # Delay in milliseconds (5000 ms = 5 seconds)
+        pygame.time.delay(3000)  # Delay in milliseconds (5000 ms = 5 seconds)
 
         
 
