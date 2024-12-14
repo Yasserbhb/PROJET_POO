@@ -100,7 +100,9 @@ class Game:
         self.key_last_state = {} # prevent repeated actions
         self.current_turn=1
 
-        
+        #barrier status
+        self.blue_barrier="Up"
+        self.red_barrier="Up"
 
 
     def log_event(self, message):
@@ -224,7 +226,7 @@ class Game:
             num_abilities = len(current_unit.abilities)
             if num_abilities > 0:
                 ability_x_start = stats_x + hp_bar_width + 2 * padding
-                ability_width = (SCREEN_WIDTH-300 - ability_x_start - padding) // num_abilities
+                ability_width = (SCREEN_WIDTH - ability_x_start - padding) // num_abilities
 
                 for i, ability in enumerate(current_unit.abilities):
                     # Highlight the selected ability
@@ -661,7 +663,11 @@ class Game:
                 print(f"{dead_player.name}'s {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) are not lost.")
 
             # Reset keys on the dead player
-            
+        if self.units[0].red_keys + self.units[1].red_keys ==3:
+            self.red_barrier="Down"
+        if self.units[2].blue_keys + self.units[3].blue_keys ==3:
+            self.red_barrier="Down"
+
 
         # Spawn additional keys based on turn events
         if current_turn:
@@ -691,11 +697,14 @@ class Game:
         including the player's image next to their key counts.
         """
         # Constants for layout
-        key_icon_size = 20  # Size of the key images
-        unit_icon_size = int(CELL_SIZE / 2)  # Size of the unit image (1/3 of cell height and width)
-        x_offset = SCREEN_WIDTH-220  # Horizontal margin
-        y_offset = SCREEN_HEIGHT /2  # Vertical margin
-        spacing = 30  # Space between rows
+        key_icon_size = 30  # Slightly increased size of the key images
+        unit_icon_size = int(CELL_SIZE * 3 / 4)  # Increased size of the unit image (3/4 of cell size)
+        x_offset = SCREEN_WIDTH - 250  # Adjusted horizontal margin for larger layout
+        y_offset = SCREEN_HEIGHT / 2  # Vertical margin
+        spacing = 50  # Increased space between rows for larger elements
+
+        # Create a larger font for the key counts
+        larger_font = pygame.font.Font(None, 32)  # Use size 32 for even larger text
 
         # Draw individual player key counts
         for i, unit in enumerate(self.units):
@@ -712,24 +721,36 @@ class Game:
                 # Draw key images and counts
                 self.screen.blit(
                     pygame.transform.scale(self.red_key_img, (key_icon_size, key_icon_size)),
-                    (x_offset + unit_icon_size + 10, player_y)
+                    (x_offset + unit_icon_size + 110, player_y)
                 )
                 self.screen.blit(
                     pygame.transform.scale(self.blue_key_img, (key_icon_size, key_icon_size)),
-                    (x_offset + unit_icon_size + 70, player_y)
-                )  # Space between keys
+                    (x_offset + unit_icon_size + 20, player_y)
+                )  # More space between key images
 
-                # Draw key count texts
-                red_key_count_text = self.font.render(str(unit.red_keys), True, (255, 0, 0))
-                blue_key_count_text = self.font.render(str(unit.blue_keys), True, (0, 0, 255))
+                # Draw key count texts with updated font size and white color
+                red_key_count_text = larger_font.render(str(unit.red_keys), True, (200, 156, 56))
+                blue_key_count_text = larger_font.render(str(unit.blue_keys), True, (200, 156, 56))
                 self.screen.blit(
                     red_key_count_text,
-                    (x_offset + unit_icon_size + 10 + key_icon_size + 5, player_y)
+                    (x_offset + unit_icon_size + 110 + key_icon_size + 10, player_y)
                 )
                 self.screen.blit(
                     blue_key_count_text,
-                    (x_offset + unit_icon_size + 70 + key_icon_size + 5, player_y)
+                    (x_offset + unit_icon_size + 20 + key_icon_size + 10, player_y)
                 )
+    # Draw barrier statuses below key counts
+        red_barrier_text = larger_font.render(f"Red Barrier: {self.red_barrier}", True, (255, 255, 255))
+        blue_barrier_text = larger_font.render(f"Blue Barreir: {self.blue_barrier}", True, (255, 255, 255))
+        self.screen.blit(
+            red_barrier_text,
+            (x_offset , player_y + key_icon_size + 10)
+        )
+        self.screen.blit(
+            blue_barrier_text,
+            (x_offset , player_y +spacing + key_icon_size + 10)
+        )
+
 
         
 
