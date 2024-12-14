@@ -60,7 +60,7 @@ class Pickup:
                 "golden_potion":{"rarity": 0.2},
                 "black_potion": {"rarity": 0.2},
             }
-
+    
             self.next_spawn_turns = {}
             self.sound = Sounds() 
             self.event_log = [] # Initialize event log
@@ -123,24 +123,24 @@ class Pickup:
             if pickup.overlay == "red_potion":    # heals 30% missing health
                 heal_amount = int((unit.max_health - unit.health) * 0.3)
                 unit.attack(unit, -heal_amount)
-                Highlight.log_event(self, f"{unit.name} used a Red Potion and healed {heal_amount} health!")
+                Highlight.log_event(self,f"{unit.name} used a Red Potion and healed {heal_amount} health!")
             elif pickup.overlay == "blue_potion": # full mana regeneration
                 unit.mana = unit.max_mana
-                Highlight.log_event(self, f"{unit.name} used a Blue Potion and fully restored their mana!")
+                Highlight.log_event(self,f"{unit.name} used a Blue Potion and fully restored their mana!")
             elif pickup.overlay == "green_potion": # +100 max health and heal 33% missing health
                 increase = 100
                 unit.max_health += increase
                 heal_amount = (unit.max_health - unit.health) // 3
                 unit.attack(unit, -heal_amount)
-                Highlight.log_event(self, f"{unit.name} used a Green Potion, gaining {increase} max health and healing {heal_amount}!")
+                Highlight.log_event(self,f"{unit.name} used a Green Potion, gaining {increase} max health and healing {heal_amount}!")
             elif pickup.overlay == "golden_potion": # reduces remaining cooldowns by 50%
                 for ability in unit.abilities:
                     ability.remaining_cooldown //= 2
-                Highlight.log_event(self, f"{unit.name} used a Golden Potion, reducing all cooldowns by 50%!")
+                Highlight.log_event(self,f"{unit.name} used a Golden Potion, reducing all cooldowns by 50%!")
             elif pickup.overlay == "black_potion": # increases critical chance
                 for ability in unit.abilities:
                     unit.crit_chance += 5
-                Highlight.log_event(self, f"{unit.name} used a Black Potion, increasing critical hit chance by 5%!")
+                Highlight.log_event(self,f"{unit.name} used a Black Potion, increasing critical hit chance by 5%!")
 
         # Play the potion sound
         self.sound.play("potion")
@@ -468,29 +468,29 @@ class Highlight:
 
     def log_event(self, message):
         """Add an event to the event log."""
+        #print(f"Logging event: {message}")  # Debug
         self.event_log.append(message)
         if len(self.event_log) > 10:  # Limit the log to the last 10 events
             self.event_log.pop(0)
 
-    def draw_info_panel(self):
+
+    def draw_info_panel(self,screen):
         """Draw the information panel with word wrapping for long text."""
         panel_x = CELL_SIZE * GRID_SIZE
-        panel_width = 300  # Width of the info panel
+        panel_width = 300
         panel_height = SCREEN_HEIGHT
-        padding = 10  # Padding inside the panel
+        padding = 10
 
-        # Draw panel background
-        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
+        pygame.draw.rect(screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
 
         # Render event log with word wrapping
         font = pygame.font.Font(None, 24)
         y_offset = padding
         line_spacing = 5  # Spacing between lines
         max_line_width = panel_width - 2 * padding
-
-        for event in reversed(self.event_log):  # Display from newest to oldest
-            # Split the text into multiple lines if necessary
-            words = event.split(" ")
+        
+        for i, message in enumerate(reversed(self.event_log)):  # `for i, message` structure
+            words = message.split(" ")
             current_line = ""
             for word in words:
                 test_line = f"{current_line} {word}".strip()
@@ -512,3 +512,4 @@ class Highlight:
             # Stop rendering if we've filled the panel
             if y_offset > panel_height - padding:
                 break
+   

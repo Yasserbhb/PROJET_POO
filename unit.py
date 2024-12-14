@@ -165,8 +165,6 @@ class Unit:
         if target.health <= 0:
             target.health = 0
             target.alive = False
-
-        if not target.alive:
             Highlight.log_event(self, f"{target.name} has been defeated!")  # Log de défaite
 
         target.react_to_attack(self)  # Réaction de la cible

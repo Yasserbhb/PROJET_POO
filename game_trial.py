@@ -482,7 +482,7 @@ class Game:
                 current_unit.state = "done"
 
                 # Jouer le son d'attaque de base
-                if target is not None and target.alive and target.color != current_unit.color:
+                if target is not None and target.alive and target.color != current_unit.color: #making basic attack sound only whe target is not none
 
                     basic_attack_sound = f"{current_unit.name} Basic Attack"
                     if basic_attack_sound in self.sound.sounds:
@@ -938,7 +938,7 @@ class Game:
             self.handle_turn()
             
             #Show Info panel
-            Highlight.draw_info_panel(self)
+            Highlight.draw_info_panel(self,self.screen)
 
             #draw HUD
             self.draw_abilities_bar()
