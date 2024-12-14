@@ -2,10 +2,11 @@ import pygame
 import random 
 from sounds import *
 
-
 # Constants
 GRID_SIZE = 21
 CELL_SIZE = 35
+SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
+
 
 ##addign the types of potions 
 
@@ -43,9 +44,6 @@ class Tile:
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
 
 
-import random
-import pygame
-
 class Pickup:
     def __init__(self, x=None, y=None, overlay=None, spawn_turn=None):
         if x is None and y is None and overlay is None and spawn_turn is None:
@@ -64,7 +62,9 @@ class Pickup:
             }
 
             self.next_spawn_turns = {}
-            self.sound = Sounds()  # Initialiser le gestionnaire de sons ici
+            self.sound = Sounds() 
+            self.event_log = [] # Initialize event log
+
         else:
             # This is a pickup item instance
             self.x = x
@@ -72,6 +72,8 @@ class Pickup:
             self.overlay = overlay
             self.spawn_turn = spawn_turn
             self.picked = False
+            self.event_log = [] # Initialize event log
+
 
     def initialize(self, textures_file):
         """Initialize the pickup system and set initial next spawn attempts."""
@@ -91,7 +93,7 @@ class Pickup:
         # Attempt to spawn each pickup type if it's time
         for p_type, config in self.pickup_types.items():
             if self.turn_count >= self.next_spawn_turns[p_type]:
-                if len(self.all_pickups) < 5:
+                if len(self.all_pickups) < 10:
                     # Check rarity
                     if random.random() < config["rarity"]:
                         x, y = self.get_random_spawn_location(grid)
@@ -112,39 +114,41 @@ class Pickup:
         for p in self.all_pickups:
             if not p.picked and (p.x, p.y) in visible_tiles:
                 texture = self.textures_file[p.overlay]
-                rect = pygame.Rect(
-                    p.x * CELL_SIZE + CELL_SIZE / 4,
-                    p.y * CELL_SIZE + CELL_SIZE / 4,
-                    CELL_SIZE / 2,
-                    CELL_SIZE / 2,
-                )
-                screen.blit(pygame.transform.scale(texture, (CELL_SIZE / 2, CELL_SIZE / 2)), rect)
+                rect = pygame.Rect(p.x * CELL_SIZE+CELL_SIZE/4, p.y * CELL_SIZE+CELL_SIZE/4, CELL_SIZE/2, CELL_SIZE/2)
+                screen.blit(pygame.transform.scale(texture, (CELL_SIZE/2, CELL_SIZE/2)), rect)
 
     def picked_used(self, unit, pickup):
         """Apply the effect of this pickup to the unit and remove it (manager only)."""
         if not pickup.picked:
-            if pickup.overlay == "red_potion":  # heals 20% max health
-                heal_amount = int(unit.max_health * 0.2)
-                unit.attack(unit, -min(unit.max_health - unit.health, heal_amount))
-            elif pickup.overlay == "blue_potion":  # full mana regeneration
+            if pickup.overlay == "red_potion":    # heals 30% missing health
+                heal_amount = int((unit.max_health - unit.health) * 0.3)
+                unit.attack(unit, -heal_amount)
+                Highlight.log_event(self, f"{unit.name} used a Red Potion and healed {heal_amount} health!")
+            elif pickup.overlay == "blue_potion": # full mana regeneration
                 unit.mana = unit.max_mana
-            elif pickup.overlay == "green_potion":  # increase max health by 100 and heal 33% missing health
+                Highlight.log_event(self, f"{unit.name} used a Blue Potion and fully restored their mana!")
+            elif pickup.overlay == "green_potion": # +100 max health and heal 33% missing health
                 increase = 100
                 unit.max_health += increase
                 heal_amount = (unit.max_health - unit.health) // 3
                 unit.attack(unit, -heal_amount)
-            elif pickup.overlay == "golden_potion":  # reduces remaining cooldowns by 50%
+                Highlight.log_event(self, f"{unit.name} used a Green Potion, gaining {increase} max health and healing {heal_amount}!")
+            elif pickup.overlay == "golden_potion": # reduces remaining cooldowns by 50%
                 for ability in unit.abilities:
                     ability.remaining_cooldown //= 2
-            elif pickup.overlay == "black_potion":  # increases crit chance by 5%
-                unit.crit_chance += 5
+                Highlight.log_event(self, f"{unit.name} used a Golden Potion, reducing all cooldowns by 50%!")
+            elif pickup.overlay == "black_potion": # increases critical chance
+                for ability in unit.abilities:
+                    unit.crit_chance += 5
+                Highlight.log_event(self, f"{unit.name} used a Black Potion, increasing critical hit chance by 5%!")
 
-            # Play the potion sound
-            self.sound.play("potion")
+        # Play the potion sound
+        self.sound.play("potion")
 
-            # Mark as picked and remove
-            pickup.picked = True
-            self.remove_pickup(pickup)
+        # Mark as picked and remove
+        pickup.picked = True
+        self.remove_pickup(pickup)
+
 
     def remove_pickup(self, pickup):
         """Remove a pickup and schedule next spawn attempt (manager only)."""
@@ -159,9 +163,9 @@ class Pickup:
             x = random.randint(0, GRID_SIZE - 1)
             y = random.randint(0, GRID_SIZE - 1)
             tile_type = grid.tiles[x][y].terrain
-            if tile_type in self.allowed_tile_types:
+            if tile_type in self.allowed_tile_types :
                 return x, y
-
+            # If not allowed, loop again until we find a suitable tile
 
 
 
@@ -237,11 +241,14 @@ class Grid:
 
 # Highlight Class
 class Highlight:
+
     """Manages highlighting for movement and attack ranges."""
     def __init__(self,textures_file):
         
         self.visible_tiles = set()
         self.textures_file=textures_file
+        self.event_log = [] # Initialize event log
+
         
         
 
@@ -280,10 +287,12 @@ class Highlight:
                         
         elif unit.state == "attack":
             # Determine the current attack range based on the selected ability
-            if hasattr(unit, "selected_ability") and unit.selected_ability is not None:
+            if unit.selected_ability is not None:
                 attack_range = unit.selected_ability.attack_radius
+                aoe_range = unit.selected_ability.is_aoe
             else:
                 attack_range = unit.attack_range
+                aoe_range = 0
 
             # Highlight the attack range
             for dx in range(-attack_range, attack_range + 1):
@@ -297,19 +306,24 @@ class Highlight:
                         self.screen.blit(overlay, rect)
 
 
-            # Highlight the target cursor
-            target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            beat_scale = 100  # Indicator scale percentage
-            beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
-            indicator_size = int(CELL_SIZE * beat_scale / 100)  # Scale the indicator image
-            indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
-            indicator_image.set_alpha(beat_alpha)
+            for dx in range(-aoe_range,aoe_range+1):
+                for dy in range(-aoe_range,aoe_range+1):
+                    x, y = unit.target_x + dx, unit.target_y + dy
 
-            # Center the scaled indicator within the target tile
-            indicator_x = target_rect.x + (CELL_SIZE - indicator_size) // 2
-            indicator_y = target_rect.y + (CELL_SIZE - indicator_size) // 2
+                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and abs(dx) + abs(dy) <= aoe_range:
+                    # Highlight the target cursor
+                        target_rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                        beat_scale = 100  # Indicator scale percentage
+                        beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
+                        indicator_size = int(CELL_SIZE * beat_scale / 100)*1.2  # Scale the indicator image
+                        indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
+                        indicator_image.set_alpha(beat_alpha)
 
-            self.screen.blit(indicator_image, (indicator_x, indicator_y))
+                        # Center the scaled indicator within the target tile
+                        indicator_x = target_rect.x + (CELL_SIZE - indicator_size) // 2
+                        indicator_y = target_rect.y + (CELL_SIZE - indicator_size) // 2
+
+                        self.screen.blit(indicator_image, (indicator_x, indicator_y))
 
 
 
@@ -450,3 +464,51 @@ class Highlight:
 
             pygame.display.flip()
             clock.tick(60)
+
+
+    def log_event(self, message):
+        """Add an event to the event log."""
+        self.event_log.append(message)
+        if len(self.event_log) > 10:  # Limit the log to the last 10 events
+            self.event_log.pop(0)
+
+    def draw_info_panel(self):
+        """Draw the information panel with word wrapping for long text."""
+        panel_x = CELL_SIZE * GRID_SIZE
+        panel_width = 300  # Width of the info panel
+        panel_height = SCREEN_HEIGHT
+        padding = 10  # Padding inside the panel
+
+        # Draw panel background
+        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
+
+        # Render event log with word wrapping
+        font = pygame.font.Font(None, 24)
+        y_offset = padding
+        line_spacing = 5  # Spacing between lines
+        max_line_width = panel_width - 2 * padding
+
+        for event in reversed(self.event_log):  # Display from newest to oldest
+            # Split the text into multiple lines if necessary
+            words = event.split(" ")
+            current_line = ""
+            for word in words:
+                test_line = f"{current_line} {word}".strip()
+                text_surface = font.render(test_line, True, (255, 255, 255))
+                if text_surface.get_width() > max_line_width:
+                    # Render the current line and move to the next
+                    rendered_surface = font.render(current_line, True, (255, 255, 255))
+                    self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
+                    y_offset += rendered_surface.get_height() + line_spacing
+                    current_line = word
+                else:
+                    current_line = test_line
+            # Render the last line of the current event
+            if current_line:
+                rendered_surface = font.render(current_line, True, (255, 255, 255))
+                self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
+                y_offset += rendered_surface.get_height() + line_spacing
+
+            # Stop rendering if we've filled the panel
+            if y_offset > panel_height - padding:
+                break

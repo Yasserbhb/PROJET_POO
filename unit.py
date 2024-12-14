@@ -1,9 +1,8 @@
 import pygame
 import random
 from abilities import Abilities,BuffAbility,DebuffAbility
+from interface import Highlight
 from sounds import *
-
-
 CELL_SIZE = 35
 class Unit:
     """A single unit in the game."""
@@ -33,10 +32,8 @@ class Unit:
         self.target_x = x
         self.target_y = y
         self.abilities = abilities if abilities else []  # Default to an empty list if no abilities are provided
-        self.grass_sound = pygame.mixer.Sound("sounds/moving.mp3")  # Son pour l'herbe
-        self.grass_sound.set_volume(0.2)
-        self.water_sound = pygame.mixer.Sound("sounds/water.mp3")   # Son pour l'eau
-        self.water_sound.set_volume(0.2)
+        self.event_log = [] # Initialize event log
+
 
 
         # Buff and debuff trackers
@@ -53,18 +50,24 @@ class Unit:
         self.red_keys = 0  # Number of red keys this unit holds
         self.blue_keys = 0  # Number of blue keys this unit holds
 
+        self.death_timer = 0  # Tracks turns since death
+        
         # Initialize for damage display
         self.last_damage_time = None 
         self.damage_taken = 0 
-        #self.sound=Sounds()
 
+        #grass and water sounds for movement
+        self.grass_sound = pygame.mixer.Sound("sounds/moving.mp3")  # Son pour l'herbe
+        self.grass_sound.set_volume(0.2)
+        self.water_sound = pygame.mixer.Sound("sounds/water.mp3")   # Son pour l'eau
+        self.water_sound.set_volume(0.2)
 
 
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
             Unit(3,15, "Garen", 900, 99,0,50, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3),
+                Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3,is_aoe=2),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
             ]),  
@@ -78,7 +81,7 @@ class Unit:
                 DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
                 Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
             ]), 
-            Unit(16,4, "Soraka",490, 50 ,0,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
+            Unit(16,4, "Soraka",490, 50 ,50,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
                 Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage."),
                 Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
@@ -91,7 +94,7 @@ class Unit:
 
 
             MonsterUnit(10, 10, "BigBuff",1000, 50 ,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(1, 13, "BlueBuff",390, 250 ,0,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(5 ,7, "BlueBuff",390, 250 ,0,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(15, 13, "RedBuff",390, 250 ,0,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
             Unit(1, 19, "NexusBlue",390, 50 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base"),  #Blue team base
@@ -123,16 +126,15 @@ class Unit:
                 print(f"Cannot move to ({new_x}, {new_y}) because it's not highlighted.")
                 return  # Can't move if the tile is not highlighted
             # Jouer le son correspondant au type de terrain
-            if target_tile.terrain== "grass":
-                self.grass_sound.play()
-                
-            elif target_tile.terrain == "water":
-                self.water_sound.play()
-                
 
-            # Mettre à jour la position
-            self.x, self.y = new_x, new_y
-                
+            else :
+                self.x, self.y = new_x, new_y
+                if target_tile.terrain== "grass":
+                    self.grass_sound.play()
+                    
+                elif target_tile.terrain == "water":
+                    self.water_sound.play()
+
 
 
 
@@ -140,34 +142,50 @@ class Unit:
     def react_to_attack(self, attacker):
         return
 
-    def attack(self, target,damage):
-        multiplyer=1
-        if random.randint(1, 100) <= self.crit_chance:
-            multiplyer = 2  # Double the damage for critical hit
-        print(f"{self.name} attacks {target.name}!")
-        damage_after_def=int(damage*multiplyer*(1-target.defense/(target.defense+100)))
-        target.health -= damage_after_def  
-        target.damage_taken = damage_after_def 
-        target.last_damage_time = pygame.time.get_ticks() 
+    def attack(self, target, damage):
+        """Handle an attack on the target."""
+        multiplier = 1
+
+        # Vérifie les chances de coup critique
+        if random.randint(1, 100) <= self.crit_chance and damage > 0:
+            multiplier = 2
+            Highlight.log_event(self, f"{self.name} lands a critical hit on {target.name}!")
+
+        Highlight.log_event(self, f"{self.name} attacks {target.name}!")  # Log standard
+        if damage > 0:
+            damage_after_def = int(damage * multiplier * (1 - target.defense / (target.defense + 100)))
+        else:
+            damage_after_def = damage
+
+        target.health -= damage_after_def
+        target.damage_taken = damage_after_def
+        target.last_damage_time = pygame.time.get_ticks()
+
+        # Vérifie si la cible est morte
         if target.health <= 0:
             target.health = 0
             target.alive = False
-        target.react_to_attack(self)  # Trigger monster reaction
+
+        if not target.alive:
+            Highlight.log_event(self, f"{target.name} has been defeated!")  # Log de défaite
+
+        target.react_to_attack(self)  # Réaction de la cible
         return damage_after_def
+
     
     def update_buffs_and_debuffs(self):
             # Handle buffs
             if self.buff_duration > 0:
                 self.buff_duration -= 1
                 if self.buff_duration == 0:
-                    print(f"{self.name}'s buff has expired.")
+                    Highlight.log_event(self,f"{self.name}'s buff has expired.")
                     self.revert_buff()
 
             # Handle debuffs
             if self.debuff_duration > 0:
                 self.debuff_duration -= 1
                 if self.debuff_duration == 0:
-                    print(f"{self.name}'s debuff has expired.")
+                    Highlight.log_event(self,f"{self.name}'s debuff has expired.")
                     self.revert_debuff()
 
     def revert_buff(self):
@@ -177,7 +195,7 @@ class Unit:
         self.buffed_damage_increase = 0
         self.buffed_defense_increase = 0
         self.is_buffed = False
-        print(f"{self.name}'s stats after buff ended: Damage: {self.damage}, Defense: {self.defense}")
+        Highlight.log_event(self,"{self.name}'s stats after buff ended: Damage: {self.damage}, Defense: {self.defense}")
 
     def revert_debuff(self):
         # Revert debuff effects
@@ -186,7 +204,7 @@ class Unit:
         self.debuffed_attack_reduction = 0
         self.debuffed_defense_reduction = 0
         self.is_debuffed = False
-        print(f"{self.name}'s stats after debuff ended: Damage: {self.damage}, Defense: {self.defense}")
+        Highlight.log_event(self,f"{self.name}'s stats after debuff ended: Damage: {self.damage}, Defense: {self.defense}")
 
 
 
@@ -324,4 +342,7 @@ class MonsterUnit(Unit):
             # Attack the attacker (if in range)    
             if self.in_range(attacker):
                 self.attack(attacker,self.damage)
+        
+
+            
                 

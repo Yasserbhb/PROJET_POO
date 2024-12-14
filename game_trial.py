@@ -5,7 +5,6 @@ from interface import Grid,Highlight,Pickup
 from sounds import Sounds
 
 
-
 # Constants
 GRID_SIZE = 21
 CELL_SIZE = 35
@@ -72,12 +71,11 @@ class Game:
         self.indicators = load_indicators()
         self.textures_file=load_textures()
         self.pickup=Pickup()
+        self.sound=Sounds()
         self.pickup_textures=load_pickups()
         self.grid = Grid(GRID_SIZE, self.textures_file)
         self.units = [] 
         self.pickups=[]
-
-        self.sound=Sounds()
 
         self.pickup.initialize(self.pickup_textures)  
         self.current_unit_index = 0
@@ -102,55 +100,9 @@ class Game:
         self.key_last_state = {} # prevent repeated actions
         self.current_turn=1
 
-        
-
-
-    def log_event(self, message):
-        """Add an event to the event log."""
-        self.event_log.append(message)
-        if len(self.event_log) > 10:  # Limit the log to the last 10 events
-            self.event_log.pop(0)
-
-    def draw_info_panel(self):
-        """Draw the information panel with word wrapping for long text."""
-        panel_x = CELL_SIZE * GRID_SIZE
-        panel_width = 300  # Width of the info panel
-        panel_height = SCREEN_HEIGHT
-        padding = 10  # Padding inside the panel
-
-        # Draw panel background
-        pygame.draw.rect(self.screen, (30, 30, 30), (panel_x, 0, panel_width, panel_height))
-
-        # Render event log with word wrapping
-        font = pygame.font.Font(None, 24)
-        y_offset = padding
-        line_spacing = 5  # Spacing between lines
-        max_line_width = panel_width - 2 * padding
-
-        for event in reversed(self.event_log):  # Display from newest to oldest
-            # Split the text into multiple lines if necessary
-            words = event.split(" ")
-            current_line = ""
-            for word in words:
-                test_line = f"{current_line} {word}".strip()
-                text_surface = font.render(test_line, True, (255, 255, 255))
-                if text_surface.get_width() > max_line_width:
-                    # Render the current line and move to the next
-                    rendered_surface = font.render(current_line, True, (255, 255, 255))
-                    self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
-                    y_offset += rendered_surface.get_height() + line_spacing
-                    current_line = word
-                else:
-                    current_line = test_line
-            # Render the last line of the current event
-            if current_line:
-                rendered_surface = font.render(current_line, True, (255, 255, 255))
-                self.screen.blit(rendered_surface, (panel_x + padding, y_offset))
-                y_offset += rendered_surface.get_height() + line_spacing
-
-            # Stop rendering if we've filled the panel
-            if y_offset > panel_height - padding:
-                break
+        #barrier status
+        self.blue_barrier="Up"
+        self.red_barrier="Up"
 
 
 
@@ -226,7 +178,7 @@ class Game:
             num_abilities = len(current_unit.abilities)
             if num_abilities > 0:
                 ability_x_start = stats_x + hp_bar_width + 2 * padding
-                ability_width = (SCREEN_WIDTH-300 - ability_x_start - padding) // num_abilities
+                ability_width = (SCREEN_WIDTH - ability_x_start - padding) // num_abilities
 
                 for i, ability in enumerate(current_unit.abilities):
                     # Highlight the selected ability
@@ -314,16 +266,16 @@ class Game:
             ):
                 damage=unit.attack(other_unit,unit.damage)  # Use the Unit's attack method
                 if damage > 0:
-                    self.log_event(f"{unit.name} attacked {other_unit.name} for {damage} damage!")
+                    Highlight.log_event(self,f"{unit.name} attacked {other_unit.name} for {damage} damage!")
                     # Vérifier si l'unité est morte
                     if not other_unit.alive:
-                        self.log_event(f"{other_unit.name} has been defeated!")
+                        Highlight.log_event(self,f"{other_unit.name} has been defeated!")
                 else:
-                    self.log_event(f"{unit.name} attacked {other_unit.name} but missed!")
+                    Highlight.log_event(self,f"{unit.name} attacked {other_unit.name} but missed!")
                 target_hit = True
                 break
         if not target_hit:
-            self.log_event(f"{unit.name} attacked but missed!")
+            Highlight.log_event(self,f"{unit.name} attacked but missed!")
 
         unit.state = "done"  # Mark the unit as done after the attack
         
@@ -346,7 +298,7 @@ class Game:
 
             # If we've cycled through all units and come back to the start, stop (prevents infinite loops)
             if self.current_unit_index == start_index:
-                self.log_event("No alive units remaining!")
+                Highlight.log_event(self,"No alive units remaining!")
                 return
 
 
@@ -387,7 +339,7 @@ class Game:
                         unit.x == current_unit.x and unit.y == current_unit.y and unit != current_unit
                         and unit.alive for unit in self.units 
                     ):  
-                        self.log_event(f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
+                        Highlight.log_event(self,f"{current_unit.name} finalized move at ({current_unit.x}, {current_unit.y}).")
 
                         for p in self.pickup.all_pickups:
                             if p.x == current_unit.x and p.y == current_unit.y:
@@ -401,12 +353,29 @@ class Game:
                         next_team_color = self.units[self.current_unit_index].color
                         Highlight.update_fog_visibility(self,next_team_color)
 
-                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush":   #in the presence of an enemy on this position but it's a bush u just get assassinated
-                        self.log_event(f"{current_unit.name} got assassinated")
-                        current_unit.state="done"
-                        current_unit.alive=False
+
+
+                            #check if there is enemy in bush
+                    elif self.grid.tiles[current_unit.x][current_unit.y].overlay == "bush" and any(
+                            unit.x == current_unit.x and unit.y == current_unit.y 
+                            and unit.alive and unit.color != current_unit.color for unit in self.units
+                        ) :   #in the presence of an enemy on this position but it's a bush u just get assassinated
+                        enemy_unit = next(
+                            (unit for unit in self.units if unit.x == current_unit.x and unit.y == current_unit.y 
+                            and unit.alive and unit.color != current_unit.color), 
+                            None
+                        )
+                        if enemy_unit:
+                            Highlight.log_event(self,f"{current_unit.name} got assassinated")
+                            
+                            enemy_unit.attack(current_unit,9999)
+                            current_unit.state="done"
+                            self.manage_keys(dead_player=current_unit, killer=enemy_unit)
+
+
+
                     else :      #if it's another unit u just can't finalise movement
-                        self.log_event("can't finalise movement , another unit is filling this position")
+                        Highlight.log_event(self,"can't finalise movement , another unit is filling this position")
                     
         # Attack Phase
         elif current_unit.state == "attack":
@@ -460,26 +429,89 @@ class Game:
             )
             if current_unit.selected_ability is not None :
                 if key_just_pressed:  # Confirm ability usage
-                    if current_unit.selected_ability.use(current_unit, target):
-                        self.sound.play(current_unit.selected_ability.name)
-                        current_unit.state = "done"
-                        current_unit.selected_ability = None  # Reset ability selection
+                    if current_unit.selected_ability.is_aoe>0:   #logic when using aoe abilities
+                        aoe_targets = current_unit.selected_ability.get_targets_in_aoe(current_unit, self.units)
+                        if aoe_targets is not None:  # Ensure targets exist
+                            if current_unit.selected_ability.use(current_unit, aoe_targets):
+                                self.sound.play(current_unit.selected_ability.name)
+                                current_unit.state = "done"
+                                current_unit.selected_ability = None  # Reset ability selection
+                        
+                        else:
+                            print("No valid target selected.")
+
+                        #manage after using aoe abilitities
+                        for targets in aoe_targets:
+                            #manage the mssg to show when buff is killed 
+                            if targets !=None and targets.unit_type =="monster" and targets.alive==False :
+                                #if the buff dies the team gets a permanent buff
+                                for unit in self.units:
+                                        if unit.color == current_unit.color:
+                                            if unit.name=="BigBuff":
+                                                unit.max_health = int(unit.max_health * 1.10)
+                                                unit.damage = int(unit.damage * 1.15)
+                                            else :
+                                                unit.max_health = int(unit.max_health * 1.05)
+                                                unit.damage = int(unit.damage * 1.05)
+                                
+                                if targets.red_keys==1:
+                                    Highlight.show_buff_animation(self,self.screen,targets.image,"You won a red key + buff")
+                                elif targets.blue_keys==1:
+                                    Highlight.show_buff_animation(self,self.screen,targets.image,"You won a blue key + buff")
+                                else:
+                                    Highlight.show_buff_animation(self,self.screen,targets.image,"You got the Buff ")
+
+                                # managing the keys
+                            if targets !=None and targets.alive==False:
+                                self.manage_keys(dead_player=targets, killer=current_unit)
+
+                    else : #logic when using none aoe abilities
+                        if target is not None:  # Ensure targets exist
+                            if current_unit.selected_ability.use(current_unit, target):
+                                self.sound.play(current_unit.selected_ability.name)
+                                current_unit.state = "done"
+                                current_unit.selected_ability = None  # Reset ability selection
+                        
+                        else:
+                            print("No valid target selected.")
+
+
+
             elif  key_just_pressed:
-                # Basic attack
-                self.basic_attack(current_unit)
+                self.basic_attack(current_unit)  # Basic attack
                 current_unit.state = "done"
 
                 # Jouer le son d'attaque de base
                 basic_attack_sound = f"{current_unit.name} Basic Attack"
                 if basic_attack_sound in self.sound.sounds:
                     self.sound.play(basic_attack_sound)
+            
                 
-                                # managing the keys
+            #manage after using basic attack and none aoe abilities
+            #manage the mssg to show when buff is killed 
+            if target !=None and target.unit_type =="monster" and target.alive==False :
+                #if the buff dies the team gets a permanent buff
+                for unit in self.units:
+                    if unit.color == current_unit.color:
+                        if unit.name=="BigBuff":
+                            unit.max_health = int(unit.max_health * 1.10)
+                            unit.damage = int(unit.damage * 1.15)
+                        else :
+                            unit.max_health = int(unit.max_health * 1.05)
+                            unit.damage = int(unit.damage * 1.05)
+                
+                if target.red_keys==1:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You won a red key + buff")
+                elif target.blue_keys==1:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You won a blue key + buff")
+                else:
+                    Highlight.show_buff_animation(self,self.screen,target.image,"You got the Buff ")
+
+                # managing the keys
             if target !=None and target.alive==False:
                 self.manage_keys(dead_player=target, killer=current_unit)
 
-            if target !=None and target.unit_type =="monster" and target.alive==False :
-                    Highlight.show_buff_animation(self,self.screen,target.image)
+            
 
         # End Turn
         if  keys[pygame.K_r] and current_unit.state == "done" :
@@ -507,7 +539,44 @@ class Game:
                 if unit.unit_type=="player":
                     unit.health+=min(unit.max_health-unit.health,int(0.005*unit.max_health))
                     unit.mana +=min(unit.max_mana-unit.mana,int(0.01*unit.max_mana))
+
+            #respawn logic
+            # Calculate respawn cap  
+            respawn = min(self.current_turn // 8, 10)
+
+            # Update death timers and respawn dead units
+            for unit in self.units:
+                if not unit.alive and unit.unit_type=="player":
+                    unit.death_timer += 1  # Increment death timer for dead units
+                    Highlight.log_event(self,f"{unit.death_timer}seconds of death for {unit.name}")
+                    # Respawn logic
+                    if unit.death_timer >= respawn :
+                        Highlight.log_event(self,f"{unit.name} has respawned at base!")
+                        unit.alive = True
+                        unit.health = unit.max_health  # Restore health
+                        unit.state = "move"
+                        unit.initial_x, unit.initial_y = self.get_respawn_location(unit)  # Define respawn location logic
+                        unit.x,unit.y = unit.initial_x, unit.initial_y
+                        unit.death_timer = 0  # Reset death timer
+
+            
+
+            
     
+    def get_respawn_location(self, unit):
+    # Example: respawn at a fixed position or base location
+        unit_index = self.units.index(unit)
+        # Determine the respawn location based on the index
+        if unit_index == 0:
+            return (3, 15)  # Respawn point for the first unit
+        elif unit_index == 1:
+            return (4, 16)  # Respawn point for the second unit
+        elif unit_index == 2:
+            return (15, 2)  # Respawn point for the third unit
+        elif unit_index == 3:
+            return (17, 4)
+        # Add more conditions as needed for additional indices
+
 
 
     
@@ -530,7 +599,7 @@ class Game:
             self.units[2].red_keys = 1  # Red Player 1 starts with one Red key
             self.units[3].red_keys = 1  # Red Player 2 starts with one Red key
             self.keys_initialized = True
-            print(f"Initial keys have been assigned to players.")
+            Highlight.log_event(self,f"Initial keys have been assigned to players.")
 
         # Handle key transfer on player death
         if dead_player and killer:
@@ -538,28 +607,36 @@ class Game:
                 # Transfer keys to the killer
                 killer.red_keys += dead_player.red_keys
                 killer.blue_keys += dead_player.blue_keys
-                print(f"{killer.name} collected {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) from {dead_player.name}.")
+                Highlight.log_event(self,f"{killer.name} collected {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) from {dead_player.name}.")
                 dead_player.red_keys = 0
                 dead_player.blue_keys = 0
             else:
                 # Keys are lost if the killer is not a player
-                print(f"{dead_player.name}'s {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) are not lost.")
+                Highlight.log_event(self,f"{dead_player.name}'s {dead_player.red_keys} Red key(s) and {dead_player.blue_keys} Blue key(s) are not lost.")
 
             # Reset keys on the dead player
-            
+        if self.units[0].red_keys + self.units[1].red_keys ==3:
+            self.red_barrier="Down"
+        if self.units[2].blue_keys + self.units[3].blue_keys ==3:
+            self.red_barrier="Down"
+
 
         # Spawn additional keys based on turn events
         if current_turn:
-            if current_turn == random.randint(20, 25):
+            if current_turn == random.randint(25,30):
                 # Assign keys to a monster
                 for unit in self.units :
-                    if unit.unit_type == "monster" and unit.alive == True:
+                    if unit.unit_type == "monster" :
+                        if unit.alive==False:
+                            unit.health=unit.max_health
+                            unit.alive=True
                         if unit.name=="BlueBuff":
                             unit.blue_keys += 1
                             print("BlueBuff now holds 1 Blue key")
                         if unit.name=="RedBuff":
-                                unit.red_keys += 1
-                                print("RedBuff now holds 1 Red key.")
+                            unit.red_keys += 1
+                            print("RedBuff now holds 1 Red key.")
+                    
                     
                     
 
@@ -572,11 +649,14 @@ class Game:
         including the player's image next to their key counts.
         """
         # Constants for layout
-        key_icon_size = 20  # Size of the key images
-        unit_icon_size = int(CELL_SIZE / 2)  # Size of the unit image (1/3 of cell height and width)
-        x_offset = SCREEN_WIDTH-220  # Horizontal margin
-        y_offset = SCREEN_HEIGHT /2  # Vertical margin
-        spacing = 30  # Space between rows
+        key_icon_size = 30  # Slightly increased size of the key images
+        unit_icon_size = int(CELL_SIZE * 3 / 4)  # Increased size of the unit image (3/4 of cell size)
+        x_offset = SCREEN_WIDTH - 250  # Adjusted horizontal margin for larger layout
+        y_offset = SCREEN_HEIGHT / 2  # Vertical margin
+        spacing = 50  # Increased space between rows for larger elements
+
+        # Create a larger font for the key counts
+        larger_font = pygame.font.Font(None, 32)  # Use size 32 for even larger text
 
         # Draw individual player key counts
         for i, unit in enumerate(self.units):
@@ -593,24 +673,36 @@ class Game:
                 # Draw key images and counts
                 self.screen.blit(
                     pygame.transform.scale(self.red_key_img, (key_icon_size, key_icon_size)),
-                    (x_offset + unit_icon_size + 10, player_y)
+                    (x_offset + unit_icon_size + 110, player_y)
                 )
                 self.screen.blit(
                     pygame.transform.scale(self.blue_key_img, (key_icon_size, key_icon_size)),
-                    (x_offset + unit_icon_size + 70, player_y)
-                )  # Space between keys
+                    (x_offset + unit_icon_size + 20, player_y)
+                )  # More space between key images
 
-                # Draw key count texts
-                red_key_count_text = self.font.render(str(unit.red_keys), True, (255, 0, 0))
-                blue_key_count_text = self.font.render(str(unit.blue_keys), True, (0, 0, 255))
+                # Draw key count texts with updated font size and white color
+                red_key_count_text = larger_font.render(str(unit.red_keys), True, (200, 156, 56))
+                blue_key_count_text = larger_font.render(str(unit.blue_keys), True, (200, 156, 56))
                 self.screen.blit(
                     red_key_count_text,
-                    (x_offset + unit_icon_size + 10 + key_icon_size + 5, player_y)
+                    (x_offset + unit_icon_size + 110 + key_icon_size + 10, player_y)
                 )
                 self.screen.blit(
                     blue_key_count_text,
-                    (x_offset + unit_icon_size + 70 + key_icon_size + 5, player_y)
+                    (x_offset + unit_icon_size + 20 + key_icon_size + 10, player_y)
                 )
+    # Draw barrier statuses below key counts
+        red_barrier_text = larger_font.render(f"Red Barrier: {self.red_barrier}", True, (255, 255, 255))
+        blue_barrier_text = larger_font.render(f"Blue Barreir: {self.blue_barrier}", True, (255, 255, 255))
+        self.screen.blit(
+            red_barrier_text,
+            (x_offset , player_y + key_icon_size + 10)
+        )
+        self.screen.blit(
+            blue_barrier_text,
+            (x_offset , player_y +spacing + key_icon_size + 10)
+        )
+
 
         
 
@@ -625,20 +717,20 @@ class Game:
         # Start menu sound
         self.sound.play("game_music")
 
-
         while menu_running:
             rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
             self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
 
             # Render game title
             title_text = self.font_title.render("League on Budget", True, (200, 156, 56))
-            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
-            title_text1 = self.font_title.render("League on Budget", True, (0, 0, 0))
-            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 + 2, SCREEN_HEIGHT // 4 + 2))
+            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 4  ))
+            title_text1 = self.font_title.render("League on Budget", True, (0,0,0))
+            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 +2, SCREEN_HEIGHT // 4+ 2))
 
             self.screen.blit(title_text1, title_rect1)
             self.screen.blit(title_text, title_rect)
-
+            
+            
             # Render instructions
             start_text = self.font_small.render("Press ENTER to Play", True, (200, 200, 200))
             quit_text = self.font_small.render("Press ESC to Quit", True, (200, 200, 200))
@@ -658,9 +750,7 @@ class Game:
                     exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:  # Start the game
-                        
                         menu_running = False
-                        #self.sound.stop("menu_music") # Stop menu sound
                     elif event.key == pygame.K_ESCAPE:  # Quit the game
                         pygame.quit()
                         exit()
@@ -672,6 +762,7 @@ class Game:
     def show_menu(self):
         """Enhanced team selection menu."""
         menu_running = True
+        
         # Initialize assets
         font = self.font_title
         small_font = self.font_small
@@ -752,10 +843,10 @@ class Game:
                     if pygame.K_1 <= event.key <= pygame.K_9:
                         index = event.key - pygame.K_1
                         if 0 <= index < len(available_units):
-                            selected_unit_info = available_units[index]  
-                            self.sound.play("selection") 
-                            self.sound.set_volume("selection", 0.5) # Jouer le son de sélection# Show attributes for this unit
+                            selected_unit_info = available_units[index]  # Show attributes for this unit
                     elif event.key == pygame.K_RETURN and selected_unit_info:
+                        self.sound.play("selection") 
+                        self.sound.set_volume("selection", 0.5)
                         if selected_unit_info not in selected_units:
                             # Assign the current team and position to the selected unit
                             if current_team == "blue":
@@ -785,13 +876,13 @@ class Game:
                                     countdown_rect = countdown_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
                                     self.screen.blit(countdown_text, countdown_rect)
                                     pygame.display.flip()
-                                    pygame.time.delay(1000)# Delay for 1 second
-                                 # Play game music
+                                    pygame.time.delay(1000)  # Delay for 1 second
+                                    # Play game music
                                 for volume in reversed([x / 100 for x in range(1, 101)]):  # De 1.0 à 0.01
                                     self.sound.set_volume("game_music", volume)  
                                     pygame.time.delay(10) 
                                 self.sound.set_volume("game_music", 0.03)  
-                                self.sound.sounds["game_music"].play(loops=-1)  
+                                self.sound.sounds["game_music"].play(loops=-1)
                                 menu_running = False
 
         # Build self.units in the required order: blue team → red team → monsters
@@ -808,7 +899,6 @@ class Game:
         """Main game loop."""
         self.main_menu()  # Display main menu
         self.units = self.show_menu()
-
         self.manage_keys()  # Initializes keys
          
         starting_team_color = self.units[self.current_unit_index].color
@@ -819,7 +909,6 @@ class Game:
 
         running = True
         while running:
-
             self.screen.fill((0, 0, 0))  # Clear the screen
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -845,9 +934,9 @@ class Game:
 
             # Handle current unit's turn
             self.handle_turn()
-
+            
             #Show Info panel
-            self.draw_info_panel()
+            Highlight.draw_info_panel(self)
 
             #draw HUD
             self.draw_abilities_bar()
@@ -865,34 +954,9 @@ if __name__ == "__main__":
     Game().run()
 
 
-#everything related to grid stays in grid , and add a hiding place that we can use as a dmg boost if you hit from it
-#take the turn handler to a diffrent class ?
-# take in rnage verification to game instead of unit , so resolve attack checks all the enviromeent and confirms if we attack , and attack method only works after we confim that so it just modifies the hp and effects...
- 
-
-# add objective class it has a nexus also red and blue monster  (red and blue monster spawn once each 6 rounds)
-# each team has 2 keys 1 on each player and the third is hidden in a monster ( 2 keys 2 buffs , 1 for each team and there are 3 monsters total ) and one that spawns randomly
-# once u have 3 keys of the enemy  the barriere disappears and their nexus is visible and u can hit it 
-# game ends with nexus exploding 
-
-
-#create split screen
-#add reviving system and lvl system but the pickups will tend to be closer to the losing team 
-
-
-#to do:
 
 
 
+#fix the keys vfx ; make the showing of mssgs better
 
-#add sound design and abilities animations&
-
-
-#make the buffs respawn when the turn arrives so they get their keys and add them in bushes 
-#make buffs have a good buff so it's worth fighting for early 
-#add the respawn mechanic for units that goes by 1 each time current_turn goes up by 8 so respawn=current_turn/8 and it caps at 6
-#make base inheretence to take 0 dmg if the keys are < 3 and didnt get the fusion to make barrier disappear
-## fix the textures and all that later
-## new abilities deatiled under the abilities files
-
-
+#add the win conditions and make base inhereted class
