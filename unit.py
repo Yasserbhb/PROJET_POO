@@ -59,7 +59,7 @@ class Unit:
         """Create units and place them on the grid."""       
         return [            
             Unit(3,15, "Garen", 900, 99,0,50, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3),
+                Abilities("Slash", 30, 5, "damage", attack=900, description="A quick slash attack.",attack_radius=3,is_aoe=2),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
             ]),  

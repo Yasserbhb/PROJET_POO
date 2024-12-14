@@ -474,12 +474,56 @@ class Game:
             )
             if current_unit.selected_ability is not None :
                 if key_just_pressed:  # Confirm ability usage
-                    if current_unit.selected_ability.use(current_unit, target):
-                        current_unit.state = "done"
-                        current_unit.selected_ability = None  # Reset ability selection
+                    if current_unit.selected_ability.is_aoe>0:   #logic when using aoe abilities
+                        aoe_targets = current_unit.selected_ability.get_targets_in_aoe(current_unit, self.units)
+                        if aoe_targets is not None:  # Ensure targets exist
+                            if current_unit.selected_ability.use(current_unit, aoe_targets):
+                                
+                                current_unit.state = "done"
+                                current_unit.selected_ability = None  # Reset ability selection
+                        
+                        else:
+                            print("No valid target selected.")
+
+                        #manage after using aoe abilitities
+                        for targets in aoe_targets:
+                            #manage the mssg to show when buff is killed 
+                            if targets !=None and targets.unit_type =="monster" and targets.alive==False :
+                                #if the buff dies the team gets a permanent buff
+                                for unit in self.units:
+                                    if unit.color == current_unit.color:
+                                        unit.max_health = int(unit.max_health * 1.05)
+                                        unit.damage = int(unit.damage * 1.1)
+                                
+                                if targets.red_keys==1:
+                                    Highlight.show_buff_animation(self,self.screen,targets.image,"You won a red key + buff")
+                                elif targets.blue_keys==1:
+                                    Highlight.show_buff_animation(self,self.screen,targets.image,"You won a blue key + buff")
+                                else:
+                                    Highlight.show_buff_animation(self,self.screen,targets.image,"You got the Buff ")
+
+                                # managing the keys
+                            if targets !=None and targets.alive==False:
+                                self.manage_keys(dead_player=targets, killer=current_unit)
+                    else : #logic when using none aoe abilities
+                        if target is not None:  # Ensure targets exist
+                            if current_unit.selected_ability.use(current_unit, target):
+                                
+                                current_unit.state = "done"
+                                current_unit.selected_ability = None  # Reset ability selection
+                        
+                        else:
+                            print("No valid target selected.")
+
+
+
             elif  key_just_pressed:
                 self.basic_attack(current_unit)  # Basic attack
                 current_unit.state = "done"
+
+            
+                
+            #manage after using basic attack and none aoe abilities
             #manage the mssg to show when buff is killed 
             if target !=None and target.unit_type =="monster" and target.alive==False :
                 #if the buff dies the team gets a permanent buff

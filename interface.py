@@ -266,10 +266,12 @@ class Highlight:
                         
         elif unit.state == "attack":
             # Determine the current attack range based on the selected ability
-            if hasattr(unit, "selected_ability") and unit.selected_ability is not None:
+            if unit.selected_ability is not None:
                 attack_range = unit.selected_ability.attack_radius
+                aoe_range = unit.selected_ability.is_aoe
             else:
                 attack_range = unit.attack_range
+                aoe_range = 0
 
             # Highlight the attack range
             for dx in range(-attack_range, attack_range + 1):
@@ -283,19 +285,24 @@ class Highlight:
                         self.screen.blit(overlay, rect)
 
 
-            # Highlight the target cursor
-            target_rect = pygame.Rect(unit.target_x * CELL_SIZE, unit.target_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            beat_scale = 100  # Indicator scale percentage
-            beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
-            indicator_size = int(CELL_SIZE * beat_scale / 100)*1.2  # Scale the indicator image
-            indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
-            indicator_image.set_alpha(beat_alpha)
+            for dx in range(-aoe_range,aoe_range+1):
+                for dy in range(-aoe_range,aoe_range+1):
+                    x, y = unit.target_x + dx, unit.target_y + dy
 
-            # Center the scaled indicator within the target tile
-            indicator_x = target_rect.x + (CELL_SIZE - indicator_size) // 2
-            indicator_y = target_rect.y + (CELL_SIZE - indicator_size) // 2
+                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE and abs(dx) + abs(dy) <= aoe_range:
+                    # Highlight the target cursor
+                        target_rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                        beat_scale = 100  # Indicator scale percentage
+                        beat_alpha = 180 + 70 * (pygame.time.get_ticks() % 1000 / 500 - 1)  # Smoother alpha transition
+                        indicator_size = int(CELL_SIZE * beat_scale / 100)*1.2  # Scale the indicator image
+                        indicator_image = pygame.transform.scale(self.indicators["redsquare"], (indicator_size, indicator_size))
+                        indicator_image.set_alpha(beat_alpha)
 
-            self.screen.blit(indicator_image, (indicator_x, indicator_y))
+                        # Center the scaled indicator within the target tile
+                        indicator_x = target_rect.x + (CELL_SIZE - indicator_size) // 2
+                        indicator_y = target_rect.y + (CELL_SIZE - indicator_size) // 2
+
+                        self.screen.blit(indicator_image, (indicator_x, indicator_y))
 
 
 

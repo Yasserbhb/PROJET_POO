@@ -2,7 +2,7 @@ import pygame
 
 
 class Abilities:
-    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description="",attack_radius=3):
+    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description="",attack_radius=3,is_aoe=0):
         self.name = name
         self.mana_cost = mana_cost
         self.cooldown = cooldown
@@ -12,14 +12,16 @@ class Abilities:
         self.defense = defense
         self.description = description
         self.attack_radius=attack_radius
+        self.is_aoe = is_aoe
 
 
-    def use(self, user, target=None):
-        if self.ability_type in ["damage", "heal"] and not target:
-            print(f"No valid target for {self.name}.")
-            user.mana -= self.mana_cost
-            self.remaining_cooldown = self.cooldown
-            return True
+    def use(self, user, targets):
+        """
+        Execute the ability. Supports AoE if `is_aoe` is True.
+        :param user: Unit using the ability.
+        :param targets: List of targets.
+        :param grid: Grid object to calculate AoE range.
+        """
         if user.mana < self.mana_cost:
             print(f"Not enough mana to use {self.name}.")
             return False
@@ -27,26 +29,46 @@ class Abilities:
             print(f"{self.name} is on cooldown.")
             return False
 
-        # Prevent friendly fire for damage abilities
-        if self.ability_type == "damage" and target and user.color == target.color:
-            print(f"{self.name} cannot be used on a teammate!")
-            return False
         
-        # Apply effects based on ability type
-        if self.ability_type == "damage" and target:
-            print(f"{user.name} uses {self.name} on {target.name}, dealing {self.attack} damage!")
-            user.attack(target,self.attack+user.damage)
 
-        elif self.ability_type == "heal" and target:
-            print(f"{user.name} uses {self.name}, healing {self.attack} health!")
-            user.attack(target,-min(target.max_health-target.health, self.attack+user.damage))
+        print(f"{user.name} uses {self.name} on multiple targets!")
+        if self.is_aoe>0:
+            for target in targets:
+                self.apply_effect(user, target)
+                print(target.name)
+        else :
+            self.apply_effect(user, targets)
+            print(targets.name)
 
+        
 
         # Deduct mana and apply cooldown
         user.mana -= self.mana_cost
         self.remaining_cooldown = self.cooldown
         return True
+    def get_targets_in_aoe(self, user, units):
+        """Get all units within AoE radius."""
+        aoe_targets = []
+        for unit in units:
+            if unit.alive and unit!=user:
+                distance = abs(unit.x - user.target_x) + abs(unit.y - user.target_y)
+                if distance <= self.is_aoe:
+                    aoe_targets.append(unit)
+        return aoe_targets
 
+    def apply_effect(self, user, target):
+        """Apply the ability's effect to the target."""
+        if target is None:
+            print("No valid target to apply effect.")
+            return
+        
+        if self.ability_type == "damage" and user.color != target.color:
+            print(f"{target.name} takes {self.attack} damage!")
+            user.attack(target, self.attack)
+        elif self.ability_type == "heal" and user.color == target.color:
+            heal_amount = min(target.max_health - target.health, self.attack)
+            print(f"{target.name} is healed by {heal_amount} health!")
+            user.attack(target, -heal_amount)
 
     def reduce_cooldown(self):
         """
@@ -86,14 +108,15 @@ class BuffAbility(Abilities):
         else :
             print(f"{target.name} is already buffed")
             return False
-        
-
-
+   
 
         print(f"{self.name}: {target.name} is buffed for 5 turns!")
         user.mana -= self.mana_cost
         self.remaining_cooldown = self.cooldown
         return True
+    
+
+    
     
 
 
@@ -136,7 +159,7 @@ class DebuffAbility(Abilities):
         user.mana -= self.mana_cost
         self.remaining_cooldown = self.cooldown
         return True
-    
+
 #using inheretence : vision ability teleport ability
 #for buffs : crit and attack range(lasts long)
 #make some of the abilities AOE
