@@ -978,5 +978,4 @@ if __name__ == "__main__":
 
 #fix the keys vfx ; make the showing of mssgs better
 
-
-
+#add the win conditions and make base inhereted class
