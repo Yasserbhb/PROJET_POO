@@ -772,15 +772,15 @@ class Game:
                     (x_offset + unit_icon_size + 20 + key_icon_size + 10, player_y)
                 )
     # Draw barrier statuses below key counts
-        red_barrier_text = larger_font.render(f"Red Barrier: {self.red_barrier}", True, (255, 255, 255))
-        blue_barrier_text = larger_font.render(f"Blue Barreir: {self.blue_barrier}", True, (255, 255, 255))
+        red_barrier_text = larger_font.render(f"Red Barrier: {self.red_barrier}", True, (200, 156, 56))
+        blue_barrier_text = larger_font.render(f"Blue Barreir: {self.blue_barrier}", True, (200, 156, 56))
         self.screen.blit(
             red_barrier_text,
-            (x_offset , player_y + key_icon_size + 10)
+            (x_offset-10 , player_y + key_icon_size + 10)
         )
         self.screen.blit(
             blue_barrier_text,
-            (x_offset , player_y +spacing + key_icon_size + 10)
+            (x_offset-10 , player_y +spacing + key_icon_size + 10)
         )
 
 
