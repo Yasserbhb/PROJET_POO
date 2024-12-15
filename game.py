@@ -1,13 +1,13 @@
 import pygame
 import random
 from unit import Unit 
-from interface import Grid,Highlight,Pickup
+from interface import Grid,Highlight,Pickup,Animation
 from sounds import Sounds
 
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 40
+CELL_SIZE = 43
 SCREEN_WIDTH, SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 300, CELL_SIZE * GRID_SIZE + 100
 FPS = 60
 
@@ -82,7 +82,7 @@ class Game:
         self.last_move_time = 0  # Timestamp of the last movement
         self.visible_tiles = set()
         self.event_log = [] # Initialize event log
-
+        self.animations = Animation.create_animations()
 
         
         #initilizing main menu
@@ -299,7 +299,14 @@ class Game:
                     unit.draw(self.screen, is_current_turn=is_current_turn)
                     
 
-
+    def play_animation(self, name, x, y):
+        """Find and play the animation by name."""
+        for anim in self.animations:
+            if anim.name == name:
+                anim.done=False
+                anim.play(self.screen, x, y)
+                if anim.done:
+                    anim.reset()  # Reset if replay is needed
 
     def basic_attack(self, unit):
         """Resolve the attack at the current target location."""
@@ -484,6 +491,7 @@ class Game:
                         aoe_targets = current_unit.selected_ability.get_targets_in_aoe(current_unit, self.units)
                         if aoe_targets is not None:  # Ensure targets exist
                             if current_unit.selected_ability.use(current_unit, aoe_targets):
+                                self.play_animation(current_unit.selected_ability.name, current_unit.target_x * CELL_SIZE, current_unit.target_y * CELL_SIZE)
                                 self.sound.play(current_unit.selected_ability.name)
                                 current_unit.state = "done"
                                 current_unit.selected_ability = None  # Reset ability selection
@@ -1068,6 +1076,10 @@ class Game:
                 # Handle current unit's turn
                 self.handle_turn()
 
+                # Play animations
+                for anim in self.animations:
+                    if not anim.done:
+                        anim.play(self.screen, anim.current_x, anim.current_y)
                 # Show Info panel
                 self.draw_info_panel()
 

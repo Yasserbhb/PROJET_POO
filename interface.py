@@ -4,7 +4,7 @@ from sounds import *
 
 # Constants
 GRID_SIZE = 21
-CELL_SIZE = 40
+CELL_SIZE = 43
 
 ##addign the types of potions 
 
@@ -449,3 +449,66 @@ class Highlight:
 
             pygame.display.flip()
             clock.tick(60)
+
+
+class Animation:
+    """Manages and plays animations."""
+    def __init__(self, name, sprite_sheet_path, row, target_size=(43, 43)):
+        self.name = name
+        self.frames = self.load_frames(sprite_sheet_path, row, target_size)
+        self.current_frame = 0
+        self.done = True
+        self.current_x = None  # Initialize to None
+        self.current_y = None
+
+    def load_frames(self, sprite_sheet_path, row, target_size):
+        """Extract frames from a sprite sheet."""
+        sprite_sheet = pygame.image.load(sprite_sheet_path).convert_alpha()
+        sheet_width, sheet_height = sprite_sheet.get_size()
+        frame_width = sheet_width // 12
+        frame_height = sheet_height // 9
+        y = (row - 1) * frame_height
+        frames = []
+        for col in range(12):
+            x = col * frame_width
+            frame = sprite_sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+            scaled_frame = pygame.transform.scale(frame, target_size)
+            frames.append(scaled_frame)
+        return frames
+
+    def play(self, screen, x, y):
+        """Play the animation at the given position."""
+        if self.done:
+            return  # Stop playing if animation is complete
+
+        # Update the position where the animation is drawn
+        self.current_x, self.current_y = x, y
+
+        # Display the current frame
+        frame = self.frames[self.current_frame]
+        screen.blit(frame, (x, y))
+
+        # Advance the frame
+        self.current_frame += 1
+
+        # Mark as done when all frames are played
+        if self.current_frame >= len(self.frames):
+            self.done = True
+
+
+    def reset(self):
+        """Reset the animation for replay."""
+        self.current_frame = 0
+        self.done = False
+
+    @staticmethod
+    def create_animations():
+        """
+        Create predefined animations and return them as a list.
+        """
+        animations = [
+            Animation("Slash", "assets/vfx_sheet.png", row=1),
+            Animation("Arrow Shot", "assets/vfx_sheet.png", row=3),
+            Animation("Decimate", "assets/vfx_sheet.png", row=5),
+        ]
+        return animations
