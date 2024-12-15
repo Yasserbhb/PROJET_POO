@@ -91,6 +91,7 @@ class Game:
         self.menu_image = pygame.image.load("assets/main_screen.jpg")  # Load main menu background
         self.background_image = pygame.image.load("assets/lol_background.jpg")  # Load main menu background
         self.champ_select_image = pygame.image.load("assets/champ_select.jpg")  # Load champion selection background
+        self.game_over_image = pygame.image.load("assets/game_over_image.jpg")  # Load champion selection background
 
         #intializing key menu
         self.red_key_img = pygame.image.load("assets/red_key.png")
@@ -104,6 +105,198 @@ class Game:
         #barrier status
         self.blue_barrier="Up"
         self.red_barrier="Up"
+
+
+
+
+
+    def main_menu(self):
+        """Display the main menu with options to start or quit."""
+        menu_running = True
+
+        # Start menu sound
+        self.sound.play("game_music")
+
+        while menu_running:
+            rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
+
+            # Render game title
+            title_text = self.font_title.render("League on Budget", True, (200, 156, 56))
+            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 4  ))
+            title_text1 = self.font_title.render("League on Budget", True, (0,0,0))
+            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 +2, SCREEN_HEIGHT // 4+ 2))
+
+            self.screen.blit(title_text1, title_rect1)
+            self.screen.blit(title_text, title_rect)
+            
+            
+            # Render instructions
+            start_text = self.font_small.render("Press ENTER to Play", True, (200, 200, 200))
+            quit_text = self.font_small.render("Press ESC to Quit", True, (200, 200, 200))
+
+            start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            quit_rect = quit_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
+
+            self.screen.blit(start_text, start_rect)
+            self.screen.blit(quit_text, quit_rect)
+
+            pygame.display.flip()
+
+            # Handle events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:  # Start the game
+                        menu_running = False
+                    elif event.key == pygame.K_ESCAPE:  # Quit the game
+                        pygame.quit()
+                        exit()
+
+
+
+
+
+    def show_menu(self):
+        """Enhanced team selection menu."""
+        menu_running = True
+        
+        # Initialize assets
+        font = self.font_title
+        small_font = self.font_small
+
+        # Get all units from create_units
+        all_units = Unit.create_units(self)
+
+        # Filter player units for selection (those with team=None)
+        available_units = [unit for unit in all_units if unit.color is None]
+
+        # Track selected units and predefined positions
+        blue_team = []
+        red_team = []
+        blue_positions = [(3, 15), (4, 16)]
+        red_positions = [(15, 2), (17, 4)]
+        current_team = "blue"  # Start with Blue's turn
+        selected_units = []
+        selected_unit_info = None  # Track which unit's details are displayed
+
+        while menu_running:
+            rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+            self.screen.blit(pygame.transform.scale(self.champ_select_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
+
+            # Render the middle section with available units
+            y_offset = SCREEN_HEIGHT // 3
+            for i, unit in enumerate(available_units):
+                color = (
+                    (10, 10, 200) if unit in selected_units and unit.color == "blue" else
+                    (200, 10, 10) if unit in selected_units and unit.color == "red" else
+                    (255, 255, 255)
+                )
+
+                unit_text = small_font.render(f"{i + 1}: {unit.name}", True, color)
+                self.screen.blit(unit_text, (SCREEN_WIDTH // 2 - 50, y_offset))
+                y_offset += 40
+
+            # Display currently selected unit's attributes
+            if selected_unit_info:
+                attributes_text = [
+                    f"Name: {selected_unit_info.name}",
+                    f"HP: {selected_unit_info.health}",
+                    f"ATK: {selected_unit_info.damage}",
+                ]
+                y_offset = SCREEN_HEIGHT // 3
+                for line in attributes_text:
+                    attr_text = small_font.render(line, True, (255, 255, 255))
+                    self.screen.blit(attr_text, (SCREEN_WIDTH // 2 + 200, y_offset))
+                    y_offset += 40
+                     # Show the selected champion's image larger
+                selected_image = pygame.transform.scale(selected_unit_info.image, (150, 150))
+                self.screen.blit(selected_image, (SCREEN_WIDTH - 420, y_offset+30))
+
+            # Render team rosters
+            blue_text = font.render("Blue Team", True, (0, 0, 255))
+            red_text = font.render("Red Team", True, (255, 0, 0))
+            self.screen.blit(blue_text, (50, 50))
+            self.screen.blit(red_text, (SCREEN_WIDTH-400, 50))
+
+            y_offset_blue = 200
+            for unit in blue_team:
+                unit_text = small_font.render(unit.name, True, (0, 0, 255))
+                self.screen.blit(unit_text, (100, y_offset_blue))
+                selected_image = pygame.transform.scale(unit.image, (50, 50))
+                self.screen.blit(selected_image, (250, y_offset_blue-10))
+                y_offset_blue += 60
+
+            y_offset_red = 200
+            for unit in red_team:
+                unit_text = small_font.render(unit.name, True, (255, 0, 0))
+                self.screen.blit(unit_text, (SCREEN_WIDTH-400+50, y_offset_red))
+                selected_image = pygame.transform.scale(unit.image, (50, 50))
+                self.screen.blit(selected_image, (SCREEN_WIDTH-200, y_offset_red-10))
+                y_offset_red += 60
+
+            pygame.display.flip()
+
+            # Handle menu events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.KEYDOWN:
+                    if pygame.K_1 <= event.key <= pygame.K_9:
+                        index = event.key - pygame.K_1
+                        if 0 <= index < len(available_units):
+                            selected_unit_info = available_units[index]  # Show attributes for this unit
+                    elif event.key == pygame.K_RETURN and selected_unit_info:
+                        self.sound.play("selection") 
+                        self.sound.set_volume("selection", 0.5)
+                        if selected_unit_info not in selected_units:
+                            # Assign the current team and position to the selected unit
+                            if current_team == "blue":
+                                selected_unit_info.color = "blue"
+                                selected_unit_info.initial_x = blue_positions[len(blue_team)][0]
+                                selected_unit_info.initial_y = blue_positions[len(blue_team)][1]
+                                selected_unit_info.x = blue_positions[len(blue_team)][0]
+                                selected_unit_info.y = blue_positions[len(blue_team)][1]
+                                blue_team.append(selected_unit_info)
+                                current_team = "red"
+                            else:
+                                selected_unit_info.color = "red"
+                                selected_unit_info.initial_x = red_positions[len(red_team)][0]
+                                selected_unit_info.initial_y = red_positions[len(red_team)][1]
+                                selected_unit_info.x = red_positions[len(red_team)][0]
+                                selected_unit_info.y = red_positions[len(red_team)][1]
+                                red_team.append(selected_unit_info)
+                                current_team = "blue"
+                            selected_units.append(selected_unit_info)
+                            selected_unit_info = None
+                            # End selection if both teams have 2 units each
+                            if len(blue_team) == 2 and len(red_team) == 2 :
+                                for i in range(3, 0, -1):  # Countdown from 3 to 1
+                                    rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+                                    self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
+                                    countdown_text = small_font.render(f"Starting in {i}...", True, (55, 255, 55))
+                                    countdown_rect = countdown_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+                                    self.screen.blit(countdown_text, countdown_rect)
+                                    pygame.display.flip()
+                                    pygame.time.delay(1000)  # Delay for 1 second
+                                    # Play game music
+                                for volume in reversed([x / 100 for x in range(1, 101)]):  # De 1.0 à 0.01
+                                    self.sound.set_volume("game_music", volume)  
+                                    pygame.time.delay(10) 
+                                self.sound.set_volume("game_music", 0.03)  
+                                self.sound.sounds["game_music"].play(loops=-1)
+                                menu_running = False
+
+        # Build self.units in the required order: blue team → red team → monsters
+        monsters = [unit for unit in all_units if unit.unit_type == "monster"]
+        bases = [unit for unit in all_units if unit.unit_type == "base"]
+        self.units = blue_team + red_team + monsters + bases
+
+        return self.units
+    
 
 
     def log_event(self, message):
@@ -668,7 +861,7 @@ class Game:
         """
         # Initialize keys at the start of the game
         if not hasattr(self, "keys_initialized") or not self.keys_initialized:
-            self.units[0].blue_keys = 1  # Blue Player 1 starts with one Blue key
+            self.units[0].red_keys = 3  # Blue Player 1 starts with one Blue key
             self.units[1].blue_keys = 1  # Blue Player 2 starts with one Blue key
             self.units[2].red_keys = 1  # Red Player 1 starts with one Red key
             self.units[3].red_keys = 1  # Red Player 2 starts with one Red key
@@ -789,188 +982,6 @@ class Game:
 
 
 
-
-    def main_menu(self):
-        """Display the main menu with options to start or quit."""
-        menu_running = True
-
-        # Start menu sound
-        self.sound.play("game_music")
-
-        while menu_running:
-            rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
-
-            # Render game title
-            title_text = self.font_title.render("League on Budget", True, (200, 156, 56))
-            title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2  , SCREEN_HEIGHT // 4  ))
-            title_text1 = self.font_title.render("League on Budget", True, (0,0,0))
-            title_rect1 = title_text1.get_rect(center=(SCREEN_WIDTH // 2 +2, SCREEN_HEIGHT // 4+ 2))
-
-            self.screen.blit(title_text1, title_rect1)
-            self.screen.blit(title_text, title_rect)
-            
-            
-            # Render instructions
-            start_text = self.font_small.render("Press ENTER to Play", True, (200, 200, 200))
-            quit_text = self.font_small.render("Press ESC to Quit", True, (200, 200, 200))
-
-            start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-            quit_rect = quit_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
-
-            self.screen.blit(start_text, start_rect)
-            self.screen.blit(quit_text, quit_rect)
-
-            pygame.display.flip()
-
-            # Handle events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:  # Start the game
-                        menu_running = False
-                    elif event.key == pygame.K_ESCAPE:  # Quit the game
-                        pygame.quit()
-                        exit()
-
-
-
-
-
-    def show_menu(self):
-        """Enhanced team selection menu."""
-        menu_running = True
-        
-        # Initialize assets
-        font = self.font_title
-        small_font = self.font_small
-
-        # Get all units from create_units
-        all_units = Unit.create_units(self)
-
-        # Filter player units for selection (those with team=None)
-        available_units = [unit for unit in all_units if unit.color is None]
-
-        # Track selected units and predefined positions
-        blue_team = []
-        red_team = []
-        blue_positions = [(3, 15), (4, 16)]
-        red_positions = [(15, 2), (17, 4)]
-        current_team = "blue"  # Start with Blue's turn
-        selected_units = []
-        selected_unit_info = None  # Track which unit's details are displayed
-
-        while menu_running:
-            rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
-            self.screen.blit(pygame.transform.scale(self.champ_select_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
-
-            # Render the middle section with available units
-            y_offset = SCREEN_HEIGHT // 3
-            for i, unit in enumerate(available_units):
-                color = (200, 100, 100) if unit in selected_units else (255, 255, 255)
-                unit_text = small_font.render(f"{i + 1}: {unit.name}", True, color)
-                self.screen.blit(unit_text, (SCREEN_WIDTH // 2 - 50, y_offset))
-                y_offset += 40
-
-            # Display currently selected unit's attributes
-            if selected_unit_info:
-                attributes_text = [
-                    f"Name: {selected_unit_info.name}",
-                    f"HP: {selected_unit_info.health}",
-                    f"ATK: {selected_unit_info.damage}",
-                ]
-                y_offset = SCREEN_HEIGHT // 3
-                for line in attributes_text:
-                    attr_text = small_font.render(line, True, (255, 255, 255))
-                    self.screen.blit(attr_text, (SCREEN_WIDTH // 2 + 200, y_offset))
-                    y_offset += 40
-                     # Show the selected champion's image larger
-                selected_image = pygame.transform.scale(selected_unit_info.image, (150, 150))
-                self.screen.blit(selected_image, (SCREEN_WIDTH - 420, y_offset+30))
-
-            # Render team rosters
-            blue_text = font.render("Blue Team", True, (0, 0, 255))
-            red_text = font.render("Red Team", True, (255, 0, 0))
-            self.screen.blit(blue_text, (50, 50))
-            self.screen.blit(red_text, (SCREEN_WIDTH-400, 50))
-
-            y_offset_blue = 200
-            for unit in blue_team:
-                unit_text = small_font.render(unit.name, True, (0, 0, 255))
-                self.screen.blit(unit_text, (100, y_offset_blue))
-                selected_image = pygame.transform.scale(unit.image, (50, 50))
-                self.screen.blit(selected_image, (250, y_offset_blue-10))
-                y_offset_blue += 60
-
-            y_offset_red = 200
-            for unit in red_team:
-                unit_text = small_font.render(unit.name, True, (255, 0, 0))
-                self.screen.blit(unit_text, (SCREEN_WIDTH-400+50, y_offset_red))
-                selected_image = pygame.transform.scale(unit.image, (50, 50))
-                self.screen.blit(selected_image, (SCREEN_WIDTH-200, y_offset_red-10))
-                y_offset_red += 60
-
-            pygame.display.flip()
-
-            # Handle menu events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
-                elif event.type == pygame.KEYDOWN:
-                    if pygame.K_1 <= event.key <= pygame.K_9:
-                        index = event.key - pygame.K_1
-                        if 0 <= index < len(available_units):
-                            selected_unit_info = available_units[index]  # Show attributes for this unit
-                    elif event.key == pygame.K_RETURN and selected_unit_info:
-                        self.sound.play("selection") 
-                        self.sound.set_volume("selection", 0.5)
-                        if selected_unit_info not in selected_units:
-                            # Assign the current team and position to the selected unit
-                            if current_team == "blue":
-                                selected_unit_info.color = "blue"
-                                selected_unit_info.initial_x = blue_positions[len(blue_team)][0]
-                                selected_unit_info.initial_y = blue_positions[len(blue_team)][1]
-                                selected_unit_info.x = blue_positions[len(blue_team)][0]
-                                selected_unit_info.y = blue_positions[len(blue_team)][1]
-                                blue_team.append(selected_unit_info)
-                                current_team = "red"
-                            else:
-                                selected_unit_info.color = "red"
-                                selected_unit_info.initial_x = red_positions[len(red_team)][0]
-                                selected_unit_info.initial_y = red_positions[len(red_team)][1]
-                                selected_unit_info.x = red_positions[len(red_team)][0]
-                                selected_unit_info.y = red_positions[len(red_team)][1]
-                                red_team.append(selected_unit_info)
-                                current_team = "blue"
-                            selected_units.append(selected_unit_info)
-                            selected_unit_info = None
-                            # End selection if both teams have 2 units each
-                            if len(blue_team) == 2 and len(red_team) == 2 :
-                                for i in range(3, 0, -1):  # Countdown from 3 to 1
-                                    rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
-                                    self.screen.blit(pygame.transform.scale(self.background_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
-                                    countdown_text = small_font.render(f"Starting in {i}...", True, (55, 255, 55))
-                                    countdown_rect = countdown_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-                                    self.screen.blit(countdown_text, countdown_rect)
-                                    pygame.display.flip()
-                                    pygame.time.delay(1000)  # Delay for 1 second
-                                    # Play game music
-                                for volume in reversed([x / 100 for x in range(1, 101)]):  # De 1.0 à 0.01
-                                    self.sound.set_volume("game_music", volume)  
-                                    pygame.time.delay(10) 
-                                self.sound.set_volume("game_music", 0.03)  
-                                self.sound.sounds["game_music"].play(loops=-1)
-                                menu_running = False
-
-        # Build self.units in the required order: blue team → red team → monsters
-        monsters = [unit for unit in all_units if unit.unit_type == "monster"]
-        bases = [unit for unit in all_units if unit.unit_type == "base"]
-        self.units = blue_team + red_team + monsters + bases
-
-        return self.units
     
 
 
@@ -996,8 +1007,8 @@ class Game:
         """
         Displays a 'Game Over' screen indicating which team won.
         """
-        # Fill the screen with a solid color (e.g., black)
-        self.screen.fill((0, 0, 0))
+        rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.screen.blit(pygame.transform.scale(self.game_over_image, (SCREEN_WIDTH, SCREEN_HEIGHT)), rect)
 
         # Set up fonts
         game_over_font = pygame.font.Font("assets/RussoOne.ttf", 80)  # Large font for "Game Over"
@@ -1005,7 +1016,7 @@ class Game:
 
         # Render text surfaces
         game_over_text = game_over_font.render("GAME OVER", True, (255, 255, 255))  # White text
-        winner_text = winner_font.render(f"Team {winner_team.upper()} Won!", True, (255, 155, 56))  # Green text for winner
+        winner_text = winner_font.render(f"Team {winner_team.upper()} Won!", True, (255, 155, 56))  #  text for winner
 
         # Center the texts on the screen
         screen_width, screen_height = self.screen.get_size()
@@ -1020,7 +1031,7 @@ class Game:
         pygame.display.flip()
 
         # Pause to show the screen for a while (e.g., 5 seconds)
-        pygame.time.delay(3000)  # Delay in milliseconds (5000 ms = 5 seconds)
+        pygame.time.delay(6000)  # Delay in milliseconds (5000 ms = 5 seconds)
 
         
 
