@@ -65,7 +65,7 @@ class Unit:
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
-            Unit(3,15, "Garen", 900, 99,0,50,20, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
+            Unit(3,15, "Garen", 900, 9999,0,50,20, self.unit_images["garen"], None,13,2,"player", mana=120, abilities=[
                 DamageHealAbility("Slash", 30, 5, "damage", attack=90, description="A quick slash attack.",attack_radius=3,is_aoe=2,damage_type="magical"),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 DamageHealAbility("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
@@ -102,9 +102,11 @@ class Unit:
 
 
 
+
     def in_range(self, target):
         """Check if the target is within attack range."""
         return abs(self.x - target.x) + abs(self.y - target.y) <= self.attack_range
+
 
 
 
@@ -136,10 +138,12 @@ class Unit:
 
 
 
-
     #neutral monsters reacting to attacks
     def react_to_attack(self, attacker):
         return
+
+
+
 
     def attack(self, target,damage,damage_type="physical"):
         multiplyer=1
@@ -169,7 +173,9 @@ class Unit:
         target.react_to_attack(self)  # Trigger monster reaction
         return damage_after_def
         
-        
+
+
+
     def update_buffs_and_debuffs(self):
             # Handle buffs
             if self.buff_duration > 0:
@@ -185,6 +191,9 @@ class Unit:
                     print(f"{self.name}'s debuff has expired.")
                     self.revert_debuff()
 
+
+
+
     def revert_buff(self):
         # Revert buff effects
         self.damage -= self.buffed_damage_increase
@@ -195,6 +204,9 @@ class Unit:
         self.is_buffed = False
         print(f"{self.name}'s stats after buff ended: Damage: {self.damage}, Defense: {self.physical_defense } and {self.physical_defense} ")
 
+
+
+
     def revert_debuff(self):
         # Revert debuff effects
         self.damage += self.debuffed_attack_reduction
@@ -204,6 +216,7 @@ class Unit:
         self.debuffed_defense_reduction = 0
         self.is_debuffed = False
         print(f"{self.name}'s stats after debuff ended: Damage: {self.damage}, Defense: {self.physical_defense } and {self.physical_defense} ")
+
 
 
 
@@ -336,10 +349,15 @@ class Unit:
             ])
 
 
+
+
                 
 class MonsterUnit(Unit):
     def __init__(self, x, y, name, health, damage,physical_defense,magical_defense,crit_chance,image_path, color, move_range, attack_range, unit_type):  
         Unit.__init__(self, x, y, name, health, damage,physical_defense,magical_defense,crit_chance,image_path, color, move_range, attack_range, unit_type)
+
+
+
 
     def react_to_attack(self, attacker):
         if self.alive:
@@ -348,11 +366,16 @@ class MonsterUnit(Unit):
                 self.attack(attacker,self.damage)
         
 
+
+
             
 class BaseUnit(Unit):
     def __init__(self, x, y, name, health, damage, physical_defense,magical_defense, crit_chance, image_path, color, move_range, attack_range, unit_type, barrier_status):
         super().__init__(x, y, name, health, damage, physical_defense,magical_defense, crit_chance, image_path, color, move_range, attack_range, unit_type)
         self.barrier_status = barrier_status
+
+
+
 
     def draw(self, screen, is_current_turn):
         """

@@ -158,7 +158,6 @@ class Game:
 
 
 
-
     def show_menu(self):
         """Enhanced team selection menu."""
         menu_running = True
@@ -299,11 +298,15 @@ class Game:
     
 
 
+
     def log_event(self, message):
         """Add an event to the event log."""
         self.event_log.append(message)
         if len(self.event_log) > 10:  # Limit the log to the last 10 events
             self.event_log.pop(0)
+
+
+
 
     def draw_info_panel(self):
         """Draw the information panel with word wrapping for long text."""
@@ -345,7 +348,6 @@ class Game:
             # Stop rendering if we've filled the panel
             if y_offset > panel_height - padding:
                 break
-
 
 
 #space for the abilities abr
@@ -493,6 +495,7 @@ class Game:
                     
 
 
+
     def basic_attack(self, unit):
         """Resolve the attack at the current target location."""
         target_hit = False
@@ -520,6 +523,7 @@ class Game:
 
         unit.state = "done"  # Mark the unit as done after the attack
         
+
 
 
     def advance_to_next_unit(self):
@@ -828,8 +832,7 @@ class Game:
 
             
 
-            
-    
+
     def get_respawn_location(self, unit):
     # Example: respawn at a fixed position or base location
         unit_index = self.units.index(unit)
@@ -910,12 +913,9 @@ class Game:
                                 unit.red_keys = 1
                                 print("RedBuff now holds 1 Red key.")
                     
+
+
                     
-                    
-
-
-
-
     def draw_key_counts(self):
         """
         Draws the number of red and blue keys each player and team has,
@@ -977,14 +977,8 @@ class Game:
         )
 
 
+
         
-
-
-
-
-    
-
-
     def check_game_over(self):
         """
         Checks if either Nexus is dead and triggers the Game Over screen.
@@ -1000,6 +994,7 @@ class Game:
                 return True  # Indicate that the game is over
 
         return False  # Continue the game if no Nexus is dead
+
 
 
 
@@ -1033,8 +1028,8 @@ class Game:
         # Pause to show the screen for a while (e.g., 5 seconds)
         pygame.time.delay(6000)  # Delay in milliseconds (5000 ms = 5 seconds)
 
+   
         
-
 
     def run(self):
         """Main game loop with return to main menu on game over."""

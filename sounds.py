@@ -56,9 +56,14 @@ class Sounds:
             self.sounds[name].play(loops=loop)  # Utilise l'option `loops` de pygame
 
 
+
+
     def set_volume(self, sound_name, volume):
         if sound_name in self.sounds:
             self.sounds[sound_name].set_volume(volume)
+    
+
+
     
     def stop(self, sound_name):
         if sound_name in self.sounds:

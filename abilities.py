@@ -15,11 +15,17 @@ class Abilities(ABC):
         self.is_aoe = is_aoe
         self.damage_type=damage_type
 
+
+
+
     @abstractmethod
     def use(self, user, targets):
         """Abstract method for ability usage."""
         pass
     
+
+
+
     def get_targets_in_aoe(self, user, units):
         """Get all units within AoE radius."""
         aoe_targets = []
@@ -29,6 +35,9 @@ class Abilities(ABC):
                 if distance <= self.is_aoe:
                     aoe_targets.append(unit)
         return aoe_targets
+
+
+
 
     def apply_effect(self, user, target):
         """Apply the ability's effect to the target."""
@@ -44,6 +53,9 @@ class Abilities(ABC):
             print(f"{target.name} is healed by {heal_amount} health!")
             user.attack(target, -heal_amount)
 
+
+
+
     def reduce_cooldown(self):
         """
         Réduit le cooldown de l'ability à chaque tour.
@@ -53,13 +65,19 @@ class Abilities(ABC):
             if self.remaining_cooldown < 0:
                 self.remaining_cooldown = 0  # Assure que le cooldown ne soit pas négatif
         
-                
+
+
+
+
 class BuffAbility(Abilities):
     def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=8,attack_radius=1):
         # Call the parent constructor with "buff" as the ability type
         super().__init__(name, mana_cost, cooldown, "buff", attack=attack, defense=defense, description=description,attack_radius=attack_radius)
         self.duration = duration  # Number of turns the buff lasts
         self.remaining_cooldown = 0
+
+
+
 
     def use(self, user, target=None):
         if self.remaining_cooldown > 0:
@@ -91,16 +109,16 @@ class BuffAbility(Abilities):
         return True
     
 
-    
-    
 
 
-    
+
 class DebuffAbility(Abilities):
     def __init__(self, name, mana_cost, cooldown, attack=0, defense=0, description="", duration=8,attack_radius=1):
         # Call the parent constructor with "debuff" as the ability type
         super().__init__(name, mana_cost, cooldown, "debuff", attack=attack, defense=defense, description=description,attack_radius=attack_radius)
         self.duration = duration  # Number of turns the debuff lasts
+
+
 
 
     def use(self, user, target=None):
@@ -137,9 +155,13 @@ class DebuffAbility(Abilities):
         return True
 
 
+
+
+
 class DamageHealAbility(Abilities):
     def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0,description="", attack_radius=3, is_aoe=0, damage_type="physical"):
         super().__init__(name, mana_cost, cooldown, ability_type=ability_type, attack=attack,defense=defense, description=description, attack_radius=attack_radius, is_aoe=is_aoe, damage_type=damage_type)
+
 
 
 

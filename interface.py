@@ -26,6 +26,7 @@ class Tile:
         
         
 
+
     def draw_tile(self, screen):
         """Draw the tile with its texture and overlay."""
         rect = pygame.Rect(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
@@ -40,6 +41,9 @@ class Tile:
 
         # Optional: Draw tile border
         #pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # Black border
+
+
+
 
 
 class Pickup:
@@ -69,11 +73,17 @@ class Pickup:
             self.spawn_turn = spawn_turn
             self.picked = False
 
+
+
+
     def initialize(self, textures_file):
         """Initialize the pickup system and set initial next spawn attempts."""
         self.textures_file = textures_file
         for p_type in self.pickup_types:
             self.next_spawn_turns[p_type] = random.randint(5, 8)
+
+
+
 
     def update(self, turn_count, grid):
         """Update all pickups and attempt spawns each turn (manager only)."""
@@ -96,10 +106,16 @@ class Pickup:
                         # Not spawned this turn, try again soon
                         self.next_spawn_turns[p_type] = self.turn_count + random.randint(1, 3)
 
+
+
+
     def spawn_single_pickup(self, x, y, overlay, spawn_turn):
         """Create and store a single pickup item instance."""
         new_pickup = Pickup(x, y, overlay, spawn_turn)
         self.all_pickups.append(new_pickup)
+
+
+
 
     def draw_pickups(self, screen, visible_tiles):
         """Draw all item pickups (manager only)."""
@@ -110,6 +126,9 @@ class Pickup:
                 texture = self.textures_file[p.overlay]
                 rect = pygame.Rect(p.x * CELL_SIZE+CELL_SIZE/4, p.y * CELL_SIZE+CELL_SIZE/4, CELL_SIZE/2, CELL_SIZE/2)
                 screen.blit(pygame.transform.scale(texture, (CELL_SIZE/2, CELL_SIZE/2)), rect)
+
+
+
 
     def picked_used(self, unit, pickup):
         """Apply the effect of this pickup to the unit and remove it (manager only)."""
@@ -138,12 +157,18 @@ class Pickup:
         pickup.picked = True
         self.remove_pickup(pickup)
 
+
+
+
     def remove_pickup(self, pickup):
         """Remove a pickup and schedule next spawn attempt (manager only)."""
         if pickup in self.all_pickups:
             self.all_pickups.remove(pickup)
         delay = random.randint(15, 20)
         self.next_spawn_turns[pickup.overlay] = self.turn_count + delay
+
+
+
 
     def get_random_spawn_location(self, grid):
         """Get a random allowed cell for spawning."""
@@ -169,6 +194,8 @@ class Grid:
         self.tiles = self.create_grid()
         self.highlight=Highlight(self.textures_file)
         
+
+
 
     def create_grid(self):
         """Create the grid with predefined terrain and overlays."""
@@ -215,6 +242,9 @@ class Grid:
 
         return grid
 
+
+
+
     def draw(self, screen):
         """Draw all tiles in the grid."""
         for row in self.tiles:
@@ -225,8 +255,6 @@ class Grid:
 
 
 
-    
-
 # Highlight Class
 class Highlight:
     """Manages highlighting for movement and attack ranges."""
@@ -235,7 +263,8 @@ class Highlight:
         self.visible_tiles = set()
         self.textures_file=textures_file
         
-        
+
+
 
     def highlight_range(self, unit):
         """Highlight movement or attack range based on the unit's state."""
@@ -312,6 +341,7 @@ class Highlight:
 
 
 
+
     def update_fog_visibility(self, team_color):
         """
         Update the set of visible tiles based on all members of the team.
@@ -364,10 +394,6 @@ class Highlight:
                 
 
         # Final combined visible tiles
-
-
-
-
     def draw_fog(self,screen):
  
         """Draw the fog of war and dim lighting based on the visible tiles."""
@@ -394,8 +420,6 @@ class Highlight:
 
 
                     
-
-
 
     def show_buff_animation(self, screen, buff_image, key_message="You won a key"):
         """Displays a buff animation after a monster is defeated."""
