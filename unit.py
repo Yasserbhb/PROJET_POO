@@ -92,6 +92,8 @@ class Unit:
             ]),  
 
 
+            MonsterUnit(11, 19, "BigBuff",1000, 50 ,0,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(9, 1, "BigBuff",1000, 50 ,0,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(10, 10, "BigBuff",1000, 50 ,0,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(5 ,7, "BlueBuff",390, 250 ,20,170,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(15, 13, "RedBuff",390, 250 ,30,0,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
