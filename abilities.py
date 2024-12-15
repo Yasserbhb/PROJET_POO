@@ -2,7 +2,7 @@ import pygame
 
 
 class Abilities:
-    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description="",attack_radius=3,is_aoe=0):
+    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description="",attack_radius=3,is_aoe=0,damage_type="physical"):
         self.name = name
         self.mana_cost = mana_cost
         self.cooldown = cooldown
@@ -13,7 +13,7 @@ class Abilities:
         self.description = description
         self.attack_radius=attack_radius
         self.is_aoe = is_aoe
-
+        self.damage_type=damage_type
 
     def use(self, user, targets):
         """
@@ -30,8 +30,8 @@ class Abilities:
             return False
 
         
-
-        print(f"{user.name} uses {self.name} on multiple targets!")
+        if targets is not None:
+            print(f"{user.name} uses {self.name} on multiple targets!")
         if self.is_aoe>0:
             for target in targets:
                 self.apply_effect(user, target)
@@ -60,11 +60,11 @@ class Abilities:
         """Apply the ability's effect to the target."""
         if target is None:
             print("No valid target to apply effect.")
-            return
+            return 
         
         if self.ability_type == "damage" and user.color != target.color:
             print(f"{target.name} takes {self.attack} damage!")
-            user.attack(target, self.attack+user.damage)
+            user.attack(target, self.attack+user.damage,self.damage_type)
         elif self.ability_type == "heal" and user.color == target.color:
             heal_amount = min(target.max_health - target.health, self.attack)
             print(f"{target.name} is healed by {heal_amount} health!")
@@ -101,7 +101,8 @@ class BuffAbility(Abilities):
                 target.damage += self.attack
                 target.buffed_attack_increase = self.attack  # Track the increase
             if self.defense:
-                target.defense += self.defense
+                target.physical_defense += self.defense
+                target.magical_defense += self.defense
                 target.buffed_defense_increase = self.defense  # Track the increase
             target.is_buffed=True
             target.buff_duration = self.duration 
@@ -146,7 +147,8 @@ class DebuffAbility(Abilities):
                 target.damage -= self.attack
                 target.debuffed_attack_reduction = self.attack  # Track the reduction
             if self.defense:
-                target.defense -= self.defense
+                target.physical_defense -= self.defense
+                target.magical_defense -= self.defense
                 target.debuffed_defense_reduction = self.defense  # Track the reduction
             target.is_debuffed=True
             target.debuff_duration = self.duration
@@ -160,6 +162,3 @@ class DebuffAbility(Abilities):
         self.remaining_cooldown = self.cooldown
         return True
 
-#using inheretence : vision ability teleport ability
-#for buffs : crit and attack range(lasts long)
-#make some of the abilities AOE
