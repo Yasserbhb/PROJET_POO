@@ -1,7 +1,7 @@
 import pygame
+from abc import ABC, abstractmethod
 
-
-class Abilities:
+class Abilities(ABC):
     def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0, description="",attack_radius=3,is_aoe=0,damage_type="physical"):
         self.name = name
         self.mana_cost = mana_cost
@@ -15,37 +15,11 @@ class Abilities:
         self.is_aoe = is_aoe
         self.damage_type=damage_type
 
+    @abstractmethod
     def use(self, user, targets):
-        """
-        Execute the ability. Supports AoE if `is_aoe` is True.
-        :param user: Unit using the ability.
-        :param targets: List of targets.
-        :param grid: Grid object to calculate AoE range.
-        """
-        if user.mana < self.mana_cost:
-            print(f"Not enough mana to use {self.name}.")
-            return False
-        if self.remaining_cooldown > 0:
-            print(f"{self.name} is on cooldown.")
-            return False
-
-        
-        if targets is not None:
-            print(f"{user.name} uses {self.name} on multiple targets!")
-        if self.is_aoe>0:
-            for target in targets:
-                self.apply_effect(user, target)
-                print(target.name)
-        else :
-            self.apply_effect(user, targets)
-            print(targets.name)
-
-        
-
-        # Deduct mana and apply cooldown
-        user.mana -= self.mana_cost
-        self.remaining_cooldown = self.cooldown
-        return True
+        """Abstract method for ability usage."""
+        pass
+    
     def get_targets_in_aoe(self, user, units):
         """Get all units within AoE radius."""
         aoe_targets = []
@@ -162,3 +136,41 @@ class DebuffAbility(Abilities):
         self.remaining_cooldown = self.cooldown
         return True
 
+
+class DamageHealAbility(Abilities):
+    def __init__(self, name, mana_cost, cooldown, ability_type, attack=0, defense=0,description="", attack_radius=3, is_aoe=0, damage_type="physical"):
+        super().__init__(name, mana_cost, cooldown, ability_type=ability_type, attack=attack,defense=defense, description=description, attack_radius=attack_radius, is_aoe=is_aoe, damage_type=damage_type)
+
+
+
+    def use(self, user, targets):
+        """
+        Execute the ability. Supports AoE if `is_aoe` is True.
+        :param user: Unit using the ability.
+        :param targets: List of targets.
+        :param grid: Grid object to calculate AoE range.
+        """
+        if user.mana < self.mana_cost:
+            print(f"Not enough mana to use {self.name}.")
+            return False
+        if self.remaining_cooldown > 0:
+            print(f"{self.name} is on cooldown.")
+            return False
+
+        
+        if targets is not None:
+            print(f"{user.name} uses {self.name} on multiple targets!")
+        if self.is_aoe>0:
+            for target in targets:
+                self.apply_effect(user, target)
+                print(target.name)
+        else :
+            self.apply_effect(user, targets)
+            print(targets.name)
+
+        
+
+        # Deduct mana and apply cooldown
+        user.mana -= self.mana_cost
+        self.remaining_cooldown = self.cooldown
+        return True    

@@ -1,6 +1,6 @@
 import pygame
 import random
-from abilities import Abilities,BuffAbility,DebuffAbility
+from abilities import DamageHealAbility,BuffAbility,DebuffAbility
 from sounds import *
 CELL_SIZE = 43
 
@@ -66,27 +66,27 @@ class Unit:
         """Create units and place them on the grid."""       
         return [            
             Unit(3,15, "Garen", 900, 99,0,50,20, self.unit_images["garen"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Slash", 30, 5, "damage", attack=90, description="A quick slash attack.",attack_radius=3,is_aoe=2,damage_type="magical"),
+                DamageHealAbility("Slash", 30, 5, "damage", attack=90, description="A quick slash attack.",attack_radius=3,is_aoe=2,damage_type="magical"),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
-                Abilities("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
+                DamageHealAbility("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
             ]),  
             Unit(4,16, "Ashe", 500, 70,100,30,50 ,self.unit_images["ashe"], None,3,2,"player", mana=100, abilities=[
-                Abilities("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
+                DamageHealAbility("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
                 DebuffAbility("Frost Arrow", 30, 10, attack=20, defense=10, description="Slows and weakens the target."),
                 BuffAbility("Healing Wind", 50, 15, defense=20, description="Restores health to an ally and grants temporary defense."),
             ]),  
             Unit(15,3, "Darius",700, 90,0,70,50,self.unit_images["darius"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Decimate", 50, 7, "damage", attack=250, description="Spins his axe, dealing damage to nearby enemies."),
+                DamageHealAbility("Decimate", 50, 7, "damage", attack=250, description="Spins his axe, dealing damage to nearby enemies."),
                 DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
-                Abilities("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
+                DamageHealAbility("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
             ]), 
             Unit(16,4, "Soraka",490, 50 ,50,33,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
-                Abilities("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage.",damage_type="magical"),
-                Abilities("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
+                DamageHealAbility("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage.",damage_type="magical"),
+                DamageHealAbility("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
             ]),  
             Unit(0,0, "Rengar",700, 180 ,0,0,50,self.unit_images["rengar"], None,3,2,"player", mana=120, abilities=[
-                Abilities("Savagery", 30, 5, "damage", attack=300, description="Empowered strike dealing extra damage."),
+                DamageHealAbility("Savagery", 30, 5, "damage", attack=300, description="Empowered strike dealing extra damage."),
                 BuffAbility("Battle Roar", 40, 8, defense=40, description="Boosts defense and regenerates health."),
                 DebuffAbility("Thrill of the Hunt", 80, 20, attack=20, description="Tracks the enemy, reducing their attack temporarily."),
             ]),  
@@ -193,7 +193,7 @@ class Unit:
         self.buffed_damage_increase = 0
         self.buffed_defense_increase = 0
         self.is_buffed = False
-        print(f"{self.name}'s stats after buff ended: Damage: {self.damage}, Defense: {self.defense}")
+        print(f"{self.name}'s stats after buff ended: Damage: {self.damage}, Defense: {self.physical_defense } and {self.physical_defense} ")
 
     def revert_debuff(self):
         # Revert debuff effects
@@ -203,7 +203,7 @@ class Unit:
         self.debuffed_attack_reduction = 0
         self.debuffed_defense_reduction = 0
         self.is_debuffed = False
-        print(f"{self.name}'s stats after debuff ended: Damage: {self.damage}, Defense: {self.defense}")
+        print(f"{self.name}'s stats after debuff ended: Damage: {self.damage}, Defense: {self.physical_defense } and {self.physical_defense} ")
 
 
 
