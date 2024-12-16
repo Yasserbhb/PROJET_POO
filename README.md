@@ -38,11 +38,14 @@ Once all champions are selected, the game begins!
 Each character has three phases during their turn:
 
 1. **Move Phase**:
+
 ![Alt Text](https://i.imgur.com/l9MxEfF.png)
+
    - Use the **arrow keys** to move your character.
    - **Press `Space`** to lock in your position and switch to the attack phase.
 
 2. **Attack Phase**:
+
 ![Alt Text](https://i.imgur.com/ZJjckIP.png)
 ![Alt Text](https://i.imgur.com/UwZynwE.png)
 
@@ -67,6 +70,7 @@ Each character has three phases during their turn:
 
 
 #### **Grid Terrain**
+
 ![Alt Text](https://i.imgur.com/VDZQzXV.png)
 
 The grid features four tile types:
@@ -78,6 +82,7 @@ The grid features four tile types:
 ---
 
 #### **Vision System**
+
 ![Alt Text](https://i.imgur.com/yDcLN2J.png)
 ![Alt Text](https://i.imgur.com/BwH2N6L.png)
 
@@ -96,21 +101,25 @@ There are two types of damage and corresponding defenses:
 1. **Physical Damage**:
    - Reduced by the target's **Physical Defense**.
    - Displayed in **red numbers** during the game.
+
 ![Alt Text](https://i.imgur.com/VB7HEHA.png)
 
 2. **Magical Damage**:
    - Reduced by the target's **Magical Defense**.
    - Displayed in **purple numbers** during the game.
+
 ![Alt Text](https://i.imgur.com/EVvA1nM.png)
 
 3. **Healing**:
    - Restores health points (HP) to the target.
    - Displayed in **green numbers with a "+" sign**.
+
 ![Alt Text](https://i.imgur.com/MJr0LZd.png)
 
 ---
 
 #### **Monsters**
+
 ![Alt Text](https://i.imgur.com/mo0E9N3.png)
 ![Alt Text](https://i.imgur.com/f0vaTWW.png)
 ![Alt Text](https://i.imgur.com/gNVhghg.png)
