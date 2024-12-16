@@ -65,7 +65,7 @@ class Unit:
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
-            Unit(3,15, "Garen", 900, 800,50,50,20, self.unit_images["garen"], None,3,2,"player", mana=220, abilities=[
+            Unit(3,15, "Garen", 900, 80,50,50,20, self.unit_images["garen"], None,3,2,"player", mana=220, abilities=[
                 DamageHealAbility("Slash", 30, 5, "damage", attack=90, description="A quick slash attack.",attack_radius=4,is_aoe=1,damage_type="magical"),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 DamageHealAbility("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
