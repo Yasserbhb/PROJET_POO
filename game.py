@@ -864,7 +864,7 @@ class Game:
         """
         # Initialize keys at the start of the game
         if not hasattr(self, "keys_initialized") or not self.keys_initialized:
-            self.units[0].red_keys = 3  # Blue Player 1 starts with one Blue key
+            self.units[0].blue_keys = 1  # Blue Player 1 starts with one Blue key
             self.units[1].blue_keys = 1  # Blue Player 2 starts with one Blue key
             self.units[2].red_keys = 1  # Red Player 1 starts with one Red key
             self.units[3].red_keys = 1  # Red Player 2 starts with one Red key

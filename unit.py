@@ -65,28 +65,28 @@ class Unit:
     def create_units(self):
         """Create units and place them on the grid."""       
         return [            
-            Unit(3,15, "Garen", 900, 9999,0,50,20, self.unit_images["garen"], None,13,2,"player", mana=120, abilities=[
-                DamageHealAbility("Slash", 30, 5, "damage", attack=90, description="A quick slash attack.",attack_radius=3,is_aoe=2,damage_type="magical"),
+            Unit(3,15, "Garen", 900, 800,50,50,20, self.unit_images["garen"], None,3,2,"player", mana=220, abilities=[
+                DamageHealAbility("Slash", 30, 5, "damage", attack=90, description="A quick slash attack.",attack_radius=4,is_aoe=1,damage_type="magical"),
                 BuffAbility("Fortify", 20, 14, defense=50, description="Increases defense temporarily for 3 turns.",attack_radius=8),
                 DamageHealAbility("Charge", 40, 8, "damage", attack=300, description="A powerful charging attack that stuns the target.",attack_radius=2),
             ]),  
-            Unit(4,16, "Ashe", 500, 70,100,30,50 ,self.unit_images["ashe"], None,3,2,"player", mana=100, abilities=[
+            Unit(4,16, "Ashe", 500, 120,10,30,50 ,self.unit_images["ashe"], None,4,3,"player", mana=150, abilities=[
                 DamageHealAbility("Arrow Shot", 20, 5, "damage", attack=150, description="Shoots an arrow at the target."),
-                DebuffAbility("Frost Arrow", 30, 10, attack=20, defense=10, description="Slows and weakens the target."),
-                BuffAbility("Healing Wind", 50, 15, defense=20, description="Restores health to an ally and grants temporary defense."),
+                DebuffAbility("Frost Arrow", 30, 10, attack=20, defense=10, description="Slows and weakens the target.",attack_radius=5),
+                BuffAbility("Healing Wind", 50, 15, defense=20, description="Restores health to an ally and grants temporary defense.",attack_radius=3),
             ]),  
-            Unit(15,3, "Darius",700, 90,0,70,50,self.unit_images["darius"], None,3,2,"player", mana=120, abilities=[
+            Unit(15,3, "Darius",700, 90,50,50,50,self.unit_images["darius"], None,3,2,"player", mana=120, abilities=[
                 DamageHealAbility("Decimate", 50, 7, "damage", attack=250, description="Spins his axe, dealing damage to nearby enemies."),
                 DebuffAbility("Crippling Strike", 40, 8, attack=30, defense=10, description="A heavy strike that slows and weakens the target."),
                 DamageHealAbility("Noxian Guillotine", 80, 15, "damage", attack=400, description="Executes an enemy with low health."),
             ]), 
-            Unit(16,4, "Soraka",490, 50 ,50,33,50,self.unit_images["soraka"], None,3,2,"player", mana=250, abilities=[
-                DamageHealAbility("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage.",damage_type="magical"),
+            Unit(16,4, "Soraka",490, 50 ,50,33,50,self.unit_images["soraka"], None,4,3,"player", mana=250, abilities=[
+                DamageHealAbility("Starcall", 30, 5, "damage", attack=50, description="Calls a star down, dealing magic damage.",is_aoe=2,damage_type="magical"),
                 DamageHealAbility("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
             ]),  
-            Unit(0,0, "Rengar",700, 180 ,0,0,50,self.unit_images["rengar"], None,3,2,"player", mana=120, abilities=[
-                DamageHealAbility("Savagery", 30, 5, "damage", attack=300, description="Empowered strike dealing extra damage."),
+            Unit(0,0, "Rengar",500, 190 ,0,0,50,self.unit_images["rengar"], None,4,1,"player", mana=120, abilities=[
+                DamageHealAbility("Savagery", 150, 5, "damage", attack=300, description="Empowered strike dealing extra damage.",attack_radius=4),
                 BuffAbility("Battle Roar", 40, 8, defense=40, description="Boosts defense and regenerates health."),
                 DebuffAbility("Thrill of the Hunt", 80, 20, attack=20, description="Tracks the enemy, reducing their attack temporarily."),
             ]),  
@@ -95,11 +95,11 @@ class Unit:
             MonsterUnit(11, 19, "BigBuff",1000, 50 ,0,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(9, 1, "BigBuff",1000, 50 ,0,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
             MonsterUnit(10, 10, "BigBuff",1000, 50 ,0,0,0,self.unit_images["bigbuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(5 ,7, "BlueBuff",390, 250 ,20,170,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
-            MonsterUnit(15, 13, "RedBuff",390, 250 ,30,0,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
+            MonsterUnit(5 ,7, "BlueBuff",390, 150 ,20,30,0,self.unit_images["bluebuff"], "neutral",3,2,"monster"),  #neutral monster
+            MonsterUnit(15, 13, "RedBuff",390, 150 ,30,0,0,self.unit_images["redbuff"], "neutral",3,2,"monster"), #neutral monster
 
-            BaseUnit(1, 19, "NexusBlue",2900, 50,0 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base","Up"),  #Blue team base
-            BaseUnit(19, 1, "NexusRed",2900, 50,0 ,0,0,self.unit_images["basered"], "red",0,0,"base","Up"), #Red team base
+            BaseUnit(1, 19, "NexusBlue",2500, 50,0 ,0,0,self.unit_images["baseblue"], "blue",0,0,"base","Up"),  #Blue team base
+            BaseUnit(19, 1, "NexusRed",2500, 50,0 ,0,0,self.unit_images["basered"], "red",0,0,"base","Up"), #Red team base
        ]
 
 
