@@ -85,8 +85,8 @@ class Unit:
                 DamageHealAbility("Astral Infusion", 40, 8, "heal", attack=100, description="Sacrifices own health to heal an ally."),
                 BuffAbility("Wish", 100, 20, defense=30, description="Restores health to all allies and grants defense for 3 turns."),
             ]),  
-            Unit(0,0, "Rengar",500, 190 ,0,0,50,self.unit_images["rengar"], None,4,1,"player", mana=120, abilities=[
-                DamageHealAbility("Savagery", 150, 5, "damage", attack=300, description="Empowered strike dealing extra damage.",attack_radius=4),
+            Unit(0,0, "Rengar",500, 190 ,0,0,50,self.unit_images["rengar"], None,4,1,"player", mana=150, abilities=[
+                DamageHealAbility("Savagery", 50, 5, "damage", attack=300, description="Empowered strike dealing extra damage.",attack_radius=4),
                 BuffAbility("Battle Roar", 40, 8, defense=40, description="Boosts defense and regenerates health."),
                 DebuffAbility("Thrill of the Hunt", 80, 20, attack=20, description="Tracks the enemy, reducing their attack temporarily."),
             ]),  
