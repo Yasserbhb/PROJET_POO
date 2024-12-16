@@ -74,11 +74,13 @@ Each character has three phases during their turn:
 ![Alt Text](https://i.imgur.com/VDZQzXV.png)
 
 The grid features four tile types:
-- **Grass**: Standard movement.
-- **Bushes**: Hide units from enemy vision unless they are in the same bush.
-- **Rocks**: Impassable terrain.
-- **Water**: Slows movement but is traversable.
-
+- **Grass** (light green): Standard movement.
+- **Bushes** (dark green): Hide units from enemy vision unless they are in the same bush.
+- **Rocks** (gray): Impassable terrain.
+- **Water** (light blue): Slows movement but is traversable.
+And also features two types of units besides the players
+-  **Bases** (dark blue and red): the base that each team proctects or else they lose (surrounded by Yellow barriers).
+-  **Monsters** (red and purple and blue) : different monsters that we'll talk about later.
 ---
 
 #### **Vision System**
@@ -102,19 +104,19 @@ There are two types of damage and corresponding defenses:
    - Reduced by the target's **Physical Defense**.
    - Displayed in **red numbers** during the game.
 
-![Alt Text](https://i.imgur.com/VB7HEHA.png)
+![Alt Text](https://i.imgur.com/L4HILtx.png)
 
 2. **Magical Damage**:
    - Reduced by the target's **Magical Defense**.
    - Displayed in **purple numbers** during the game.
 
-![Alt Text](https://i.imgur.com/EVvA1nM.png)
+![Alt Text](https://i.imgur.com/aMZ97pm.png)
 
 3. **Healing**:
    - Restores health points (HP) to the target.
    - Displayed in **green numbers with a "+" sign**.
 
-![Alt Text](https://i.imgur.com/MJr0LZd.png)
+![Alt Text](https://i.imgur.com/Wv6nlkm.png)
 
 ---
 
@@ -130,6 +132,8 @@ Three types of neutral monsters appear on the grid:
 - **Big Buff**: Bigger Increases to both health and damage.
 
 Monsters may also drop **keys** after a certain number of rounds. Attacking monsters will make them retaliate!
+
+![Alt Text](https://i.imgur.com/J5eZhrC.png)
 
 ---
 
