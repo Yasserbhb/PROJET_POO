@@ -7,6 +7,7 @@ Welcome to **League on Budget**, a 2D turn-based combat game inspired by the pop
 ---
 
 ## **Key Features**
+- **Vision System**: Limited sight range based on your allies and terrain mechanics.
 - **Turn-Based Combat**: Engage in 2v2 battles on a **21x21 grid**.
 - **Unique Champions**: Each character comes with distinct abilities and stats.
 - **Interactive Grid**: Includes terrain types (grass, bushes, water, and rocks) that influence gameplay.
@@ -37,10 +38,12 @@ Once all champions are selected, the game begins!
 Each character has three phases during their turn:
 
 1. **Move Phase**:
+LINK 
    - Use the **arrow keys** to move your character.
    - **Press `Space`** to lock in your position and switch to the attack phase.
 
 2. **Attack Phase**:
+LINK to baisc and abilities side by side
    - Choose between **basic attacks** and **abilities**:
      - **Basic Attack**: Default attack with a red range indicator.
      - **Abilities**:
@@ -60,7 +63,9 @@ Each character has three phases during their turn:
 
 ### **Game Elements**
 
+
 #### **Grid Terrain**
+![Alt Text](https://imgur.com/VDZQzXV)
 The grid features four tile types:
 - **Grass**: Standard movement.
 - **Bushes**: Hide units from enemy vision unless they are in the same bush.
@@ -69,23 +74,36 @@ The grid features four tile types:
 
 ---
 
+#### **Vision System**
+Link to vision + and -
+The game features a **fog of war** mechanic where visibility is limited:
+- **Sight Range**: You can see within a certain range of your character and any allies.
+- **Hidden Areas**: Any grid spaces outside your sight range or behind terrain obstacles (e.g., rocks) are hidden.
+- **Bush Mechanic**: Units inside bushes (from the enemy team) are invisible .
+- **Allies**: You share vision with your teammates, so you can always see what an ally sees.
+
+This system adds an extra layer of strategy, encouraging players to stay close to their team while exploring.
+
+---
+
 #### **Damage and Defense**
 There are two types of damage and corresponding defenses:
 1. **Physical Damage**:
    - Reduced by the target's **Physical Defense**.
    - Displayed in **red numbers** during the game.
-
+Link to red number
 2. **Magical Damage**:
    - Reduced by the target's **Magical Defense**.
    - Displayed in **purple numbers** during the game.
-
+Link to purple number
 3. **Healing**:
    - Restores health points (HP) to the target.
    - Displayed in **green numbers with a "+" sign**.
-
+Link to green number
 ---
 
 #### **Monsters**
+Link photo of the 3
 Three types of neutral monsters appear on the grid:
 - **Blue Buff**: Increases attack damage and max health.
 - **Red Buff**: Increases attack damage and max health.
@@ -96,6 +114,7 @@ Monsters may also drop **keys** after a certain number of rounds. Attacking mons
 ---
 
 #### **Potions**
+Link photo of the 5
 Potions spawn randomly on **grass** and **water** tiles. Collect them to gain powerful bonuses:
 - **Red Potion**: Restores health.
 - **Green Potion**: Increases max HP.
@@ -108,6 +127,7 @@ Potions have varying rarities, so plan carefully to maximize their effects.
 ---
 
 #### **Keys and Barriers**
+Key system
 - **Goal**: Collect 3 keys of the **enemy team's color** to break their barrier and attack their Nexus.
 - Each team starts with:
   - 2 keys of their own color.
@@ -123,12 +143,11 @@ Potions have varying rarities, so plan carefully to maximize their effects.
 ---
 
 ### **Visual Indicators**
+Link to triangle
 - **Buffs**: Green upward triangle.
 - **Debuffs**: Red downward triangle.
-- **Damage**:
-  - **Red numbers**: Physical damage.
-  - **Purple numbers**: Magical damage.
-- **Healing**: Green numbers with a "+" sign.
+- **Damage**: Red flash on the unit (besides the damage umbers)
+- **Healing**: Green flash on the unit (besides the green numbers with a "+" sign.)
 
 ---
 
@@ -150,6 +169,7 @@ Potions have varying rarities, so plan carefully to maximize their effects.
 ---
 
 ## **Additional Notes**
+
 - Only the **number keys above the letters** work for champion selection or ability selection.
 - The **side numpad keys** are **not supported**.
 
