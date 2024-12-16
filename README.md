@@ -65,7 +65,7 @@ LINK to baisc and abilities side by side
 
 
 #### **Grid Terrain**
-![Alt Text](https://imgur.com/VDZQzXV)
+![Alt Text](hhttps://i.imgur.com/VDZQzXV.png)
 The grid features four tile types:
 - **Grass**: Standard movement.
 - **Bushes**: Hide units from enemy vision unless they are in the same bush.
