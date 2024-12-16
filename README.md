@@ -38,12 +38,14 @@ Once all champions are selected, the game begins!
 Each character has three phases during their turn:
 
 1. **Move Phase**:
-LINK 
+![Alt Text](https://i.imgur.com/l9MxEfF.png)
    - Use the **arrow keys** to move your character.
    - **Press `Space`** to lock in your position and switch to the attack phase.
 
 2. **Attack Phase**:
-LINK to baisc and abilities side by side
+![Alt Text](https://i.imgur.com/ZJjckIP.png)
+![Alt Text](https://i.imgur.com/UwZynwE.png)
+
    - Choose between **basic attacks** and **abilities**:
      - **Basic Attack**: Default attack with a red range indicator.
      - **Abilities**:
@@ -66,6 +68,7 @@ LINK to baisc and abilities side by side
 
 #### **Grid Terrain**
 ![Alt Text](https://i.imgur.com/VDZQzXV.png)
+
 The grid features four tile types:
 - **Grass**: Standard movement.
 - **Bushes**: Hide units from enemy vision unless they are in the same bush.
@@ -75,7 +78,9 @@ The grid features four tile types:
 ---
 
 #### **Vision System**
-Link to vision + and -
+![Alt Text](https://i.imgur.com/yDcLN2J.png)
+![Alt Text](https://i.imgur.com/BwH2N6L.png)
+
 The game features a **fog of war** mechanic where visibility is limited:
 - **Sight Range**: You can see within a certain range of your character and any allies.
 - **Hidden Areas**: Any grid spaces outside your sight range or behind terrain obstacles (e.g., rocks) are hidden.
@@ -91,19 +96,25 @@ There are two types of damage and corresponding defenses:
 1. **Physical Damage**:
    - Reduced by the target's **Physical Defense**.
    - Displayed in **red numbers** during the game.
-Link to red number
+![Alt Text](https://i.imgur.com/VB7HEHA.png)
+
 2. **Magical Damage**:
    - Reduced by the target's **Magical Defense**.
    - Displayed in **purple numbers** during the game.
-Link to purple number
+![Alt Text](https://i.imgur.com/EVvA1nM.png)
+
 3. **Healing**:
    - Restores health points (HP) to the target.
    - Displayed in **green numbers with a "+" sign**.
-Link to green number
+![Alt Text](https://i.imgur.com/MJr0LZd.png)
+
 ---
 
 #### **Monsters**
-Link photo of the 3
+![Alt Text](https://i.imgur.com/mo0E9N3.png)
+![Alt Text](https://i.imgur.com/f0vaTWW.png)
+![Alt Text](https://i.imgur.com/gNVhghg.png)
+
 Three types of neutral monsters appear on the grid:
 - **Blue Buff**: Increases attack damage and max health.
 - **Red Buff**: Increases attack damage and max health.
@@ -114,7 +125,8 @@ Monsters may also drop **keys** after a certain number of rounds. Attacking mons
 ---
 
 #### **Potions**
-Link photo of the 5
+![Alt Text](https://i.imgur.com/wzCpZAi.png)
+
 Potions spawn randomly on **grass** and **water** tiles. Collect them to gain powerful bonuses:
 - **Red Potion**: Restores health.
 - **Green Potion**: Increases max HP.
@@ -127,7 +139,8 @@ Potions have varying rarities, so plan carefully to maximize their effects.
 ---
 
 #### **Keys and Barriers**
-Key system
+![Alt Text](https://i.imgur.com/GBqN6AI.png)
+
 - **Goal**: Collect 3 keys of the **enemy team's color** to break their barrier and attack their Nexus.
 - Each team starts with:
   - 2 keys of their own color.
@@ -143,7 +156,9 @@ Key system
 ---
 
 ### **Visual Indicators**
-Link to triangle
+![Alt Text](https://i.imgur.com/pbwjksw.png)
+![Att Text](https://i.imgur.com/k6CNDzJ.png)
+
 - **Buffs**: Green upward triangle.
 - **Debuffs**: Red downward triangle.
 - **Damage**: Red flash on the unit (besides the damage umbers)
